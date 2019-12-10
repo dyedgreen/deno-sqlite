@@ -1,15 +1,15 @@
-// First test ...
-// ../emsdk/upstream/emscripten/emcc -s MODULARIZE=1 -s EXPORT_ES6=1 -s ENVIRONMENT=shell -s EXPORT_ALL=1 test.c
-// keep that handy :)
+// // First test ...
+// // ../emsdk/upstream/emscripten/emcc -s MODULARIZE=1 -s EXPORT_ES6=1 -s ENVIRONMENT=shell -s EXPORT_ALL=1 test.c
+// // keep that handy :)
 
-// shell stuff:
-const read = Deno.readFileSync;
-const readAsync = Deno.readFile;
-// replace:
-// var UTF16Decoder ?=[^;]+;
-// var UTF16Decoder = undefined;
-// remove (if present):
-// if ?\(.+\) ?throw new Error\('not compiled for this environment[^;]+\);
+// // shell stuff:
+// const read = Deno.readFileSync;
+// const readAsync = Deno.readFile;
+// // replace:
+// // var UTF16Decoder ?=[^;]+;
+// // var UTF16Decoder = undefined;
+// // remove (if present):
+// // if ?\(.+\) ?throw new Error\('not compiled for this environment[^;]+\);
 
 import Module from "./sqlite.js";
 

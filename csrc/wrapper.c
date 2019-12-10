@@ -5,10 +5,16 @@
 #include <backup.h>
 
 #define MAX_TRANSACTIONS 32
-#define ERROR_VAL -1
+#define ERROR_VAL        -1
 
 // Custom status codes
 #define STATUS_TRANSACTION_LIMIT 1000
+#define STATUS_NO_TRANSACTION    1001
+
+#define GUARD_TRANSACTION(idx)   if (transactions[idx] == NULL) {          \
+                                 debug_printf("transaction guard failed\n"); \
+                                 last_status = STATUS_NO_TRANSACTION;      \
+                                 return STATUS_NO_TRANSACTION; }
 
 // Module state
 sqlite3* db;
@@ -51,7 +57,7 @@ const char* EMSCRIPTEN_KEEPALIVE get_sqlite_error_str() {
   return sqlite3_errmsg(db);
 }
 
-// wraps sqlite3_prepare
+// Wraps sqlite3_prepare
 int EMSCRIPTEN_KEEPALIVE prepare(const char* sql) {
   if (open_transactions >= MAX_TRANSACTIONS) {
     debug_printf("transaction limit exceeded\n");
@@ -78,5 +84,92 @@ int EMSCRIPTEN_KEEPALIVE prepare(const char* sql) {
     transactions[last_transaction] = NULL;
     return ERROR_VAL;
   }
+
+  debug_printf("prepared statement (%i open transactions\n)", open_transactions);
+  open_transactions ++;
   return last_transaction;
+}
+
+// Destruct the given statement/ transaction. This will destruct the SQLite
+// statement and free up it's transaction slot.
+int EMSCRIPTEN_KEEPALIVE finalize(int trans) {
+  if (transactions[trans] == NULL)
+    return SQLITE_OK;
+
+  last_status = sqlite3_finalize(transactions[trans]);
+  transactions[trans] = NULL;
+  open_transactions --;
+  debug_printf("finalized statement (status %i, %i open transactions\n)", last_status, open_transactions);
+  return last_status;
+}
+
+// Wrappers for bind statements, these return the status directly
+int EMSCRIPTEN_KEEPALIVE bind_int(int trans, int idx, int value) {
+  GUARD_TRANSACTION(trans);
+  last_status = sqlite3_bind_int(transactions[trans], idx, value);
+  return last_status;
+}
+
+int EMSCRIPTEN_KEEPALIVE bind_double(int trans, int idx, double value) {
+  GUARD_TRANSACTION(trans);
+  last_status = sqlite3_bind_double(transactions[trans], idx, value);
+  return last_status;
+}
+
+int EMSCRIPTEN_KEEPALIVE bind_text(int trans, int idx, const char* value) {
+  GUARD_TRANSACTION(trans);
+  last_status = sqlite3_bind_text(transactions[trans], idx, value, -1, NULL);
+  return last_status;
+}
+
+// Wraps running statements, this returns the status directly
+int EMSCRIPTEN_KEEPALIVE step(int trans) {
+  GUARD_TRANSACTION(trans);
+  last_status = sqlite3_step(transactions[trans]);
+  return last_status;
+}
+
+// Count columns returned by statement. If the statement does not
+// exist, ERROR_VAL is returned.
+int EMSCRIPTEN_KEEPALIVE column_count(int trans) {
+  if (transactions[trans] == NULL) {
+    debug_printf("column_count failed silently\n");
+    return ERROR_VAL;
+  }
+  return sqlite3_column_count(transactions[trans]);
+}
+
+// Determine type of column. Returns SQLITE column types and SQLITE_NULL
+// if the column does not exist.
+int EMSCRIPTEN_KEEPALIVE column_type(int trans, int col) {
+  if (transactions[trans] == NULL) {
+    debug_printf("column_type failed silently\n");
+    return SQLITE_NULL;
+  }
+  return sqlite3_column_type(transactions[trans], col);
+}
+
+// Wrap result returning functions. These fail silently.
+int EMSCRIPTEN_KEEPALIVE column_int(int trans, int col) {
+  if (transactions[trans] == NULL) {
+    debug_printf("column_int failed silently\n");
+    return 0;
+  }
+  return sqlite3_column_int(transactions[trans], col);
+}
+
+double EMSCRIPTEN_KEEPALIVE column_double(int trans, int col) {
+  if (transactions[trans] == NULL) {
+    debug_printf("column_double failed silently\n");
+    return 0.0;
+  }
+  return sqlite3_column_double(transactions[trans], col);
+}
+
+const char* EMSCRIPTEN_KEEPALIVE column_text(int trans, int col) {
+  if (transactions[trans] == NULL) {
+    debug_printf("column_text failed silently\n");
+    return "";
+  }
+  return (const char*)sqlite3_column_text(transactions[trans], col);
 }

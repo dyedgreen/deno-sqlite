@@ -4,7 +4,8 @@ EMCC ?= emcc
 OUT = "sqlite.js"
 
 CSRC  = $(shell find . -name "*.c")
-CFLG  = #-Os
+FLGS  = -Wall
+RFLG  = -Os
 DFLG  = -DDEBUG_BUILD
 JSFLG = -s MODULARIZE=1 -s EXPORT_ES6=1 -s ENVIRONMENT=shell -s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall']"
 INCS  = -Ilib -Icsrc
@@ -22,10 +23,13 @@ SQLFLG = -DSQLITE_DQS=0 -DSQLITE_THREADSAFE=0 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS\
 all: build
 
 build:
-	$(EMCC) $(JSFLG) $(CFLG) $(INCS) $(CSRC) $(SQLFLG) -o $(OUT)
+	$(EMCC) $(JSFLG) $(FLGS) $(INCS) $(CSRC) $(SQLFLG) -o $(OUT)
 	$(DENO) --allow-read --allow-write hack/patch.js $(OUT)
 
-debug: CFLG += $(DFLG)
+debug: FLGS += $(DFLG)
 debug: build
+
+release: FLGS += $(RFLG)
+release: build
 
 .PHONY: build

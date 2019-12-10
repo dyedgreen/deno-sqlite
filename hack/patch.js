@@ -1,6 +1,8 @@
 "use strict";
 // Patch the emscripten build
 
+// TODO: Deliver .wasm file in-lined somewhere so this  is portable (and avoids read permissions)
+
 // patches (applied consecutively!)
 const patches = [
   // fill in file-loading functions

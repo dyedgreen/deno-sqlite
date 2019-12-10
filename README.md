@@ -20,4 +20,7 @@ for (const [name, email] of db.query("SELECT name, email FROM users;")) {
 // Parameters are passed after the query string
 let birthdays = [...db.query("SELECT birthdays FROM users WHERE name LIKE ?;", "Clark Kent")].map(unix => new Date(unix));
 console.log(birthdays);
+
+// Save database to disc (TODO: explain why necessary)
+db.save();
 ```
