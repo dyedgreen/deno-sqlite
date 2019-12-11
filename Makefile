@@ -7,7 +7,7 @@ CSRC  = $(shell find . -name "*.c")
 FLGS  = -Wall
 RFLG  = -Os
 DFLG  = -DDEBUG_BUILD
-JSFLG = -s MODULARIZE=1 -s EXPORT_ES6=1 -s ENVIRONMENT=shell -s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall']"
+JSFLG = -s MODULARIZE=1 -s EXPORT_ES6=1 -s ENVIRONMENT=shell -s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap']"
 INCS  = -Ilib -Icsrc
 
 # Configure sqlite for out use-case

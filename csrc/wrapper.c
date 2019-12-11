@@ -85,8 +85,8 @@ int EMSCRIPTEN_KEEPALIVE prepare(const char* sql) {
     return ERROR_VAL;
   }
 
-  debug_printf("prepared statement (%i open transactions\n)", open_transactions);
   open_transactions ++;
+  debug_printf("prepared statement (%i open transactions)\n", open_transactions);
   return last_transaction;
 }
 
@@ -99,7 +99,7 @@ int EMSCRIPTEN_KEEPALIVE finalize(int trans) {
   last_status = sqlite3_finalize(transactions[trans]);
   transactions[trans] = NULL;
   open_transactions --;
-  debug_printf("finalized statement (status %i, %i open transactions\n)", last_status, open_transactions);
+  debug_printf("finalized statement (status %i, %i open transactions)\n", last_status, open_transactions);
   return last_status;
 }
 
