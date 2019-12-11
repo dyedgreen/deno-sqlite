@@ -1,0 +1,6 @@
+# System files
+.DS_Store
+
+# Misc
+test.js
+test.db

@@ -7,7 +7,7 @@
 #define MAX_TRANSACTIONS 32
 #define ERROR_VAL        -1
 
-// Custom status codes
+// Custom/ wrapper status codes
 #define STATUS_TRANSACTION_LIMIT 1000
 #define STATUS_NO_TRANSACTION    1001
 
@@ -41,7 +41,7 @@ int EMSCRIPTEN_KEEPALIVE init() {
   last_transaction  = 0;
 
   // Initialize SQLite
-  last_status = sqlite3_open(":memory:", &db);
+  last_status = sqlite3_open("/db", &db);
   debug_printf("initialized db, status: %i\n", last_status);
   return last_status;
 }
@@ -107,18 +107,24 @@ int EMSCRIPTEN_KEEPALIVE finalize(int trans) {
 int EMSCRIPTEN_KEEPALIVE bind_int(int trans, int idx, int value) {
   GUARD_TRANSACTION(trans);
   last_status = sqlite3_bind_int(transactions[trans], idx, value);
+  debug_printf("binding int %i (status %i)\n", value, last_status);
   return last_status;
 }
 
 int EMSCRIPTEN_KEEPALIVE bind_double(int trans, int idx, double value) {
   GUARD_TRANSACTION(trans);
   last_status = sqlite3_bind_double(transactions[trans], idx, value);
+  debug_printf("binding double %f (status %i)\n", value, last_status);
   return last_status;
 }
 
 int EMSCRIPTEN_KEEPALIVE bind_text(int trans, int idx, const char* value) {
   GUARD_TRANSACTION(trans);
-  last_status = sqlite3_bind_text(transactions[trans], idx, value, -1, NULL);
+  // SQLite retrains the string until we execute the statement, but emscripten
+  // frees any strings passed in when the function returns. Thus we need to mark
+  // is as transient.
+  last_status = sqlite3_bind_text(transactions[trans], idx, value, -1, SQLITE_TRANSIENT);
+  debug_printf("binding text '%s' (status %i)\n", value, last_status);
   return last_status;
 }
 
@@ -126,6 +132,7 @@ int EMSCRIPTEN_KEEPALIVE bind_text(int trans, int idx, const char* value) {
 int EMSCRIPTEN_KEEPALIVE step(int trans) {
   GUARD_TRANSACTION(trans);
   last_status = sqlite3_step(transactions[trans]);
+  debug_printf("stepping transaction %i (status %i)\n", trans, last_status);
   return last_status;
 }
 
