@@ -14,7 +14,7 @@ This also still needs unit tests, better documentation, and a re-write in TypeSc
 The API is simplicity itself:
 
 ```JavaScript
-import {open, Empty} from "./mod.ts";
+import {open, Empty} from "https://deno.land/x/sqlite/mod.ts";
 
 // Construct a database
 const db = await open(); // pass file path to load database contents
