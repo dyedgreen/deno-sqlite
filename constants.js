@@ -1,5 +1,3 @@
-// SQLite and wrapper constants
-
 const status = {
   sqliteOk:         0,
   sqliteRow:        100,
@@ -19,4 +17,4 @@ const values = {
   error: -1,
 };
 
-export default {status, types, values};
+export default { status, types, values };
