@@ -1,6 +1,9 @@
 # System files
 .DS_Store
 
+# Build files
+sqlite.wasm
+
 # Misc
 test.js
 test.db

@@ -9,12 +9,23 @@ function instance() {
   });
 }
 
-function open(file) {
+/**
+* Open a new SQLite3 database. Each database is
+* running in a separate WASM instance. This
+* returns a promise resolving to the database.
+*
+* If a file path is provided, then the database
+* is initialized with the data from the file.
+*
+* @param path
+* @return Promise<DB>
+*/
+function open(path) {
   return new Promise((accept, reject) => {
-    if (!file) {
+    if (!path) {
       accept();
     } else {
-      Deno.readFile(file).then(file => {
+      Deno.readFile(path).then(file => {
         accept(file);
       }).catch(reject);
     }

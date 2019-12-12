@@ -2,7 +2,6 @@
 #include <emscripten.h>
 #include <sqlite3.h>
 #include <debug.h>
-#include <backup.h>
 
 #define MAX_TRANSACTIONS 32
 #define ERROR_VAL        -1
@@ -103,6 +102,12 @@ int EMSCRIPTEN_KEEPALIVE finalize(int trans) {
   return last_status;
 }
 
+// Finalize all statements
+void EMSCRIPTEN_KEEPALIVE finalize_all() {
+  for (int trans = 0; trans < MAX_TRANSACTIONS; trans ++)
+    finalize(trans);
+}
+
 // Wrappers for bind statements, these return the status directly
 int EMSCRIPTEN_KEEPALIVE bind_int(int trans, int idx, int value) {
   GUARD_TRANSACTION(trans);
@@ -125,6 +130,13 @@ int EMSCRIPTEN_KEEPALIVE bind_text(int trans, int idx, const char* value) {
   // is as transient.
   last_status = sqlite3_bind_text(transactions[trans], idx, value, -1, SQLITE_TRANSIENT);
   debug_printf("binding text '%s' (status %i)\n", value, last_status);
+  return last_status;
+}
+
+int EMSCRIPTEN_KEEPALIVE bind_null(int trans, int idx) {
+  GUARD_TRANSACTION(trans);
+  last_status = sqlite3_bind_null(transactions[trans], idx);
+  debug_printf("binding null (status %i)\n", last_status);
   return last_status;
 }
 
