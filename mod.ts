@@ -20,7 +20,7 @@ function instance() {
 * @param path
 * @return Promise<DB>
 */
-function open(path) {
+function open(path): Promise<DB> {
   return new Promise((accept, reject) => {
     if (!path) {
       accept();
