@@ -109,10 +109,13 @@ void EMSCRIPTEN_KEEPALIVE finalize_all() {
 }
 
 // Wrappers for bind statements, these return the status directly
-int EMSCRIPTEN_KEEPALIVE bind_int(int trans, int idx, int value) {
+int EMSCRIPTEN_KEEPALIVE bind_int(int trans, int idx, double value) {
   GUARD_TRANSACTION(trans);
-  last_status = sqlite3_bind_int(transactions[trans], idx, value);
-  debug_printf("binding int %i (status %i)\n", value, last_status);
+  // we use double to pass in the value, as JS does not support 64 bit integers,
+  // but handles floats and we can contain a 32 bit in in a 64 bit float, so there
+  // should be no loss.
+  last_status = sqlite3_bind_int64(transactions[trans], idx, (sqlite3_int64)value);
+  debug_printf("binding int %lli (status %i)\n", (sqlite3_int64)value, last_status);
   return last_status;
 }
 
@@ -169,12 +172,12 @@ int EMSCRIPTEN_KEEPALIVE column_type(int trans, int col) {
 }
 
 // Wrap result returning functions. These fail silently.
-int EMSCRIPTEN_KEEPALIVE column_int(int trans, int col) {
+double EMSCRIPTEN_KEEPALIVE column_int(int trans, int col) {
   if (transactions[trans] == NULL) {
     debug_printf("column_int failed silently\n");
-    return 0;
+    return 0.0;
   }
-  return sqlite3_column_int(transactions[trans], col);
+  return (double)sqlite3_column_int64(transactions[trans], col);
 }
 
 double EMSCRIPTEN_KEEPALIVE column_double(int trans, int col) {

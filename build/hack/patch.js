@@ -7,11 +7,17 @@
 // FIXME: once WASM interfaces land and are supported by both emscripten and Deno, we probably don't
 //        need to wrap things like this anymore.
 const wasm = await Deno.readFile(Deno.args[1].replace(".js", ".wasm"));
+function hexEncode(bytes) {
+  const fragments = new Array(bytes.length);
+  for (let i = 0; i < bytes.length; i ++)
+    fragments[i] = bytes[i].toString(16).padStart(2, "0");
+  return fragments.join("");
+}
 
 // Patches (applied consecutively!)
 const patches = [
   // fill in file-loading functions
-  {regexp: /^/g, replace: `const read = () => new Uint8Array([${wasm.map(c => `${c}`).join(",")}]);\n`},
+  {regexp: /^/g, replace: `function read() {var d="${hexEncode(wasm)}";var b=new Uint8Array(d.length/2);for(var i=0;i<d.length;i+=2){b[i/2]=parseInt(d.substr(i,2),16);}return b;}\n`},
   // fix some Deno-specific problems with the provided runtime
   {regexp: /var UTF16Decoder ?=[^;]+;/g, replace: "var UTF16Decoder = undefined;"},
   {regexp: /if ?\(.+\) ?throw new Error\('not compiled for this environment[^;]+\);/g, replace: ""},

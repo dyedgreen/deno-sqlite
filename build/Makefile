@@ -20,7 +20,7 @@ SQLFLG = -DSQLITE_DQS=0 -DSQLITE_THREADSAFE=0 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS\
 # SQLITE_DEFAULT_FOREIGN_KEYS -> this should be the default
 # SQLITE_TEMP_STORE -> emscripten fs is in-memory, no need for extra indirection
 
-all: build
+all: release
 
 build:
 	$(EMCC) $(JSFLG) $(FLGS) $(INCS) $(CSRC) $(SQLFLG) -o $(OUT)

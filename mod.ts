@@ -1,9 +1,9 @@
-import sqlite from "./sqlite.js";
+import sqlite from "./build/sqlite.js";
 import {DB} from "./db.js";
 import {Empty} from "./row.js";
 
 function instance() {
-  // The emscripten module is not a promise
+  // The emscripten module is not a true promise
   return new Promise(accept => {
     sqlite().then(inst => accept(inst));
   });
