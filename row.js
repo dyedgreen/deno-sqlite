@@ -7,7 +7,8 @@ export class Rows {
     this._id = id;
     this._done = false;
 
-    if (!this._db) this._done = true;
+    if (!this._db)
+      this._done = true;
   }
 
   /**
@@ -27,7 +28,8 @@ export class Rows {
    *     }
    */
   done() {
-    if (this._done) return;
+    if (this._done)
+      return;
     // Release transaction slot
     this._db._inst._finalize(this._id);
     this._done = true;

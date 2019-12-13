@@ -54,7 +54,7 @@ test(async function readmeExample() {
   }
 });
 
-/** Ensure binding values works correctly */
+/** Ensure binding values works correctly. */
 test(async function bindValues() {
   const db = await open();
   let vals, rows;
@@ -125,4 +125,35 @@ test(async function bindValues() {
   });
 });
 
-runIfMain(import.meta);
+/** Ensure results are returned as expected. */
+test(async function testRows() {
+  // TODO
+  assert(false);
+});
+
+/** Ensure saving to file works. */
+test(async function saveToFile() {
+  const data = ["Hello World!", "Hello Deno!", "JavaScript <3", "This costs 0€!", "Wéll, hällö thėrè¿"];
+
+  // Write data to db
+  const db = await open();
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT);");
+  for (const val of data)
+    db.query("INSERT INTO test (val) VALUES (?)", val);
+  db.save("test.db");
+
+  // Read db and check the data is restored
+  const db2 = await open("test.db");
+  for (const [id, val] of db2.query("SELECT * FROM test;"))
+    assertEquals(data[id-1], val);
+});
+
+// Skip this tests if we don't have read or write
+// permissions.
+const skip = [];
+const write = (await Deno.permissions.query({ name: "write" })).state === "granted";
+const read = (await Deno.permissions.query({ name: "read" })).state === "granted";
+if (!write || !read)
+  skip.push(...["saveToFile"]);
+
+runIfMain(import.meta, { skip: new RegExp(`^${skip.join("|")}$`), exitOnFail: false });

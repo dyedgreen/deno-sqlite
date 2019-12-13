@@ -6,8 +6,10 @@ export class DB {
   constructor(inst, file) {
     this._inst = inst;
     // If we have a file given, we try to load it
-    if (file) this._inst.FS.writeFile("/db", file);
-    if (this._inst._init() !== constants.status.sqliteOk) throw this._error();
+    if (file)
+      this._inst.FS.writeFile("/db", file);
+    if (this._inst._init() !== constants.status.sqliteOk)
+      throw this._error();
   }
 
   /**
@@ -27,11 +29,13 @@ export class DB {
    * is also iterable, but has zero entries).
    */
   query(sql, ...values) {
-    if (typeof sql !== "string") throw new Error("SQL query is not a string.");
+    if (typeof sql !== "string")
+      throw new Error("SQL query is not a string.");
 
     // Prepare sqlite query statement
     const id = this._inst.ccall("prepare", "number", ["string"], [sql]);
-    if (id === constants.values.error) throw this._error();
+    if (id === constants.values.error)
+      throw this._error();
 
     // Bind values
     for (let i = 0; i < values.length; i++) {
@@ -105,7 +109,8 @@ export class DB {
   }
 
   _error(code) {
-    if (code === undefined) code = this._inst._get_status();
+    if (code === undefined)
+      code = this._inst._get_status();
     switch (code) {
       case constants.status.transactionLimit:
         return new Error("No transaction slot available.");

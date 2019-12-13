@@ -1,14 +1,26 @@
-# JavaScript SQLite Interface
+# JavaScript SQLite Module
 
-This is a wrapper for SQLite for JavaScript. The wrapper is targeted at [Deno](https://deno.land)
+This is an SQLite module for JavaScript. The wrapper is targeted at [Deno](https://deno.land)
 and uses a version of SQLite3 compiled to WebAssembly (WASM).
+
+This is still in an early stage of development. If you use this in a project, please report any
+issues you encounter, as well any other feedback by opening an issue.
 
 ## Caveats
 
 This is still a work in progress. While the API will probably remain mostly stable, there are currently
 no guarantees.
 
-This also still needs unit tests, better documentation, and a re-write in TypeScript.
+## TODO
+
+- [x] Initial API draft
+- [x] Tests
+- [ ] Support BLOBs
+- [ ] The WASM context seems to prevent Deno from exiting when an error is thrown
+- [ ] More tests (high-load, edge-cases, issues as they arise)
+- [ ] Documentation (there are in-file comments)
+- [ ] Rewrite internals to use TypeScript
+- [ ] Benchmarks
 
 ## API Documentation
 The API is simplicity itself:
