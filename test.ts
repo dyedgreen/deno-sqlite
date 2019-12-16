@@ -125,12 +125,6 @@ test(async function bindValues() {
   });
 });
 
-/** Ensure results are returned as expected. */
-test(async function testRows() {
-  // TODO
-  assert(false);
-});
-
 /** Ensure saving to file works. */
 test(async function saveToFile() {
   const data = ["Hello World!", "Hello Deno!", "JavaScript <3", "This costs 0€!", "Wéll, hällö thėrè¿"];

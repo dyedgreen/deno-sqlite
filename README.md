@@ -11,16 +11,17 @@ issues you encounter, as well any other feedback by opening an issue.
 This is still a work in progress. While the API will probably remain mostly stable, there are currently
 no guarantees.
 
-## TODO
+## TODO - Goals
 
 - [x] Initial API draft
 - [x] Tests
 - [ ] Support BLOBs
-- [ ] The WASM context seems to prevent Deno from exiting when an error is thrown
+- [x] The WASM context seems to prevent Deno from exiting when an error is thrown ([fixed by deno 3503](https://github.com/denoland/deno/pull/3503))
 - [ ] More tests (high-load, edge-cases, issues as they arise)
 - [ ] Documentation (there are in-file comments)
 - [ ] Rewrite internals to use TypeScript
 - [ ] Benchmarks
+- [ ] Replace EMSCRIPTEN with WASI (long term)
 
 ## API Documentation
 The API is simplicity itself:
