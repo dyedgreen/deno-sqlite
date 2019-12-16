@@ -10,6 +10,7 @@ const types = {
   integer: 1,
   float:   2,
   text:    3,
+  blob:    4,
   null:    5,
 };
 

@@ -19,14 +19,27 @@ export class DB {
    *
    *     db.query("SELECT name, email FROM users WHERE subscribed = ? AND list LIKE ?", true, listName);
    *
-   * Note that values may only be numbers, booleans,
-   * strings, null, undefined. Both null and undefined,
-   * result in the entry being NULL.
+   * Values may only be of the following
+   * types and are converted as follows:
+   * +------------+-----------------+------------+
+   * | JS into DB | SQL type        | JS returned|
+   * +------------+-----------------+------------+
+   * | number     | INTEGER or REAL | number     |
+   * | boolean    | INTEGER         | number     |
+   * | string     | TEXT            | string     |
+   * | Uint8Array | BLOB            | Uint8Array |
+   * | null       | NULL            | null       |
+   * | undefined  | NULL            | null       |
+   * +------------+-----------------+------------+
    *
    * This always returns an iterable Rows object.
    * As a special case, if the query has no rows
    * to return, this returns the Empty row (which
    * is also iterable, but has zero entries).
+   *
+   * Any returned Rows object needs to be fully
+   * iterated over or discarded by calling
+   * `.done()`.
    */
   query(sql, ...values) {
     if (typeof sql !== "string")
@@ -60,7 +73,15 @@ export class DB {
           );
           break;
         default:
-          if (values[i] === null || values[i] === undefined) {
+          if (values[i] instanceof Uint8Array) {
+            // Uint8Arrays are allowed and bound to BLOB
+            status = this._inst.ccall(
+              "bind_blob",
+              "number",
+              ["number", "number", "array", "number"],
+              [id, i + 1, values[i], values[i].length]
+            );
+          } else if (values[i] === null || values[i] === undefined) {
             // Both null and undefined result in a NULL entry
             status = this._inst._bind_null(id, i + 1);
           } else {
@@ -121,7 +142,7 @@ export class DB {
       default:
         // SQLite error
         return new Error(
-          this._inst.ccall("get_sqlite_error_str", "string", [])
+          this._inst.ccall("get_sqlite_error_str", "string", [], [])
         );
     }
   }

@@ -79,6 +79,17 @@ export class Rows {
             )
           );
           break;
+        case constants.types.blob:
+          const ptr = this._db._inst._column_blob(this._id, i);
+          if (ptr === 0) {
+            // Zero pointer results in null
+            row.push(null);
+          } else {
+            const length = this._db._inst._column_bytes(this._id, i);
+            // Slice should copy the bytes, as it makes a shallow copy
+            row.push(this._db._inst.HEAPU8.slice(ptr, ptr + length));
+          }
+          break;
         default:
           // TODO: Differentiate between NULL and not-recognized?
           row.push(null);

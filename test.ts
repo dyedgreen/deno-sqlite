@@ -95,6 +95,15 @@ test(async function bindValues() {
   assertEquals(rows.length, vals.length);
   assertEquals(rows, [1, 0]);
 
+  // blob
+  db.query("CREATE TABLE blobs (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB);");
+  vals = [new Uint8Array([1,2,3,4,5,6,7,8,9,0]), new Uint8Array([3,57,45])];
+  for (const val of vals)
+    db.query("INSERT INTO blobs (val) VALUES (?)", val);
+  rows = [...db.query("SELECT val FROM blobs;")].map(([v]) => v);
+  assertEquals(rows.length, vals.length);
+  assertEquals(rows, vals);
+
   // null & undefined
   db.query("CREATE TABLE nulls (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER);");
   vals = [null, undefined];
@@ -123,6 +132,31 @@ test(async function bindValues() {
     db.query("SELECT * FROM strings LIMIT ?;");
     db.query("INSERT INTO mix (val1, val2, val3, val4) VALUES (?, ?, ?, ?)", 1, null);
   });
+});
+
+/** Ensure blob data is copied and not viewed. */
+test(async function blobsAreCopies() {
+  const db = await open();
+
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB);");
+  const data = new Uint8Array([1,2,3,4,5]);
+  db.query("INSERT INTO test (val) VALUES (?);", data);
+
+  const [[a]] = [...db.query("SELECT val FROM test;")];
+  const [[b]] = [...db.query("SELECT val FROM test;")];
+
+  assertEquals(data, a);
+  assertEquals(data, b);
+  assertEquals(a, b);
+
+  a[0] = 100;
+  assertEquals(a[0], 100);
+  assertEquals(b[0], 1);
+  assertEquals(data[0], 1);
+
+  data[0] = 5;
+  const [[c]] = [...db.query("SELECT val FROM test;")];
+  assertEquals(c[0], 1);
 });
 
 /** Ensure saving to file works. */

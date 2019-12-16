@@ -136,6 +136,16 @@ int EMSCRIPTEN_KEEPALIVE bind_text(int trans, int idx, const char* value) {
   return last_status;
 }
 
+int EMSCRIPTEN_KEEPALIVE bind_blob(int trans, int idx, void* value, int size) {
+  GUARD_TRANSACTION(trans);
+  // SQLite retrains the array until we execute the statement, but emscripten
+  // frees any arrays passed in when the function returns. Thus we need to mark
+  // is as transient.
+  last_status = sqlite3_bind_blob(transactions[trans], idx, value, size, SQLITE_TRANSIENT);
+  debug_printf("binding blob '%s' (status %i)\n", value, last_status);
+  return last_status;
+}
+
 int EMSCRIPTEN_KEEPALIVE bind_null(int trans, int idx) {
   GUARD_TRANSACTION(trans);
   last_status = sqlite3_bind_null(transactions[trans], idx);
@@ -194,4 +204,20 @@ const char* EMSCRIPTEN_KEEPALIVE column_text(int trans, int col) {
     return "";
   }
   return (const char*)sqlite3_column_text(transactions[trans], col);
+}
+
+const void* EMSCRIPTEN_KEEPALIVE column_blob(int trans, int col) {
+  if (transactions[trans] == NULL) {
+    debug_printf("column_blob failed silently\n");
+    return NULL;
+  }
+  return sqlite3_column_blob(transactions[trans], col);
+}
+
+int EMSCRIPTEN_KEEPALIVE column_bytes(int trans, int col) {
+  if (transactions[trans] == NULL) {
+    debug_printf("column_bytes failed silently\n");
+    return 0;
+  }
+  return sqlite3_column_bytes(transactions[trans], col);
 }
