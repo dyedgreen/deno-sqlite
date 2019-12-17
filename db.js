@@ -141,9 +141,9 @@ export class DB {
         break;
       default:
         // SQLite error
-        return new Error(
-          this._inst.ccall("get_sqlite_error_str", "string", [], [])
-        );
+        const msg = `SQLite error: ${this._inst.ccall("get_sqlite_error_str", "string", [], [])}`;
+        return new Error(msg);
+        break;
     }
   }
 }
