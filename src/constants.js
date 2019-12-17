@@ -4,6 +4,7 @@ const status = {
   sqliteDone:       101,
   transactionLimit: 1000,
   noTransaction:    1001,
+  noDatabase:       1002,
 };
 
 const types = {

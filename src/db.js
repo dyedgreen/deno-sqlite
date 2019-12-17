@@ -6,8 +6,14 @@ export class DB {
   constructor(inst, file) {
     this._inst = inst;
     // If we have a file given, we try to load it
-    if (file)
-      this._inst.FS.writeFile("/db", file);
+    if (file) {
+      if (this._inst._grow_db_file(0, file.length) !== constants.status.sqliteOk)
+        throw this._error();
+      const ptr = this._inst._get_db_file(0);
+      if (ptr === 0)
+        throw this._error();
+      new Uint8Array(this._inst.HEAPU8.buffer, ptr, ptr + file.length).set(file);
+    }
     if (this._inst._init() !== constants.status.sqliteOk)
       throw this._error();
   }
@@ -112,8 +118,12 @@ export class DB {
 
   /** Saves the database contents to the file at path. */
   save(path) {
-    // TODO: Do we want to offer auto-saving?
-    return Deno.writeFile(path, this._inst.FS.readFile("/db"));
+    // Retrieve buffer
+    const ptr = this._inst._get_db_file(0);
+    const size = this._inst._get_db_file_size(0);
+    if (size === 0)
+      return;
+    return Deno.writeFile(path, new Uint8Array(this._inst.HEAPU8.buffer, ptr, size));
   }
 
   /**
@@ -138,6 +148,9 @@ export class DB {
         break;
       case constants.status.noTransaction:
         return new Error("Transaction not found.");
+        break;
+      case constants.status.noDatabase:
+        return new Error("Database not found.");
         break;
       default:
         // SQLite error

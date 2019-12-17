@@ -1,6 +1,6 @@
 import sqlite from "./build/sqlite.js";
-import { DB } from "./db.js";
-import { Empty } from "./row.js";
+import { DB } from "./src/db.js";
+import { Empty } from "./src/row.js";
 
 /**
  * Open a new SQLite3 database. Each database is

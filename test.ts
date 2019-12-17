@@ -168,12 +168,16 @@ test(async function saveToFile() {
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)");
   for (const val of data)
     db.query("INSERT INTO test (val) VALUES (?)", val);
-  db.save("test.db");
+  try {
+    await Deno.remove("test.db");
+  } catch {}
+  await db.save("test.db");
 
   // Read db and check the data is restored
   const db2 = await open("test.db");
   for (const [id, val] of db2.query("SELECT * FROM test"))
     assertEquals(data[id-1], val);
+  await Deno.remove("test.db");
 });
 
 /** Test error is thrown on invalid SQL */

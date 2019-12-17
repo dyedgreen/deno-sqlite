@@ -20,7 +20,8 @@ no guarantees.
 - [ ] More tests (high-load, edge-cases, issues as they arise)
 - [ ] Documentation (there are in-file comments)
 - [ ] Rewrite internals to use TypeScript
-- [ ] Benchmarks
+- [x] Benchmarks
+- [ ] More/ better benchmarks
 - [ ] Replace EMSCRIPTEN with WASI (long term)
 
 ## API Documentation
