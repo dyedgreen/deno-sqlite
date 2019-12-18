@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <time.h>
 #include <sqlite3.h>
 #include <pcg.h>
 #include "buffer.h"
+#include "registry.h"
 #include "debug.h"
 
 // SQLite VFS component.
@@ -22,8 +22,9 @@
 // Determine buffer registry id from file path. We store files
 // like follows: id=0 -> DB, id=1 -> journal for DB1, ...
 int buffer_reg_id_from_path(const char* path) {
-  int id = (int)path[0] - 1; // We need to start at 1 since 0 ends the string
-  // Determine if this is a journal file or a database file
+  int entry_id = id_for_reg_entry_path(path);
+  int id = buffer_for_reg_entry_id(entry_id);
+  // Check if this is a journal file
   if (path[1] != '\0')
     id += 1;
   return id;
@@ -172,10 +173,10 @@ static int wasiDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync) {
 static int wasiAccess(sqlite3_vfs *pVfs, const char *zPath, int flags, int *pResOut) {
   switch (flags) {
     case SQLITE_ACCESS_EXISTS:
-      *pResOut = in_use_reg_id(ID_FROM_PATH(zPath));
+      *pResOut = in_use_reg_buffer_id(ID_FROM_PATH(zPath));
       break;
     default:
-      *pResOut = valid_reg_id(ID_FROM_PATH(zPath));
+      *pResOut = valid_reg_buffer_id(ID_FROM_PATH(zPath));
       break;
   }
   debug_printf("determining file access (id: %i, access %i)\n", ID_FROM_PATH(zPath), *pResOut);
@@ -231,19 +232,14 @@ static int wasiSleep(sqlite3_vfs *pVfs, int nMicro) {
   return 0;
 }
 
-// TODO: This will apparently break in 2038
-// lifted from: https://www.sqlite.org/src/doc/trunk/src/test_demovfs.c
+// TODO: This should be done properly once WASI is more mature.
 static int wasiCurrentTime(sqlite3_vfs *pVfs, double *pTime) {
-  time_t t = time(0);
-  *pTime = t/86400.0 + 2440587.5; 
-  return SQLITE_OK;
+  *pTime = 0;
+  return SQLITE_ERROR;
 }
-
-// Return time from time.h.
 static int wasiCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *pTime) {
-  // TODO: Is this correct?
-  *pTime = (sqlite_int64)time(0);
-  return SQLITE_OK;
+  *pTime = 0;
+  return SQLITE_ERROR;
 }
 
 // This function returns a pointer to the VFS implemented in this file.
@@ -277,8 +273,6 @@ sqlite3_vfs *sqlite3_wasivfs(void) {
 
 int sqlite3_os_init(void) {
   debug_printf("running sqlite3_os_init\n");
-  // Seed PCG
-  pcg_seed((uint64_t)time(NULL));
   // Register VFS
   return sqlite3_vfs_register(sqlite3_wasivfs(), 1);
 }

@@ -1,8 +1,8 @@
 # System files
 .DS_Store
 
-# Build files
-sqlite.wasm
+# Debug builds
+sqlite.js
 
 # Misc
 hack.js

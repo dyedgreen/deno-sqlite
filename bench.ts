@@ -1,7 +1,7 @@
 import { bench, runIfMain } from "https://deno.land/std/testing/bench.ts";
-import { open, Empty } from "./mod.ts";
+import { DB } from "./mod.ts";
 
-const db = await open();
+const db = new DB();
 
 db.query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, balance INTEGER)");
 

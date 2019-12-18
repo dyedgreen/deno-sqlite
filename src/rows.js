@@ -1,3 +1,4 @@
+import { getStr } from "./wasm.js";
 import constants from "./constants.js";
 
 /** Result from a query. */
@@ -31,7 +32,7 @@ export class Rows {
     if (this._done)
       return;
     // Release transaction slot
-    this._db._inst._finalize(this._id);
+    this._db._wasm.finalize(this._db._id, this._id);
     this._done = true;
   }
 
@@ -39,7 +40,7 @@ export class Rows {
     if (this._done) return { done: true };
     // Load row data and advance statement
     const row = this._get();
-    switch (this._db._inst._step(this._id)) {
+    switch (this._db._wasm.step(this._db._id, this._id)) {
       case constants.status.sqliteRow:
         // NO OP
         break;
@@ -48,6 +49,7 @@ export class Rows {
         break;
       default:
         // TODO: Make more helpful
+        this.done();
         throw new Error("Internal error.");
         break;
     }
@@ -61,33 +63,27 @@ export class Rows {
   _get() {
     // Get results from row
     const row = [];
-    for (let i = 0, c = this._db._inst._column_count(this._id); i < c; i++) {
-      switch (this._db._inst._column_type(this._id, i)) {
+    // return row;
+    for (let i = 0, c = this._db._wasm.column_count(this._db._id, this._id); i < c; i++) {
+      switch (this._db._wasm.column_type(this._db._id, this._id, i)) {
         case constants.types.integer:
-          row.push(this._db._inst._column_int(this._id, i));
+          row.push(this._db._wasm.column_int(this._db._id, this._id, i));
           break;
         case constants.types.float:
-          row.push(this._db._inst._column_double(this._id, i));
+          row.push(this._db._wasm.column_double(this._db._id, this._id, i));
           break;
         case constants.types.text:
-          row.push(
-            this._db._inst.ccall(
-              "column_text",
-              "string",
-              ["number", "number"],
-              [this._id, i]
-            )
-          );
+          row.push(getStr(this._db._wasm, this._db._wasm.column_text(this._db._id, this._id, i)));
           break;
         case constants.types.blob:
-          const ptr = this._db._inst._column_blob(this._id, i);
+          const ptr = this._db._wasm.column_blob(this._db._id, this._id, i);
           if (ptr === 0) {
             // Zero pointer results in null
             row.push(null);
           } else {
-            const length = this._db._inst._column_bytes(this._id, i);
+            const length = this._db._wasm.column_bytes(this._db._id, this._id, i);
             // Slice should copy the bytes, as it makes a shallow copy
-            row.push(this._db._inst.HEAPU8.slice(ptr, ptr + length));
+            row.push(new Uint8Array(this._db._wasm.memory.buffer, ptr, length).slice());
           }
           break;
         default:

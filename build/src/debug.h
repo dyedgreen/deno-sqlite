@@ -1,6 +1,6 @@
 #ifndef DEBUG_H
 #define DEBUG_H
-#ifdef DEBUG_BUILD
+#if defined(DEBUG_BUILD) && !defined(WASI_BUILD)
 
 #include <stdio.h>
 

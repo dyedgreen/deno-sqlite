@@ -1,11 +1,11 @@
 import { runIfMain, test } from "https://deno.land/std/testing/mod.ts";
 import { assert, assertEquals, assertMatch, assertThrows } from "https://deno.land/std/testing/asserts.ts";
 
-import { open, Empty } from "./mod.ts";
+import { open, save, DB, Empty } from "./mod.ts";
 
 /** Ensure the README examples works as advertised. */
 test(async function readmeExample() {
-  const db = await open();
+  const db = new DB();
   const first = ["Bruce", "Clark", "Peter"];
   const last = ["Wane", "Kent", "Parker"];
   db.query(
@@ -52,11 +52,13 @@ test(async function readmeExample() {
     if (Math.random() > 0.5) continue;
     subscribers.done();
   }
+
+  db.close();
 });
 
 /** Ensure binding values works correctly. */
-test(async function bindValues() {
-  const db = await open();
+test(function bindValues() {
+  const db = new DB();
   let vals, rows;
 
   // string
@@ -132,11 +134,13 @@ test(async function bindValues() {
     db.query("SELECT * FROM strings LIMIT ?");
     db.query("INSERT INTO mix (val1, val2, val3, val4) VALUES (?, ?, ?, ?)", 1, null);
   });
+
+  db.close();
 });
 
 /** Ensure blob data is copied and not viewed. */
-test(async function blobsAreCopies() {
-  const db = await open();
+test(function blobsAreCopies() {
+  const db = new DB();
 
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB)");
   const data = new Uint8Array([1,2,3,4,5]);
@@ -157,32 +161,58 @@ test(async function blobsAreCopies() {
   data[0] = 5;
   const [[c]] = [...db.query("SELECT val FROM test")];
   assertEquals(c[0], 1);
+
+  db.close();
+});
+
+/** Ensure data returned works. */
+test(function data() {
+  const db = new DB();
+
+  // Write some data
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)");
+  db.query("INSERT INTO test (val) VALUES ('test')");
+
+  // Construct second db that is a copy of the first
+  const db2 = new DB(db.data());
+  const [[val]] = [...db.query("SELECT val FROM test")];
+  const [[val2]] = [...db2.query("SELECT val FROM test")];
+  assertEquals(val, val2);
+
+  db.close();
+  db2.close();
 });
 
 /** Ensure saving to file works. */
 test(async function saveToFile() {
   const data = ["Hello World!", "Hello Deno!", "JavaScript <3", "This costs 0€!", "Wéll, hällö thėrè¿"];
 
-  // Write data to db
-  const db = await open();
-  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)");
-  for (const val of data)
-    db.query("INSERT INTO test (val) VALUES (?)", val);
+  // Ensure test file does not exist
   try {
     await Deno.remove("test.db");
   } catch {}
-  await db.save("test.db");
+
+  // Write data to db
+  const db = await open("test.db");
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)");
+  for (const val of data)
+    db.query("INSERT INTO test (val) VALUES (?)", val);
+  await save(db);
 
   // Read db and check the data is restored
   const db2 = await open("test.db");
   for (const [id, val] of db2.query("SELECT * FROM test"))
     assertEquals(data[id-1], val);
+
+  // Clean up
   await Deno.remove("test.db");
+  db.close();
+  db2.close();
 });
 
-/** Test error is thrown on invalid SQL */
-test(async function invalidSQL() {
-  const db = await open();
+/** Test error is thrown on invalid SQL. */
+test(function invalidSQL() {
+  const db = new DB();
   const queries = [
     "INSERT INTO does_not_exist (balance) VALUES (5)",
     "this is not sql",
@@ -190,11 +220,13 @@ test(async function invalidSQL() {
   ];
   for (const query of queries)
     assertThrows(() => db.query(query));
+
+  db.close();
 });
 
 /** Test default is enforcing foreign key constraints. */
-test(async function foreignKeys() {
-  const db = await open();
+test(function foreignKeys() {
+  const db = new DB();
   db.query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)");
   db.query("CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, user INTEGER, FOREIGN KEY(user) REFERENCES users(id))");
 
@@ -213,6 +245,50 @@ test(async function foreignKeys() {
   // Now deleting is OK
   db.query("DELETE FROM orders WHERE user = ?", id);
   db.query("DELETE FROM users WHERE id = ?", id);
+
+  db.close();
+});
+
+/** Test db limit. */
+test(function dbLimit() {
+  const dbs = [];
+  let limitReached = false;
+  try {
+    // try to open too many DBs
+    // (we currently do not guarantee what the limit is)
+    for (let i = 0; i < 10_000; i ++)
+      dbs.push(new DB());
+  } catch {
+    limitReached = true;
+  }
+  assertEquals(limitReached, true);
+  assertThrows(() => new DB());
+  dbs.forEach(db => db.close());
+  const db = new DB();
+  db.close();
+});
+
+/** Test close behaves correctly. */
+test(function closeDB() {
+  const db = new DB();
+  db.close();
+
+  assertThrows(() => db.query("CREATE TABLE test (name TEXT PRIMARY KEY)"));
+  assertThrows(() => db.data());
+});
+
+/** Test having open queries blocks closing. */
+test(function openQueriesBlockClose() {
+  const db = new DB();
+  db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
+  db.query("INSERT INTO test (name) VALUES (?)", "Deno");
+  const rows = db.query("SELECT name FROM test");
+
+  // We have an open query
+  assertThrows(() => db.close());
+
+  rows.done();
+  db.close();
 });
 
 // Skip this tests if we don't have read or write

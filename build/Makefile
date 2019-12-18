@@ -1,13 +1,22 @@
 DENO ?= deno
 EMCC ?= emcc
+WASI ?=
+CC    = $(WASI)/bin/clang
 
-OUT = "sqlite.js"
+ifeq ($(WASI),)
+$(warning To build release target you need to specify a WASI root)
+endif
+
+OUT_JS = "sqlite.js"
+OUT_WA = "sqlite.wasm"
 
 CSRC  = $(shell find . -name "*.c")
 FLGS  = -Wall
 RFLG  = -Os
 DFLG  = -DDEBUG_BUILD
 JSFLG = -s MODULARIZE=1 -s EXPORT_ES6=1 -s ENVIRONMENT=shell -s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall']" -s FILESYSTEM=0
+WAFLG = --target=wasm32-unknown-wasi -Wl,--no-entry -nostartfiles --sysroot $(WASI)/share/wasi-sysroot\
+        -DWASI_BUILD -Wl,--export,malloc -Wl,--export,free
 INCS  = -Ilib
 
 # Configure sqlite for out use-case
@@ -36,11 +45,14 @@ SQLFLG = -DSQLITE_DQS=0 -DSQLITE_THREADSAFE=0 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS\
 all: release
 
 build:
-	$(EMCC) $(JSFLG) $(FLGS) $(INCS) $(CSRC) $(SQLFLG) -o $(OUT)
-	$(DENO) --allow-read --allow-write hack/patch.js $(OUT)
+	$(CC) $(WAFLG) $(FLGS) $(INCS) $(CSRC) $(SQLFLG) -o $(OUT_WA)
+
+emscripten:
+	$(EMCC) $(JSFLG) $(FLGS) $(INCS) $(CSRC) $(SQLFLG) -o $(OUT_JS)
+	$(DENO) --allow-read --allow-write hack/patch.js $(OUT_JS)
 
 debug: FLGS += $(DFLG)
-debug: build
+debug: emscripten
 
 release: FLGS += $(RFLG)
 release: build

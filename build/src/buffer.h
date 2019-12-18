@@ -1,7 +1,9 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#define BUFFER_REG_SIZE 8
+// This limits the number of simultaneous
+// open databases possible.
+#define BUFFER_REG_SIZE 64
 
 // Growing buffer
 typedef struct buffer {
@@ -20,8 +22,8 @@ int write_buffer(buffer* b, char* src, int offset, int length);
 
 // Access buffer registry
 buffer* get_reg_buffer(int id);
-int     valid_reg_id(int id);
-int     in_use_reg_id(int id);
+int     valid_reg_buffer_id(int id);
+int     in_use_reg_buffer_id(int id);
 void    delete_reg_buffer(int id);
 
 #endif // BUFFER_H

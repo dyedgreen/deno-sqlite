@@ -1,10 +1,11 @@
 const status = {
-  sqliteOk:         0,
-  sqliteRow:        100,
-  sqliteDone:       101,
-  transactionLimit: 1000,
-  noTransaction:    1001,
-  noDatabase:       1002,
+  sqliteOk:      0,
+  sqliteRow:     100,
+  sqliteDone:    101,
+  stmtLimit:     1000,
+  noStmt:        1001,
+  databaseLimit: 1002,
+  noDatabase:    1003,
 };
 
 const types = {

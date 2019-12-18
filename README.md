@@ -22,16 +22,16 @@ no guarantees.
 - [ ] Rewrite internals to use TypeScript
 - [x] Benchmarks
 - [ ] More/ better benchmarks
-- [ ] Replace EMSCRIPTEN with WASI (long term)
+- [x] Replace EMSCRIPTEN with WASI
 
 ## API Documentation
 The API is simplicity itself:
 
 ```JavaScript
-import {open, Empty} from "https://deno.land/x/sqlite/mod.ts";
+import {open, save, Empty} from "https://deno.land/x/sqlite/mod.ts";
 
-// Construct a database
-const db = await open(); // pass file path to load database contents
+// Open a database
+const db = await open("test.db"); // or new DB() for an in-memory database
 
 // You can easily bind values to your queries
 const first = ["Bruce", "Clark", "Peter"];
@@ -57,8 +57,8 @@ if (Empty === res)
   console.log("No results!");
 res.done();
 
-// To write the data to disk use
-db.save("emails.db");
+// To write the data to disk
+save(db);
 
 // Make sure to always read all results returned from
 // a query, or call done on the returned Row object.
@@ -71,4 +71,8 @@ for (const [name, email] of subscribers) {
   // using concurrent queries!
   subscribers.done();
 }
+
+// Make sure to always close the database if
+// you're done!
+db.close();
 ```

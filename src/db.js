@@ -1,21 +1,39 @@
+import * as wasm from "../build/sqlite.wasm";
+import { getStr, setStr, setArr } from "./wasm.js";
 import constants from "./constants.js";
-import { Rows, Empty } from "./row.js";
+import { Rows, Empty } from "./rows.js";
+
+// Seed random number generator
+wasm.seed_rng(Date.now());
 
 /**  Database handle. */
 export class DB {
-  constructor(inst, file) {
-    this._inst = inst;
-    // If we have a file given, we try to load it
-    if (file) {
-      if (this._inst._grow_db_file(0, file.length) !== constants.status.sqliteOk)
-        throw this._error();
-      const ptr = this._inst._get_db_file(0);
-      if (ptr === 0)
-        throw this._error();
-      new Uint8Array(this._inst.HEAPU8.buffer, ptr, ptr + file.length).set(file);
-    }
-    if (this._inst._init() !== constants.status.sqliteOk)
+  /**
+   * Create a new database. If an array buffer
+   * is provided as the first argument, the
+   * database is pre-loaded with that data.
+   */
+  constructor(data) {
+    this._wasm = wasm;
+
+    // Obtain a database id
+    this._id = this._wasm.reserve();
+    if (this._id == constants.values.error)
       throw this._error();
+
+    // If data is given, write it to db file
+    if (data instanceof Uint8Array) {
+      if (this._wasm.grow_db_file(this._id, data.length) !== constants.status.sqliteOk)
+        throw new Error("Out of memory.");
+      const ptr = this._wasm.get_db_file(this._id);
+      const view = new Uint8Array(this._wasm.memory.buffer, ptr, data.length);
+      view.set(data);
+    }
+
+    // Open database
+    if (this._wasm.init(this._id) !== constants.status.sqliteOk)
+      throw this._error();
+    this._open = true;
   }
 
   /**
@@ -48,11 +66,16 @@ export class DB {
    * `.done()`.
    */
   query(sql, ...values) {
+    if (!this._open)
+      throw new Error("Database was closed.");
     if (typeof sql !== "string")
-      throw new Error("SQL query is not a string.");
+      throw new Error("SQL query must be a string.");
 
     // Prepare sqlite query statement
-    const id = this._inst.ccall("prepare", "number", ["string"], [sql]);
+    let id;
+    setStr(this._wasm, sql, ptr => {
+      id = this._wasm.prepare(this._id, ptr);
+    });
     if (id === constants.values.error)
       throw this._error();
 
@@ -65,96 +88,98 @@ export class DB {
         // fall through
         case "number":
           if (Math.floor(values[i]) === values[i]) {
-            status = this._inst._bind_int(id, i + 1, values[i]);
+            status = this._wasm.bind_int(this._id, id, i+1, values[i]);
           } else {
-            status = this._inst._bind_double(id, i + 1, values[i]);
+            status = this._wasm.bind_double(this._id, id, i+1, values[i]);
           }
           break;
         case "string":
-          status = this._inst.ccall(
-            "bind_text",
-            "number",
-            ["number", "number", "string"],
-            [id, i + 1, values[i]]
-          );
+          setStr(this._wasm, values[i], ptr => {
+            status = this._wasm.bind_text(this._id, id, i+1, ptr);
+          });
           break;
         default:
           if (values[i] instanceof Uint8Array) {
             // Uint8Arrays are allowed and bound to BLOB
-            status = this._inst.ccall(
-              "bind_blob",
-              "number",
-              ["number", "number", "array", "number"],
-              [id, i + 1, values[i], values[i].length]
-            );
+            setArr(this._wasm, values[i], ptr => {
+              status = this._wasm.bind_blob(this._id, id, i+1, ptr, values[i].length);
+            });
           } else if (values[i] === null || values[i] === undefined) {
             // Both null and undefined result in a NULL entry
-            status = this._inst._bind_null(id, i + 1);
+            status = this._wasm.bind_null(this._id, id, i + 1);
           } else {
             throw new Error("Can not bind ".concat(values[i]));
           }
           break;
       }
       if (status !== constants.status.sqliteOk) {
-        this._inst._finalize(id);
+        this._wasm.finalize(this._id, id);
         throw this._error(status);
       }
     }
 
     // Step once to handle case where result is empty
-    switch (this._inst._step(id)) {
+    switch (this._wasm.step(this._id, id)) {
       case constants.status.sqliteDone:
-        this._inst._finalize(id);
+        this._wasm.finalize(this._id, id);
         return Empty;
         break;
       case constants.status.sqliteRow:
         return new Rows(this, id);
         break;
       default:
+        this._wasm.finalize(this._id, id);
         throw this._error();
         break;
     }
   }
 
-  /** Saves the database contents to the file at path. */
-  save(path) {
-    // Retrieve buffer
-    const ptr = this._inst._get_db_file(0);
-    const size = this._inst._get_db_file_size(0);
-    if (size === 0)
-      return;
-    return Deno.writeFile(path, new Uint8Array(this._inst.HEAPU8.buffer, ptr, size));
+  /**
+   * Return SQLite file as a Uint8Array. This
+   * makes a copy of the data. To save the data
+   * to a file prefer to use `save()` exported by
+   * `mod.ts`.
+   */
+  data() {
+    if (!this._open)
+      throw new Error("Database was closed.");
+    const ptr = this._wasm.get_db_file(this._id);
+    const len = this._wasm.get_db_file_size(this._id);
+    return new Uint8Array(this._wasm.memory.buffer, ptr, len).slice();
   }
 
   /**
-   * Warning: Unstable
-   *
-   * Finalize all running query statements. This
-   * can be used to free up space for statements,
-   * if they have not been properly deallocated.
-   * You should never have to use this.
+   * Close database handle. This must be called if
+   * DB is no longer used, otherwise the limit for
+   * open databases may be reached.
    */
-  _abortAll() {
-    // Finalize all statements, leaving open rows in limbo
-    this._inst._finalize_all();
+  close() {
+    if (!this._open)
+      return;
+    if (this._wasm.close(this._id) !== constants.status.sqliteOk)
+      throw this._error();
+    this._open = false;
   }
 
   _error(code) {
     if (code === undefined)
-      code = this._inst._get_status();
+      code = this._wasm.get_status();
     switch (code) {
-      case constants.status.transactionLimit:
-        return new Error("No transaction slot available.");
+      case constants.status.stmtLimit:
+        return new Error("Statement limit reached.");
         break;
-      case constants.status.noTransaction:
-        return new Error("Transaction not found.");
+      case constants.status.noStmt:
+        return new Error("Statement not found.");
+        break;
+      case constants.status.databaseLimit:
+        return new Error("Database limit reached.");
         break;
       case constants.status.noDatabase:
         return new Error("Database not found.");
         break;
       default:
         // SQLite error
-        const msg = `SQLite error: ${this._inst.ccall("get_sqlite_error_str", "string", [], [])}`;
+        const msg = `sqlite error: ${getStr(this._wasm, this._wasm.get_sqlite_error_str(this._id))}`;
         return new Error(msg);
         break;
     }
