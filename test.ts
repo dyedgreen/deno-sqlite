@@ -2,6 +2,7 @@ import { runIfMain, test } from "https://deno.land/std/testing/mod.ts";
 import { assert, assertEquals, assertMatch, assertThrows } from "https://deno.land/std/testing/asserts.ts";
 
 import { open, save, DB, Empty } from "./mod.ts";
+// import { open, save, DB, Empty } from "https://deno.land/x/sqlite/mod.ts";
 
 /** Ensure the README examples works as advertised. */
 test(async function readmeExample() {

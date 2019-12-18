@@ -1,8 +1,18 @@
 import { getStr } from "./wasm.js";
 import constants from "./constants.js";
 
-/** Result from a query. */
 export class Rows {
+  /**
+   * Rows
+   *
+   * Rows represent a set of results from a query.
+   * They are iterable and yield arrays with
+   * the data from the selected columns.
+   *
+   * This class is not exported from the module
+   * and the only correct way to obtain a `Rows`
+   * object is by making a database query.
+   */
   constructor(db, id) {
     this._db = db;
     this._id = id;
@@ -13,6 +23,8 @@ export class Rows {
   }
 
   /**
+   * Rows.done
+   *
    * Call this if you are done with the
    * query and have not iterated over all
    * the available results.
@@ -96,6 +108,15 @@ export class Rows {
   }
 }
 
-/** Rows representing empty result. */
+/**
+ * Empty
+ *
+ * A special constant. This is a `Rows` object
+ * which has no results. It is still iterable,
+ * however it won't yield any results.
+ *
+ * `Empty` is returned from queries which return
+ * no data.
+ */
 const Empty = new Rows(null, -1);
 export { Empty };

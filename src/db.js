@@ -9,12 +9,14 @@ import { Rows, Empty } from "./rows.js";
 // Seed random number generator
 wasm.seed_rng(Date.now());
 
-/**  Database handle. */
 export class DB {
   /**
-   * Create a new database. If an array buffer
+   * DB
+   *
+   * Create a new database. If a Uint8Array
    * is provided as the first argument, the
-   * database is pre-loaded with that data.
+   * database is pre-loaded with that as the
+   * database file.
    */
   constructor(data) {
     this._wasm = wasm;
@@ -40,6 +42,8 @@ export class DB {
   }
 
   /**
+   * DB.query
+   *
    * Run a query against the database. The SQL
    * query can contain placeholders, which are
    * bound to the following parameters in order.
@@ -48,16 +52,15 @@ export class DB {
    *
    * Values may only be of the following
    * types and are converted as follows:
-   * +------------+-----------------+------------+
-   * | JS into DB | SQL type        | JS returned|
-   * +------------+-----------------+------------+
+   *
+   * | JS in      | SQL type        | JS out     |
+   * |------------|-----------------|------------|
    * | number     | INTEGER or REAL | number     |
    * | boolean    | INTEGER         | number     |
    * | string     | TEXT            | string     |
    * | Uint8Array | BLOB            | Uint8Array |
    * | null       | NULL            | null       |
    * | undefined  | NULL            | null       |
-   * +------------+-----------------+------------+
    *
    * This always returns an iterable Rows object.
    * As a special case, if the query has no rows
@@ -138,7 +141,9 @@ export class DB {
   }
 
   /**
-   * Return SQLite file as a Uint8Array. This
+   * DB.data
+   *
+   * Return SQLite file as a `Uint8Array`. This
    * makes a copy of the data. To save the data
    * to a file prefer to use `save()` exported by
    * `mod.ts`.
@@ -152,6 +157,8 @@ export class DB {
   }
 
   /**
+   * DB.close
+   *
    * Close database handle. This must be called if
    * DB is no longer used, otherwise the limit for
    * open databases may be reached.

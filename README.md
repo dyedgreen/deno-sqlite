@@ -6,26 +6,11 @@ and uses a version of SQLite3 compiled to WebAssembly (WASM).
 This is still in an early stage of development. If you use this in a project, please report any
 issues you encounter, as well any other feedback by opening an issue.
 
-## Caveats
-
-This is still a work in progress. While the API will probably remain mostly stable, there are currently
-no guarantees.
-
-## TODO - Goals
-
-- [x] Initial API draft
-- [x] Tests
-- [x] Support BLOBs
-- [x] The WASM context seems to prevent Deno from exiting when an error is thrown ([fixed by deno 3503](https://github.com/denoland/deno/pull/3503))
-- [ ] More tests (high-load, edge-cases, issues as they arise)
-- [ ] Documentation (there are in-file comments)
-- [ ] Rewrite internals to use TypeScript
-- [x] Benchmarks
-- [ ] More/ better benchmarks
-- [x] Replace EMSCRIPTEN with WASI
 
 ## API Documentation
-The API is simplicity itself:
+
+Below is an example of how to use the wrapper. For a complete API documentation see the `docs`
+folder.
 
 ```JavaScript
 import {open, save, Empty} from "https://deno.land/x/sqlite/mod.ts";
@@ -76,3 +61,18 @@ for (const [name, email] of subscribers) {
 // you're done!
 db.close();
 ```
+
+
+## TODO - Goals
+
+- [x] Initial API draft
+- [x] Tests
+- [x] Support BLOBs
+- [x] The WASM context seems to prevent Deno from exiting when an error is thrown ([fixed by deno 3503](https://github.com/denoland/deno/pull/3503))
+- [x] Benchmarks
+- [x] Documentation (there are in-file comments)
+- [x] Replace EMSCRIPTEN with WASI
+- [ ] More tests (high-load, edge-cases, issues as they arise)
+- [ ] Documentation on general design and best practices
+- [ ] More/ better benchmarks
+- [ ] Rewrite internals to use TypeScript

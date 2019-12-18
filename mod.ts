@@ -2,6 +2,8 @@ import { DB } from "./src/db.js";
 import { Empty } from "./src/rows.js";
 
 /**
+ * open
+ *
  * Open a new SQLite3 database. The file at
  * the path is read and preloaded into the database.
  */
@@ -19,6 +21,8 @@ async function open(path: string, ignoreNotFound=true): Promise<DB> {
 }
 
 /**
+ * save
+ *
  * Save database to file. If the database was opened
  * from a file using `open()`, the second parameter
  * is optional.
