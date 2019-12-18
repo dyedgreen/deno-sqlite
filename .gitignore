@@ -2,7 +2,7 @@
 .DS_Store
 
 # Debug builds
-sqlite.js
+debug.js
 
 # Misc
 hack.js

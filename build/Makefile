@@ -7,7 +7,7 @@ ifeq ($(WASI),)
 $(warning To build release target you need to specify a WASI root)
 endif
 
-OUT_JS = "sqlite.js"
+OUT_JS = "debug.js"
 OUT_WA = "sqlite.wasm"
 
 CSRC  = $(shell find . -name "*.c")

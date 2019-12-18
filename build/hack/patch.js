@@ -16,6 +16,8 @@ function hexEncode(bytes) {
 
 // Patches (applied consecutively!)
 const patches = [
+  // write WASM hex
+  {regexp: /const wasmHex = "[^"]+";/, replace: `const wasmHex = "${hexEncode(wasm)}";`},
   // fill in file-loading functions
   {regexp: /^/g, replace: `function read() {var d="${hexEncode(wasm)}";var b=new Uint8Array(d.length/2);for(var i=0;i<d.length;i+=2){b[i/2]=parseInt(d.substr(i,2),16);}return b;}\n`},
   // fix some Deno-specific problems with the provided runtime
@@ -28,4 +30,5 @@ let data = new TextDecoder("utf-8").decode(Deno.readFileSync(file));
 data = patches.reduce((acc, {regexp, replace}) => acc.replace(regexp, replace), data);
 
 Deno.writeFileSync(file, new TextEncoder().encode(data));
-Deno.remove(Deno.args[1].replace(".js", ".wasm"));
+if (Deno.args[1].indexOf("debug") !== -1)
+  Deno.remove(Deno.args[1].replace(".js", ".wasm"));
