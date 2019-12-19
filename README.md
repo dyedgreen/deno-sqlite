@@ -9,8 +9,8 @@ issues you encounter, as well any other feedback by opening an issue.
 
 ## API Documentation
 
-Below is an example of how to use the wrapper. For a complete API documentation see the
-[documentation](docs/api.md).
+Below is an example of how to use the wrapper. See the [full documentation](https://dyedgreen.github.io/deno-sqlite/)
+for more info.
 
 ```JavaScript
 import {open, save, Empty} from "https://deno.land/x/sqlite/mod.ts";
