@@ -8,4 +8,6 @@ JavaScript binding to SQLite.
 
 ## Table of Contents
 
-- [Full API Documentation](api.md)
+- [API Documentation](api.md)
+- [Examples](examples.md)
+- [Module Design and Internals](design.md)
