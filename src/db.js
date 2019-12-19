@@ -16,7 +16,12 @@ export class DB {
    * Create a new database. If a Uint8Array
    * is provided as the first argument, the
    * database is pre-loaded with that as the
-   * database file.
+   * database file. If no arguments are provided,
+   * a new in-memory database is opened.
+   *
+   * The Uint8Array could be obtained from
+   * `db.data()`, or by reading a database
+   * file written by SQLite.
    */
   constructor(data) {
     this._wasm = wasm;
