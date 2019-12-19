@@ -153,10 +153,8 @@ export class DB {
    * to a file prefer to use `save()` exported by
    * `mod.ts`, which avoids making a copy.
    *
-   * Making a copy of a database could be done like
-   * follows:
-   *
-   *     const copy = new DB(original.data());
+   * ?> Making a copy of a database could be done like
+   * this: `const copy = new DB(original.data());`
    */
   data() {
     if (!this._open)
