@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install deno
+      run: curl -fsSL https://deno.land/x/install/install.sh | sh
+    - uses: actions/checkout@v1
+    - name: Run tests
+      run: deno --allow-read --allow-write test.ts
+    - name: Run benchmarks
+      run: deno bench.ts
