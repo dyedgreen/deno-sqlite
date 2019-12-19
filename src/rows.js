@@ -29,7 +29,7 @@ export class Rows {
    * query and have not iterated over all
    * the available results.
    *
-   * If you leave rows with results before
+   * !> If you leave rows with results before
    * making new queries, you may run into the
    * maximum limit for concurrent queries.
    * Always use `.done()` instead of `break`.

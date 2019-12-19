@@ -67,7 +67,7 @@ export class DB {
    * to return, this returns the Empty row (which
    * is also iterable, but has zero entries).
    *
-   * Any returned Rows object needs to be fully
+   * !> Any returned Rows object needs to be fully
    * iterated over or discarded by calling
    * `.done()`.
    */
@@ -146,7 +146,12 @@ export class DB {
    * Return SQLite file as a `Uint8Array`. This
    * makes a copy of the data. To save the data
    * to a file prefer to use `save()` exported by
-   * `mod.ts`.
+   * `mod.ts`, which avoids making a copy.
+   *
+   * Making a copy of a database could be done like
+   * follows:
+   *
+   *     const copy = new DB(original.data());
    */
   data() {
     if (!this._open)
@@ -160,8 +165,11 @@ export class DB {
    * DB.close
    *
    * Close database handle. This must be called if
-   * DB is no longer used, otherwise the limit for
-   * open databases may be reached.
+   * DB is no longer used.
+   *
+   * !> Not closing the database may cause you to
+   * encounter the limit for open database
+   * connections.
    */
   close() {
     if (!this._open)

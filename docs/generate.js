@@ -67,7 +67,7 @@ function generate(root, md, path=[]) {
       let declaration = root[topic].declaration;
       if (declaration.indexOf("constructor") !== -1)
         declaration = declaration.replace("constructor", `new ${path[0]}`);
-      md += `\n\`\`\`JavaScript\n${declaration}\n\`\`\``;
+      md += `\n\`\`\`javascript\n${declaration}\n\`\`\``;
     } else {
       md += "\n";
     }
@@ -106,7 +106,7 @@ rerun the generator, to avoid loosing the changes.
 
 
 ## How to import
-\`\`\`JavaScript
+\`\`\`javascript
 import { ${keys(root).filter(name => name !== "Rows").join(", ")} } from "https://deno.land/x/sqlite/mod.ts"
 \`\`\`
 The above statement lists all the available imports.

@@ -7,14 +7,14 @@ rerun the generator, to avoid loosing the changes.
 
 
 ## How to import
-```JavaScript
+```javascript
 import { open, save, DB, Empty } from "https://deno.land/x/sqlite/mod.ts"
 ```
 The above statement lists all the available imports.
 
 
 ## open
-```JavaScript
+```javascript
 async function open(path, ignoreNotFound=true)
 ```
 Open a new SQLite3 database. The file at
@@ -22,7 +22,7 @@ the path is read and preloaded into the database.
 
 
 ## save
-```JavaScript
+```javascript
 async function save(db, path)
 ```
 Save database to file. If the database was opened
@@ -31,7 +31,7 @@ is optional.
 
 
 ## DB
-```JavaScript
+```javascript
 new DB(data)
 ```
 Create a new database. If a Uint8Array
@@ -40,7 +40,7 @@ database is pre-loaded with that as the
 database file.
 
 ### DB.query
-```JavaScript
+```javascript
 query(sql, ...values)
 ```
 Run a query against the database. The SQL
@@ -66,30 +66,38 @@ As a special case, if the query has no rows
 to return, this returns the Empty row (which
 is also iterable, but has zero entries).
 
-Any returned Rows object needs to be fully
+!> Any returned Rows object needs to be fully
 iterated over or discarded by calling
 `.done()`.
 
 ### DB.data
-```JavaScript
+```javascript
 data()
 ```
 Return SQLite file as a `Uint8Array`. This
 makes a copy of the data. To save the data
 to a file prefer to use `save()` exported by
-`mod.ts`.
+`mod.ts`, which avoids making a copy.
+
+Making a copy of a database could be done like
+follows:
+
+    const copy = new DB(original.data());
 
 ### DB.close
-```JavaScript
+```javascript
 close()
 ```
 Close database handle. This must be called if
-DB is no longer used, otherwise the limit for
-open databases may be reached.
+DB is no longer used.
+
+!> Not closing the database may cause you to
+encounter the limit for open database
+connections.
 
 
 ## Rows
-```JavaScript
+```javascript
 new Rows(db, id)
 ```
 Rows represent a set of results from a query.
@@ -101,14 +109,14 @@ and the only correct way to obtain a `Rows`
 object is by making a database query.
 
 ### Rows.done
-```JavaScript
+```javascript
 done()
 ```
 Call this if you are done with the
 query and have not iterated over all
 the available results.
 
-If you leave rows with results before
+!> If you leave rows with results before
 making new queries, you may run into the
 maximum limit for concurrent queries.
 Always use `.done()` instead of `break`.
