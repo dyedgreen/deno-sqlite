@@ -4,8 +4,28 @@ import { assert, assertEquals, assertMatch, assertThrows } from "https://deno.la
 import { open, save, DB, Empty } from "./mod.ts";
 // import { open, save, DB, Empty } from "https://deno.land/x/sqlite/mod.ts";
 
-/** Ensure the README examples works as advertised. */
-test(async function readmeExample() {
+/** Ensure README example works as advertised. */
+test(function readmeExample() {
+  // Open a database (no file permission version of open)
+  const db = new DB();
+  db.query("CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)");
+
+  const name = ["Peter Parker", "Clark Kent", "Bruce Wane"][Math.floor(Math.random() * 3)];
+
+  // Run a simple query
+  db.query("INSERT INTO people (name) VALUES (?)", name);
+
+  // Print out data in table
+  for (const [name] of db.query("SELECT name FROM people"))
+    continue; // no console.log ;)
+
+  // Save and close connection
+  // save(db);
+  db.close();
+});
+
+/** Ensure the old README examples works as advertised. */
+test(async function readmeExampleOld() {
   const db = new DB();
   const first = ["Bruce", "Clark", "Peter"];
   const last = ["Wane", "Kent", "Parker"];
