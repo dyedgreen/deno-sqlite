@@ -269,6 +269,28 @@ test(function dbLimit() {
   db.close();
 });
 
+/** Test query limit. */
+test(function queryLimit() {
+  const db = new DB();
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
+  db.query("INSERT INTO test VALUES (1)");
+
+  const queries = [];
+  try {
+    for (let i = 0; i < 10_000; i ++) {
+      queries.push(db.query("SELECT * FROM test"));
+    }
+  } catch {}
+
+  assertThrows(() => {
+    db.query("SELECT * FROM test");
+  });
+  queries.forEach(query => query.done());
+  db.query("SELECT * FROM test").done();
+
+  db.close();
+});
+
 /** Test close behaves correctly. */
 test(function closeDB() {
   const db = new DB();
