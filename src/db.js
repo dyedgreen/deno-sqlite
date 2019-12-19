@@ -14,9 +14,9 @@ export class DB {
    * DB
    *
    * Create a new database. If a Uint8Array
-   * is provided as the first argument, the
-   * database is pre-loaded with that as the
-   * database file. If no arguments are provided,
+   * is provided as the first argument the
+   * database is pre-loaded with the array as the
+   * database file. If no arguments are provided
    * a new in-memory database is opened.
    *
    * The Uint8Array could be obtained from
@@ -50,7 +50,7 @@ export class DB {
    * DB.query
    *
    * Run a query against the database. The SQL
-   * query can contain placeholders, which are
+   * query can contain placeholders which are
    * bound to the following parameters in order.
    *
    *     db.query("SELECT name, email FROM users WHERE subscribed = ? AND list LIKE ?", true, listName);
@@ -69,7 +69,7 @@ export class DB {
    *
    * This always returns an iterable Rows object.
    * As a special case, if the query has no rows
-   * to return, this returns the Empty row (which
+   * to return this returns the Empty row (which
    * is also iterable, but has zero entries).
    *
    * !> Any returned Rows object needs to be fully

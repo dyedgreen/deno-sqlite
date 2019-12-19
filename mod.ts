@@ -6,6 +6,11 @@ import { Empty } from "./src/rows.js";
  *
  * Open a new SQLite3 database. The file at
  * the path is read and preloaded into the database.
+ *
+ * ?> Unlike the SQLite3 C library, this will not
+ * automatically write any changes to disk. Use
+ * `db.data()` or `save(db)` to persist any changes
+ * you make.
  */
 async function open(path: string, ignoreNotFound=true): Promise<DB> {
   let bytes = undefined;
