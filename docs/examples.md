@@ -5,7 +5,7 @@ Examples of how to use the SQLite module. Contributions are welcome!
 
 ## Opening and Saving Database Files
 
-Database Files can be opened and closed like this:
+Database Files can be opened and saved like this:
 ```javascript
 import { open, save } from "https://deno.land/x/sqlite/mod.ts";
 
@@ -54,3 +54,12 @@ db.query("INSERT INTO people (name, email) VALUES (?, ?)", name, email);
 
 ?> Queries like `INSERT INTO` don't return any rows. For these queries `.done()`
 is called automatically.
+
+## Copying a Database
+
+You can copy a whole database in memory.
+```javascript
+const copy = new DB(original.data());
+```
+
+?> This is an in-memory copy.
