@@ -2,6 +2,8 @@
 
 ?> This is a draft.
 
+?> Also see: [Building WebAssembly for Deno](https://tilman.xyz/blog/2019/12/building-webassembly-for-deno/)
+
 The SQLite for Deno module uses a version of SQLite compiled to WebAssembly (WASM). This version
 of SQLite is specifically tuned for the environment provided by WASM.
 

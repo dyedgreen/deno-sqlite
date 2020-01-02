@@ -11,7 +11,7 @@ issues you encounter, as well any other feedback by opening an issue.
 ## Documentation
 
 Documentation is available as a [website](https://dyedgreen.github.io/deno-sqlite/) or in the
-`docs` folder.
+[`docs`](./docs/README.md) folder.
 
 ## Example
 
