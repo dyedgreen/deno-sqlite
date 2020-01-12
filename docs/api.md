@@ -51,13 +51,15 @@ file written by SQLite.
 
 ### DB.query
 ```javascript
-query(sql, ...values)
+query(sql, values)
 ```
 Run a query against the database. The SQL
-query can contain placeholders which are
-bound to the following parameters in order.
+query can contain named placeholders
 
-    db.query("SELECT name, email FROM users WHERE subscribed = ? AND list LIKE ?", true, listName);
+    db.query(
+      "SELECT name, email FROM users WHERE subscribed = :subscribed AND list LIKE :listName",
+      { subscribed: true, listName }
+    );
 
 Values may only be of the following
 types and are converted as follows:

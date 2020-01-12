@@ -46,7 +46,7 @@ You can easily bind values from variables into your queries.
 const name = "Peter Parker";
 const email = "peter.parker@deno.land";
 
-db.query("INSERT INTO people (name, email) VALUES (?, ?)", name, email);
+db.query("INSERT INTO people (name, email) VALUES (:name, :email)", { name, email });
 ```
 
 !> Always bind user provided data and don't use string interpolation to avoid

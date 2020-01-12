@@ -14,7 +14,7 @@ test(function readmeExample() {
   const name = ["Peter Parker", "Clark Kent", "Bruce Wane"][Math.floor(Math.random() * 3)];
 
   // Run a simple query
-  db.query("INSERT INTO people (name) VALUES (?)", name);
+  db.query("INSERT INTO people (name) VALUES (:name)", { name });
 
   // Print out data in table
   for (const [name] of db.query("SELECT name FROM people"))
@@ -41,24 +41,23 @@ test(async function readmeExampleOld() {
     const email = `${name.replace(" ", "-")}@deno.land`;
     const subscribed = Math.random() > 0.5 ? true : false;
     db.query(
-      "INSERT INTO users (name, email, subscribed) VALUES (?, ?, ?)",
-      name,
-      email,
-      subscribed
+      "INSERT INTO users (name, email, subscribed) VALUES (:name, :email, :subscribed)", {
+        name,
+        email,
+        subscribed
+      }
     );
   }
 
   for (const [name, email] of db.query(
-    "SELECT name, email FROM users WHERE subscribed = ? LIMIT 100",
-    true
+    "SELECT name, email FROM users WHERE subscribed = :subscribed LIMIT 100", { subscribed: true }
   )) {
     assertMatch(name, /(Bruce|Clark|Peter) (Wane|Kent|Parker)/);
     assertEquals(email, `${name.replace(" ", "-")}@deno.land`);
   }
 
   const res = db.query(
-    "SELECT email FROM users WHERE name LIKE ?",
-    "Robert Parr"
+    "SELECT email FROM users WHERE name LIKE :email", { email: "Robert Parr" }
   );
   assertEquals(res, Empty);
   res.done();
@@ -67,8 +66,7 @@ test(async function readmeExampleOld() {
   // and have a write test, which checks for the flag and skips itself.
 
   const subscribers = db.query(
-    "SELECT name, email FROM users WHERE subscribed = ?",
-    true
+    "SELECT name, email FROM users WHERE subscribed = :subscribed", { subscribed: true }
   );
   for (const [name, email] of subscribers) {
     if (Math.random() > 0.5) continue;
@@ -87,7 +85,7 @@ test(function bindValues() {
   db.query("CREATE TABLE strings (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)");
   vals = ["Hello World!", "I love Deno.", "Täst strüng..."];
   for (const val of vals)
-    db.query("INSERT INTO strings (val) VALUES (?)", val);
+    db.query("INSERT INTO strings (val) VALUES (:val)", { val });
   rows = [...db.query("SELECT val FROM strings")].map(([v]) => v);
   assertEquals(rows.length, vals.length);
   assertEquals(rows, vals);
@@ -96,7 +94,7 @@ test(function bindValues() {
   db.query("CREATE TABLE ints (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)");
   vals = [42, 1, 2, 3, 4, 3453246, 4536787093, 45536787093];
   for (const val of vals)
-    db.query("INSERT INTO ints (val) VALUES (?)", val);
+    db.query("INSERT INTO ints (val) VALUES (:val)", { val });
   rows = [...db.query("SELECT val FROM ints")].map(([v]) => v);
   assertEquals(rows.length, vals.length);
   assertEquals(rows, vals);
@@ -105,7 +103,7 @@ test(function bindValues() {
   db.query("CREATE TABLE floats (id INTEGER PRIMARY KEY AUTOINCREMENT, val REAL)");
   vals = [42.1, 1.235, 2.999, 1/3, 4.2345, 345.3246, 4536787.953e-8];
   for (const val of vals)
-    db.query("INSERT INTO floats (val) VALUES (?)", val);
+    db.query("INSERT INTO floats (val) VALUES (:val)", { val  });
   rows = [...db.query("SELECT val FROM floats")].map(([v]) => v);
   assertEquals(rows.length, vals.length);
   assertEquals(rows, vals);
@@ -114,7 +112,7 @@ test(function bindValues() {
   db.query("CREATE TABLE bools (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)");
   vals = [true, false];
   for (const val of vals)
-    db.query("INSERT INTO bools (val) VALUES (?)", val);
+    db.query("INSERT INTO bools (val) VALUES (:val)", { val });
   rows = [...db.query("SELECT val FROM bools")].map(([v]) => v);
   assertEquals(rows.length, vals.length);
   assertEquals(rows, [1, 0]);
@@ -123,7 +121,7 @@ test(function bindValues() {
   db.query("CREATE TABLE blobs (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB)");
   vals = [new Uint8Array([1,2,3,4,5,6,7,8,9,0]), new Uint8Array([3,57,45])];
   for (const val of vals)
-    db.query("INSERT INTO blobs (val) VALUES (?)", val);
+    db.query("INSERT INTO blobs (val) VALUES (:val)", { val });
   rows = [...db.query("SELECT val FROM blobs")].map(([v]) => v);
   assertEquals(rows.length, vals.length);
   assertEquals(rows, vals);
@@ -132,29 +130,34 @@ test(function bindValues() {
   db.query("CREATE TABLE nulls (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)");
   vals = [null, undefined];
   for (const val of vals)
-    db.query("INSERT INTO nulls (val) VALUES (?)", val);
+    db.query("INSERT INTO nulls (val) VALUES (:val)", { val });
   rows = [...db.query("SELECT val FROM nulls")].map(([v]) => v);
   assertEquals(rows.length, vals.length);
-  assertEquals(rows, [null, null]); // undefined -> null
+  assertEquals(rows, [null, null]); // TODO(hsjoberg) undefined -> null
 
   // mixed
   db.query("CREATE TABLE mix (id INTEGER PRIMARY KEY AUTOINCREMENT, val1 INTEGER, val2 TEXT, val3 REAL, val4 TEXT)");
-  vals = [42, "Hello World!", 0.33333, null];
-  db.query("INSERT INTO mix (val1, val2, val3, val4) VALUES (?, ?, ?, ?)", ...vals);
+  vals = {
+    a: 42,
+    b: "Hello World!",
+    c: 0.33333,
+    d: null
+  };
+  db.query("INSERT INTO mix (val1, val2, val3, val4) VALUES (:a, :b, :c, :d)", vals);
   rows = [...db.query("SELECT val1, val2, val3, val4 FROM mix")];
   assertEquals(rows.length, 1);
-  assertEquals(rows[0], vals);
+  assertEquals(rows[0], Object.values(vals));
 
   // too many
   assertThrows(() => {
-    db.query("SELECT * FROM strings", null);
-    db.query("SELECT * FROM strings LIMIT ?", 35, "extra");
+    db.query("SELECT * FROM strings", { a: null });
+    db.query("SELECT * FROM strings LIMIT :limit", { limit: 35, extra: "extra" });
   });
 
   // too few
   assertThrows(() => {
-    db.query("SELECT * FROM strings LIMIT ?");
-    db.query("INSERT INTO mix (val1, val2, val3, val4) VALUES (?, ?, ?, ?)", 1, null);
+    db.query("SELECT * FROM strings LIMIT :limit");
+    db.query("INSERT INTO mix (val1, val2, val3, val4) VALUES (:val1, :val2, :val3, :val4)", { val1: 1, val2: null });
   });
 
   db.close();
@@ -166,7 +169,7 @@ test(function blobsAreCopies() {
 
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB)");
   const data = new Uint8Array([1,2,3,4,5]);
-  db.query("INSERT INTO test (val) VALUES (?)", data);
+  db.query("INSERT INTO test (val) VALUES (:data)", { data });
 
   const [[a]] = [...db.query("SELECT val FROM test")];
   const [[b]] = [...db.query("SELECT val FROM test")];
@@ -218,7 +221,7 @@ test(async function saveToFile() {
   const db = await open("test.db");
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)");
   for (const val of data)
-    db.query("INSERT INTO test (val) VALUES (?)", val);
+    db.query("INSERT INTO test (val) VALUES (:val)", { val });
   await save(db);
 
   // Read db and check the data is restored
@@ -257,16 +260,16 @@ test(function foreignKeys() {
 
   // User must exist
   assertThrows(() => {
-    db.query("INSERT INTO orders (user) VALUES (?)", id+1);
+    db.query("INSERT INTO orders (user) VALUES (:id)", { id: id+1 });
   });
-  db.query("INSERT INTO orders (user) VALUES (?)", id);
+  db.query("INSERT INTO orders (user) VALUES (:id)", { id });
   // Can't delete if that violates the constraint
   assertThrows(() => {
-    db.query("DELETE FROM users WHERE id = ?", id);
+    db.query("DELETE FROM users WHERE id = :id", { id });
   });
   // Now deleting is OK
-  db.query("DELETE FROM orders WHERE user = ?", id);
-  db.query("DELETE FROM users WHERE id = ?", id);
+  db.query("DELETE FROM orders WHERE user = :id", { id });
+  db.query("DELETE FROM users WHERE id = :id", { id });
 
   db.close();
 });
@@ -298,7 +301,7 @@ test(function queryLimit() {
 
   const queries = [];
   try {
-    for (let i = 0; i < 10_000; i ++) {
+    for (let i = 0; i < 10_000; i++) {
       queries.push(db.query("SELECT * FROM test"));
     }
   } catch {}
@@ -325,7 +328,7 @@ test(function closeDB() {
 test(function openQueriesBlockClose() {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
-  db.query("INSERT INTO test (name) VALUES (?)", "Deno");
+  db.query("INSERT INTO test (name) VALUES (:name)", { name: "Deno" });
   const rows = db.query("SELECT name FROM test");
 
   // We have an open query
@@ -339,9 +342,9 @@ test(function openQueriesBlockClose() {
 test(function constraintErrorCode() {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
-  db.query("INSERT INTO test (name) VALUES (?)", "A");
+  db.query("INSERT INTO test (name) VALUES (:name)", { name: "A" });
 
-  const e = assertThrows(() => db.query("INSERT INTO test (name) VALUES (?)", "A")) as SqliteError;
+  const e = assertThrows(() => db.query("INSERT INTO test (name) VALUES (:name)", { name: "A" })) as SqliteError;
   assertEquals(e.code, status.sqliteConstraint, "Got wrong error code");
 });
 

@@ -173,6 +173,15 @@ int KEEPALIVE finalize(int entry_id, int stmt_id) {
   return last_status;
 }
 
+// Wrapper for getting the index of a named parameter
+int KEEPALIVE bind_named_parameter(int entry_id, int stmt_id, const char* name) {
+  GUARD_STMT(entry_id, stmt_id);
+
+  int index = sqlite3_bind_parameter_index(stmt, name);
+  debug_printf("bind parameter index %s = %i\n", index, value);
+  return index;
+}
+
 // Wrappers for bind statements, these return the status directly
 int KEEPALIVE bind_int(int entry_id, int stmt_id, int idx, double value) {
   GUARD_STMT(entry_id, stmt_id);

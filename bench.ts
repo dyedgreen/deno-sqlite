@@ -13,7 +13,7 @@ bench({
   func: (b): void => {
     n = (10 * n) % 10_000;
     b.start();
-    db.query("INSERT INTO users (name, balance) VALUES (?, ?)", "Deno Land", n);
+    db.query("INSERT INTO users (name, balance) VALUES (:name, :balance)", { name: "Deno Land", balance: n });
     b.stop();
   },
 });
