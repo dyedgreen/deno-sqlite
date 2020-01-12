@@ -6,7 +6,7 @@
 
 // FIXME: once WASM interfaces land and are supported by both emscripten and Deno, we probably don't
 //        need to wrap things like this anymore.
-const wasm = await Deno.readFile(Deno.args[1].replace(".js", ".wasm"));
+const wasm = await Deno.readFile(Deno.args[0].replace(".js", ".wasm"));
 function hexEncode(bytes) {
   const fragments = new Array(bytes.length);
   for (let i = 0; i < bytes.length; i ++)
@@ -25,10 +25,10 @@ const patches = [
   {regexp: /if ?\(.+\) ?throw new Error\('not compiled for this environment[^;]+\);/g, replace: ""},
 ];
 
-const file = Deno.args[1];
+const file = Deno.args[0];
 let data = new TextDecoder("utf-8").decode(Deno.readFileSync(file));
 data = patches.reduce((acc, {regexp, replace}) => acc.replace(regexp, replace), data);
 
 Deno.writeFileSync(file, new TextEncoder().encode(data));
-if (Deno.args[1].indexOf("debug") !== -1)
-  Deno.remove(Deno.args[1].replace(".js", ".wasm"));
+if (Deno.args[0].indexOf("debug") !== -1)
+  Deno.remove(Deno.args[0].replace(".js", ".wasm"));
