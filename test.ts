@@ -1,7 +1,8 @@
 import { runIfMain, test } from "https://deno.land/std/testing/mod.ts";
 import { assert, assertEquals, assertMatch, assertThrows } from "https://deno.land/std/testing/asserts.ts";
 
-import { open, save, DB, Empty } from "./mod.ts";
+import { open, save, DB, Empty, status } from "./mod.ts";
+import SqliteError from "./src/error.js";
 // import { open, save, DB, Empty } from "https://deno.land/x/sqlite/mod.ts";
 
 /** Ensure README example works as advertised. */
@@ -332,6 +333,24 @@ test(function openQueriesBlockClose() {
 
   rows.done();
   db.close();
+});
+
+/** Test SQLite constraint error code */
+test(function constraintErrorCode() {
+  const db = new DB();
+  db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
+  db.query("INSERT INTO test (name) VALUES (?)", "A");
+
+  const e = assertThrows(() => db.query("INSERT INTO test (name) VALUES (?)", "A")) as SqliteError;
+  assertEquals(e.code, status.sqliteConstraint, "Got wrong error code");
+});
+
+/** Test SQLite syntax error error code */
+test(function syntaxErrorErrorCode() {
+  const db = new DB();
+
+  const e = assertThrows(() => db.query("CREATE TABLEX test (name TEXT PRIMARY KEY)")) as SqliteError;
+  assertEquals(e.code, status.sqliteError, "Got wrong error code");
 });
 
 // Skip this tests if we don't have read or write

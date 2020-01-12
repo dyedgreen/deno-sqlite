@@ -1,5 +1,5 @@
 import { getStr } from "./wasm.js";
-import constants from "./constants.js";
+import * as constants from "./constants.js";
 
 export class Rows {
   /**
@@ -52,7 +52,8 @@ export class Rows {
     if (this._done) return { done: true };
     // Load row data and advance statement
     const row = this._get();
-    switch (this._db._wasm.step(this._db._id, this._id)) {
+    const status = this._db._wasm.step(this._db._id, this._id);
+    switch (status) {
       case constants.status.sqliteRow:
         // NO OP
         break;
@@ -60,9 +61,8 @@ export class Rows {
         this.done();
         break;
       default:
-        // TODO: Make more helpful
         this.done();
-        throw new Error("Internal error.");
+        throw this._db._error(status);
         break;
     }
     return { value: row, done: false };

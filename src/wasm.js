@@ -1,9 +1,11 @@
+import SqliteError from "./error.js";
+
 // Move string to C
 export function setStr(wasm, str, closure) {
   const bytes = new TextEncoder().encode(str);
   const ptr = wasm.malloc(bytes.length + 1);
   if (ptr === 0)
-    throw new Error("Out of memory.");
+    throw new SqliteError("Out of memory.");
   const mem = new Uint8Array(wasm.memory.buffer, ptr, bytes.length + 1);
   mem.set(bytes);
   mem[bytes.length] = 0; // \0 terminator
@@ -15,7 +17,7 @@ export function setStr(wasm, str, closure) {
 export function setArr(wasm, arr, closure) {
   const ptr = wasm.malloc(arr.length);
   if (ptr === 0)
-    throw new Error("Out of memory.");
+    throw new SqliteError("Out of memory.");
   const mem = new Uint8Array(wasm.memory.buffer, ptr, arr.length);
   mem.set(arr);
   closure(ptr);
