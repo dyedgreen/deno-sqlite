@@ -79,19 +79,18 @@ function generate(root, md, path=[]) {
 }
 
 
-// deno --allow-read --allow-write docs/generate.js docs/api.md mod.ts src/db.js src/rows.js
-if (Deno.args.length < 5) {
+if (Deno.args.length < 4) {
   console.log("use as:");
-  console.log("deno --allow-read --allow-write docs/generate.js docs/api.md mod.ts src/db.js src/rows.js");
+  console.log("deno --allow-read --allow-write docs/generate.js -- docs/api.md mod.ts src/**.js");
   Deno.exit(1);
 }
 
 // Output file
-const out = Deno.args[1];
+const out = Deno.args[0];
 
 // Collect comments from input source files
 const comments = [];
-for (const file of Deno.args.slice(2))
+for (const file of Deno.args.slice(1))
   comments.push(...collect(new TextDecoder().decode(await Deno.readFile(file))));
 const root = parse(comments);
 

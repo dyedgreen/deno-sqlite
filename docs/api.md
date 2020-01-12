@@ -6,6 +6,7 @@ clarify any of the notes in this file, edit the corresponding comment in the sou
 rerun the generator, to avoid loosing the changes.
 
 
+
 ## How to import
 ```javascript
 import { open, save, DB, Empty } from "https://deno.land/x/sqlite/mod.ts"

@@ -1,4 +1,4 @@
-name: ci
+name: docs
 
 on:
   push:
@@ -6,16 +6,6 @@ on:
       - master
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Install Deno
-      run: curl -fsSL https://deno.land/x/install/install.sh | sh
-    - uses: actions/checkout@v1
-    - name: Run tests
-      run: /home/runner/.local/bin/deno --allow-read --allow-write test.ts
-    - name: Run benchmarks
-      run: /home/runner/.local/bin/deno bench.ts
   docs:
     runs-on: ubuntu-latest
     steps:
@@ -24,7 +14,7 @@ jobs:
     - uses: actions/checkout@v1
     - name: Build docs
       # Update this, if more files are to be included in build ...
-      run: /home/runner/.local/bin/deno --allow-read --allow-write docs/generate.js docs/api.md mod.ts src/db.js src/rows.js
+      run: /home/runner/.local/bin/deno --allow-read --allow-write docs/generate.js -- docs/api.md mod.ts src/**.js
     - uses: stefanzweifel/git-auto-commit-action@v2.5.0
       with:
         commit_message: Automatically update documentation

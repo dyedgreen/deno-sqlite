@@ -1,6 +1,6 @@
 # JavaScript SQLite Module
 
-[![ci status](https://github.com/dyedgreen/deno-sqlite/workflows/ci/badge.svg?branch=master)](https://github.com/dyedgreen/deno-sqlite/actions)
+[![test status](https://github.com/dyedgreen/deno-sqlite/workflows/tests/badge.svg?branch=master)](https://github.com/dyedgreen/deno-sqlite/actions)
 
 This is an SQLite module for JavaScript. The wrapper is targeted at [Deno](https://deno.land)
 and uses a version of SQLite3 compiled to WebAssembly (WASM).
