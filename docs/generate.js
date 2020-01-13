@@ -2,7 +2,7 @@
 
 function collect(src) {
   // Collect raw comments
-  const regexp = /(\/\*\*[^\/]+\*\/)\n *((async )?(function )?[a-zA-Z]+\([^)]*\))?/;
+  const regexp = /(\/\*\*(?:.|\n)+?\*\/)\n *((async )?(function )?[a-zA-Z]+\([^)]*\))?/;
   const raw = [];
   while (regexp.test(src)) {
     const [, body, declaration] = regexp.exec(src);
@@ -81,7 +81,7 @@ function generate(root, md, path=[]) {
 
 if (Deno.args.length < 4) {
   console.log("use as:");
-  console.log("deno --allow-read --allow-write docs/generate.js -- docs/api.md mod.ts src/**.js");
+  console.log("deno --allow-read --allow-write docs/generate.js -- docs/api.md mod.ts src/**.js src/**.ts");
   Deno.exit(1);
 }
 
@@ -90,8 +90,12 @@ const out = Deno.args[0];
 
 // Collect comments from input source files
 const comments = [];
-for (const file of Deno.args.slice(1))
-  comments.push(...collect(new TextDecoder().decode(await Deno.readFile(file))));
+const stats = {};
+for (const file of Deno.args.slice(1)) {
+  const c = collect(new TextDecoder().decode(await Deno.readFile(file)));
+  stats[file] = c.length;
+  comments.push(...c);
+}
 const root = parse(comments);
 
 // Preamble
@@ -113,3 +117,8 @@ The above statement lists all the available imports.
 
 const markdown = generate(root, title) + "\n";
 await Deno.writeFile(out, new TextEncoder().encode(markdown));
+
+// Message
+console.log("Generated documentation for:");
+for (const [file, num] of Object.entries(stats))
+  console.log(`${file} (${num})`);
