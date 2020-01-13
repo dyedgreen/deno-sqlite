@@ -2,7 +2,7 @@
 
 function collect(src) {
   // Collect raw comments
-  const regexp = /(\/\*\*(?:.|\n)+?\*\/)\n *((async )?(function )?[a-zA-Z]+\([^)]*\))?/;
+  const regexp = /(\/\*\*(?:.|\n)+?\*\/)\n *((async )?(static |get ){0,2}(function )?[a-zA-Z]+\([^)]*\))?/;
   const raw = [];
   while (regexp.test(src)) {
     const [, body, declaration] = regexp.exec(src);
