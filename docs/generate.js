@@ -98,6 +98,11 @@ for (const file of Deno.args.slice(1)) {
 }
 const root = parse(comments);
 
+// Collect exports from mod
+const modExports = /export {([^}]+)}/.exec(
+  new TextDecoder().decode(await Deno.readFile(Deno.args[1]))
+)[1];
+
 // Preamble
 const title = `
 # SQLite for Deno API Documentation
@@ -110,7 +115,7 @@ rerun the generator, to avoid loosing the changes.
 
 ## How to import
 \`\`\`javascript
-import { ${keys(root).filter(name => name !== "Rows").join(", ")} } from "https://deno.land/x/sqlite/mod.ts"
+import {${modExports}} from "https://deno.land/x/sqlite/mod.ts"
 \`\`\`
 The above statement lists all the available imports.
 `.replace(/(^\n)|(\n$)/g, "");
@@ -122,3 +127,4 @@ await Deno.writeFile(out, new TextEncoder().encode(markdown));
 console.log("Generated documentation for:");
 for (const [file, num] of Object.entries(stats))
   console.log(`${file} (${num})`);
+console.log("Parsed exports from: ".concat(Deno.args[1]));
