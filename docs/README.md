@@ -10,6 +10,7 @@ JavaScript binding to SQLite.
 
 - [API Documentation](api.md)
 - [Examples](examples.md)
+- [Contributing](contributing.md)
 - [Module Design and Internals](design.md)
 
 ## Runnable Example
