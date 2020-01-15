@@ -3,8 +3,9 @@
 // import * as wasm from "../build/sqlite.wasm";
 import wasm from "../build/sqlite.js";
 import { getStr, setStr, setArr } from "./wasm.js";
-import constants from "./constants.js";
+import * as constants from "./constants.js";
 import { Rows, Empty } from "./rows.js";
+import SqliteError from "./error.js";
 
 // Seed random number generator
 wasm.seed_rng(Date.now());
@@ -34,7 +35,7 @@ export class DB {
     // If data is given, write it to db file
     if (data instanceof Uint8Array) {
       if (this._wasm.grow_db_file(this._id, data.length) !== constants.status.sqliteOk)
-        throw new Error("Out of memory.");
+        throw new SqliteError("Out of memory.");
       const ptr = this._wasm.get_db_file(this._id);
       const view = new Uint8Array(this._wasm.memory.buffer, ptr, data.length);
       view.set(data);
@@ -78,9 +79,9 @@ export class DB {
    */
   query(sql, ...values) {
     if (!this._open)
-      throw new Error("Database was closed.");
+      throw new SqliteError("Database was closed.");
     if (typeof sql !== "string")
-      throw new Error("SQL query must be a string.");
+      throw new SqliteError("SQL query must be a string.");
 
     // Prepare sqlite query statement
     let id;
@@ -119,7 +120,7 @@ export class DB {
             // Both null and undefined result in a NULL entry
             status = this._wasm.bind_null(this._id, id, i + 1);
           } else {
-            throw new Error("Can not bind ".concat(values[i]));
+            throw new SqliteError("Can not bind ".concat(values[i]));
           }
           break;
       }
@@ -130,7 +131,8 @@ export class DB {
     }
 
     // Step once to handle case where result is empty
-    switch (this._wasm.step(this._id, id)) {
+    const status = this._wasm.step(this._id, id);
+    switch (status) {
       case constants.status.sqliteDone:
         this._wasm.finalize(this._id, id);
         return Empty;
@@ -140,7 +142,7 @@ export class DB {
         break;
       default:
         this._wasm.finalize(this._id, id);
-        throw this._error();
+        throw this._error(status);
         break;
     }
   }
@@ -158,7 +160,7 @@ export class DB {
    */
   data() {
     if (!this._open)
-      throw new Error("Database was closed.");
+      throw new SqliteError("Database was closed.");
     const ptr = this._wasm.get_db_file(this._id);
     const len = this._wasm.get_db_file_size(this._id);
     return new Uint8Array(this._wasm.memory.buffer, ptr, len).slice();
@@ -187,21 +189,21 @@ export class DB {
       code = this._wasm.get_status();
     switch (code) {
       case constants.status.stmtLimit:
-        return new Error("Statement limit reached.");
+        return new SqliteError("Statement limit reached.", code);
         break;
       case constants.status.noStmt:
-        return new Error("Statement not found.");
+        return new SqliteError("Statement not found.", code);
         break;
       case constants.status.databaseLimit:
-        return new Error("Database limit reached.");
+        return new SqliteError("Database limit reached.", code);
         break;
       case constants.status.noDatabase:
-        return new Error("Database not found.");
+        return new SqliteError("Database not found.", code);
         break;
       default:
         // SQLite error
-        const msg = `sqlite error: ${getStr(this._wasm, this._wasm.get_sqlite_error_str(this._id))}`;
-        return new Error(msg);
+        const msg = getStr(this._wasm, this._wasm.get_sqlite_error_str(this._id));
+        return new SqliteError(msg, code);
         break;
     }
   }

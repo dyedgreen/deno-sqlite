@@ -1,5 +1,7 @@
 import { DB } from "./src/db.js";
 import { Empty } from "./src/rows.js";
+import { status } from "./src/constants.js";
+import SqliteError from "./src/error.js";
 
 /**
  * open
@@ -35,7 +37,7 @@ async function open(path: string, ignoreNotFound=true): Promise<DB> {
 async function save(db: DB, path?: string): Promise<void> {
   path = path || (db as any)._save_path;
   if (!db._open)
-    throw new Error("Database was closed.");
+    throw new SqliteError("Database was closed.");
   // We obtain the data array ourselves to avoid
   // .data() making a copy
   const ptr = db._wasm.get_db_file(db._id);
@@ -44,4 +46,4 @@ async function save(db: DB, path?: string): Promise<void> {
   return Deno.writeFile(path, data);
 }
 
-export { open, save, DB, Empty };
+export { open, save, DB, Empty, status };

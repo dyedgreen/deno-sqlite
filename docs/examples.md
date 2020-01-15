@@ -55,6 +55,20 @@ db.query("INSERT INTO people (name, email) VALUES (?, ?)", name, email);
 ?> Queries like `INSERT INTO` don't return any rows. For these queries `.done()`
 is called automatically.
 
+## Error handling
+
+`DB.query` will throw an exception on failure.
+
+```javascript
+try {
+  db.query("NOT A QUERY");
+} catch (error) {
+  console.log(error.message);
+  console.log(error.code);
+  console.log(error.codeName);
+}
+```
+
 ## Copying a Database
 
 You can copy a whole database in memory.
