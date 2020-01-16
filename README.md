@@ -25,7 +25,7 @@ db.query("CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMEN
 const name = ["Peter Parker", "Clark Kent", "Bruce Wayne"][Math.floor(Math.random() * 3)];
 
 // Run a simple query
-db.query("INSERT INTO people (name) VALUES (:name)", { name });
+db.query("INSERT INTO people (name) VALUES (?)", [name]);
 
 // Print out data in table
 for (const [name] of db.query("SELECT name FROM people"))

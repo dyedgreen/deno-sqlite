@@ -173,15 +173,6 @@ int KEEPALIVE finalize(int entry_id, int stmt_id) {
   return last_status;
 }
 
-// Wrapper for getting the index of a named parameter
-int KEEPALIVE bind_named_parameter(int entry_id, int stmt_id, const char* name) {
-  GUARD_STMT(entry_id, stmt_id);
-
-  int index = sqlite3_bind_parameter_index(stmt, name);
-  debug_printf("bind parameter index %s = %i\n", index, value);
-  return index;
-}
-
 // Wrappers for bind statements, these return the status directly
 int KEEPALIVE bind_int(int entry_id, int stmt_id, int idx, double value) {
   GUARD_STMT(entry_id, stmt_id);
@@ -225,6 +216,24 @@ int KEEPALIVE bind_null(int entry_id, int stmt_id, int idx) {
   last_status = sqlite3_bind_null(stmt, idx);
   debug_printf("binding null (status %i)\n", last_status);
   return last_status;
+}
+
+// Determine parameter index for named parameters
+int KEEPALIVE bind_parameter_index(int entry_id, int stmt_id, const char* name) {
+  // Can't use guard as we don't return a status
+  sqlite3_stmt* stmt = get_reg_entry_stmt(entry_id, stmt_id);
+  if (stmt == NULL) {
+    debug_printf("statement for parameter does not exist\n");
+    return ERROR_VAL;
+  }
+  int index = sqlite3_bind_parameter_index(stmt, name);
+  if (index == 0) {
+    debug_printf("parameter '%s' does not exist", name);
+    // Normalize SQLite returning 0 for not found to ERROR_VAL
+    return ERROR_VAL;
+  }
+  debug_printf("obtained parameter index (param '%s', index %i)\n", name, index);
+  return index;
 }
 
 // Wraps running statements, this returns the status directly

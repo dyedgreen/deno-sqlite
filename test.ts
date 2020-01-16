@@ -3,22 +3,24 @@ import { assert, assertEquals, assertMatch, assertThrows } from "https://deno.la
 
 import { open, save, DB, Empty, status } from "./mod.ts";
 import SqliteError from "./src/error.js";
-// import { open, save, DB, Empty } from "https://deno.land/x/sqlite/mod.ts";
 
 /** Ensure README example works as advertised. */
 test(function readmeExample() {
   // Open a database (no file permission version of open)
   const db = new DB();
-  db.query("CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)");
+  db.query(
+    "CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)"
+  );
 
-  const name = ["Peter Parker", "Clark Kent", "Bruce Wane"][Math.floor(Math.random() * 3)];
+  const name = ["Peter Parker", "Clark Kent", "Bruce Wane"][
+    Math.floor(Math.random() * 3)
+  ];
 
   // Run a simple query
-  db.query("INSERT INTO people (name) VALUES (:name)", { name });
+  db.query("INSERT INTO people (name) VALUES (?)", [name]);
 
   // Print out data in table
-  for (const [name] of db.query("SELECT name FROM people"))
-    continue; // no console.log ;)
+  for (const [name] of db.query("SELECT name FROM people")) continue; // no console.log ;)
 
   // Save and close connection
   // save(db);
@@ -40,25 +42,27 @@ test(async function readmeExampleOld() {
     }`;
     const email = `${name.replace(" ", "-")}@deno.land`;
     const subscribed = Math.random() > 0.5 ? true : false;
-    db.query(
-      "INSERT INTO users (name, email, subscribed) VALUES (:name, :email, :subscribed)", {
-        name,
-        email,
-        subscribed
-      }
-    );
+    db.query("INSERT INTO users (name, email, subscribed) VALUES (?, ?, ?)", [
+      name,
+      email,
+      subscribed
+    ]);
   }
 
-  for (const [name, email] of db.query(
-    "SELECT name, email FROM users WHERE subscribed = :subscribed LIMIT 100", { subscribed: true }
+  for (const [
+    name,
+    email
+  ] of db.query(
+    "SELECT name, email FROM users WHERE subscribed = ? LIMIT 100",
+    [true]
   )) {
     assertMatch(name, /(Bruce|Clark|Peter) (Wane|Kent|Parker)/);
     assertEquals(email, `${name.replace(" ", "-")}@deno.land`);
   }
 
-  const res = db.query(
-    "SELECT email FROM users WHERE name LIKE :email", { email: "Robert Parr" }
-  );
+  const res = db.query("SELECT email FROM users WHERE name LIKE ?", [
+    "Robert Parr"
+  ]);
   assertEquals(res, Empty);
   res.done();
 
@@ -66,7 +70,8 @@ test(async function readmeExampleOld() {
   // and have a write test, which checks for the flag and skips itself.
 
   const subscribers = db.query(
-    "SELECT name, email FROM users WHERE subscribed = :subscribed", { subscribed: true }
+    "SELECT name, email FROM users WHERE subscribed = ?",
+    [true]
   );
   for (const [name, email] of subscribers) {
     if (Math.random() > 0.5) continue;
@@ -82,83 +87,138 @@ test(function bindValues() {
   let vals, rows;
 
   // string
-  db.query("CREATE TABLE strings (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)");
+  db.query(
+    "CREATE TABLE strings (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)"
+  );
   vals = ["Hello World!", "I love Deno.", "Täst strüng..."];
   for (const val of vals)
-    db.query("INSERT INTO strings (val) VALUES (:val)", { val });
+    db.query("INSERT INTO strings (val) VALUES (?)", [val]);
   rows = [...db.query("SELECT val FROM strings")].map(([v]) => v);
   assertEquals(rows.length, vals.length);
   assertEquals(rows, vals);
 
   // integer
-  db.query("CREATE TABLE ints (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)");
+  db.query(
+    "CREATE TABLE ints (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)"
+  );
   vals = [42, 1, 2, 3, 4, 3453246, 4536787093, 45536787093];
-  for (const val of vals)
-    db.query("INSERT INTO ints (val) VALUES (:val)", { val });
+  for (const val of vals) db.query("INSERT INTO ints (val) VALUES (?)", [val]);
   rows = [...db.query("SELECT val FROM ints")].map(([v]) => v);
   assertEquals(rows.length, vals.length);
   assertEquals(rows, vals);
 
   // float
-  db.query("CREATE TABLE floats (id INTEGER PRIMARY KEY AUTOINCREMENT, val REAL)");
-  vals = [42.1, 1.235, 2.999, 1/3, 4.2345, 345.3246, 4536787.953e-8];
+  db.query(
+    "CREATE TABLE floats (id INTEGER PRIMARY KEY AUTOINCREMENT, val REAL)"
+  );
+  vals = [42.1, 1.235, 2.999, 1 / 3, 4.2345, 345.3246, 4536787.953e-8];
   for (const val of vals)
-    db.query("INSERT INTO floats (val) VALUES (:val)", { val  });
+    db.query("INSERT INTO floats (val) VALUES (?)", [val]);
   rows = [...db.query("SELECT val FROM floats")].map(([v]) => v);
   assertEquals(rows.length, vals.length);
   assertEquals(rows, vals);
 
   // boolean
-  db.query("CREATE TABLE bools (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)");
+  db.query(
+    "CREATE TABLE bools (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)"
+  );
   vals = [true, false];
-  for (const val of vals)
-    db.query("INSERT INTO bools (val) VALUES (:val)", { val });
+  for (const val of vals) db.query("INSERT INTO bools (val) VALUES (?)", [val]);
   rows = [...db.query("SELECT val FROM bools")].map(([v]) => v);
   assertEquals(rows.length, vals.length);
   assertEquals(rows, [1, 0]);
 
   // blob
-  db.query("CREATE TABLE blobs (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB)");
-  vals = [new Uint8Array([1,2,3,4,5,6,7,8,9,0]), new Uint8Array([3,57,45])];
-  for (const val of vals)
-    db.query("INSERT INTO blobs (val) VALUES (:val)", { val });
+  db.query(
+    "CREATE TABLE blobs (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB)"
+  );
+  vals = [
+    new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 0]),
+    new Uint8Array([3, 57, 45])
+  ];
+  for (const val of vals) db.query("INSERT INTO blobs (val) VALUES (?)", [val]);
   rows = [...db.query("SELECT val FROM blobs")].map(([v]) => v);
   assertEquals(rows.length, vals.length);
   assertEquals(rows, vals);
 
   // null & undefined
-  db.query("CREATE TABLE nulls (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)");
+  db.query(
+    "CREATE TABLE nulls (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)"
+  );
   vals = [null, undefined];
-  for (const val of vals)
-    db.query("INSERT INTO nulls (val) VALUES (:val)", { val });
+  for (const val of vals) db.query("INSERT INTO nulls (val) VALUES (?)", [val]);
   rows = [...db.query("SELECT val FROM nulls")].map(([v]) => v);
   assertEquals(rows.length, vals.length);
   assertEquals(rows, [null, null]); // TODO(hsjoberg) undefined -> null
 
   // mixed
-  db.query("CREATE TABLE mix (id INTEGER PRIMARY KEY AUTOINCREMENT, val1 INTEGER, val2 TEXT, val3 REAL, val4 TEXT)");
-  vals = {
-    a: 42,
-    b: "Hello World!",
-    c: 0.33333,
-    d: null
-  };
-  db.query("INSERT INTO mix (val1, val2, val3, val4) VALUES (:a, :b, :c, :d)", vals);
+  db.query(
+    "CREATE TABLE mix (id INTEGER PRIMARY KEY AUTOINCREMENT, val1 INTEGER, val2 TEXT, val3 REAL, val4 TEXT)"
+  );
+  vals = [42, "Hello World!", 0.33333, null];
+  db.query(
+    "INSERT INTO mix (val1, val2, val3, val4) VALUES (?, ?, ?, ?)",
+    vals
+  );
   rows = [...db.query("SELECT val1, val2, val3, val4 FROM mix")];
   assertEquals(rows.length, 1);
-  assertEquals(rows[0], Object.values(vals));
+  assertEquals(rows[0], vals);
 
   // too many
   assertThrows(() => {
-    db.query("SELECT * FROM strings", { a: null });
-    db.query("SELECT * FROM strings LIMIT :limit", { limit: 35, extra: "extra" });
+    db.query("SELECT * FROM strings", [null]);
+  });
+  assertThrows(() => {
+    db.query("SELECT * FROM strings LIMIT ?", [5, "extra"]);
   });
 
   // too few
   assertThrows(() => {
-    db.query("SELECT * FROM strings LIMIT :limit");
-    db.query("INSERT INTO mix (val1, val2, val3, val4) VALUES (:val1, :val2, :val3, :val4)", { val1: 1, val2: null });
+    db.query("SELECT * FROM strings LIMIT ?");
   });
+  assertThrows(() => {
+    db.query("SELECT * FROM mix WHERE val1 = ? AND val2 = ? AND val3 = ? LIMIT ?", [
+      1,
+      "second"
+    ]);
+  });
+
+  // omitted is null
+  db.query("CREATE TABLE omit_is_null (idx INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)");
+  db.query("INSERT INTO omit_is_null (val) VALUES (?)");
+  rows = [...db.query("SELECT val FROM omit_is_null")].map(([val]) => val);
+  assertEquals(rows, [null]);
+
+  db.close();
+});
+
+/** Ensure binding named values works as advertised. */
+test(function bindNamedParameters() {
+  const db = new DB();
+
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)");
+
+  // default named syntax
+  db.query("INSERT INTO test (val) VALUES (:val)", { val: "value" });
+  db.query("INSERT INTO test (val) VALUES (:otherVal)", { otherVal: "value other" });
+
+  // @ named syntax
+  db.query("INSERT INTO test (val) VALUES (@someName)", { ["@someName"]: "@value" });
+
+  // $ names syntax
+  db.query("INSERT INTO test (val) VALUES ($var::Name)", { ["$var::Name"]: "$value" });
+
+  // explicit positional syntax
+  db.query("INSERT INTO test (id, val) VALUES (?2, ?1)", ["this-is-it", 1000]);
+
+  // names must exist
+  assertThrows(() => {
+    db.query("INSERT INTO test (val) VALUES (:val)", { Val: "miss-spelled :(" });
+  });
+
+  // Make sure the data came through correctly
+  const vals = [...db.query("SELECT val FROM test ORDER BY id ASC")].map((row) => row[0]);
+  assertEquals(vals, ["value", "value other", "@value", "$value", "this-is-it"]);
 
   db.close();
 });
@@ -167,9 +227,11 @@ test(function bindValues() {
 test(function blobsAreCopies() {
   const db = new DB();
 
-  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB)");
-  const data = new Uint8Array([1,2,3,4,5]);
-  db.query("INSERT INTO test (val) VALUES (:data)", { data });
+  db.query(
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB)"
+  );
+  const data = new Uint8Array([1, 2, 3, 4, 5]);
+  db.query("INSERT INTO test (val) VALUES (?)", [data]);
 
   const [[a]] = [...db.query("SELECT val FROM test")];
   const [[b]] = [...db.query("SELECT val FROM test")];
@@ -195,7 +257,9 @@ test(function data() {
   const db = new DB();
 
   // Write some data
-  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)");
+  db.query(
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)"
+  );
   db.query("INSERT INTO test (val) VALUES ('test')");
 
   // Construct second db that is a copy of the first
@@ -210,7 +274,13 @@ test(function data() {
 
 /** Ensure saving to file works. */
 test(async function saveToFile() {
-  const data = ["Hello World!", "Hello Deno!", "JavaScript <3", "This costs 0€!", "Wéll, hällö thėrè¿"];
+  const data = [
+    "Hello World!",
+    "Hello Deno!",
+    "JavaScript <3",
+    "This costs 0€!",
+    "Wéll, hällö thėrè¿"
+  ];
 
   // Ensure test file does not exist
   try {
@@ -219,15 +289,16 @@ test(async function saveToFile() {
 
   // Write data to db
   const db = await open("test.db");
-  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)");
-  for (const val of data)
-    db.query("INSERT INTO test (val) VALUES (:val)", { val });
+  db.query(
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)"
+  );
+  for (const val of data) db.query("INSERT INTO test (val) VALUES (?)", [val]);
   await save(db);
 
   // Read db and check the data is restored
   const db2 = await open("test.db");
   for (const [id, val] of db2.query("SELECT * FROM test"))
-    assertEquals(data[id-1], val);
+    assertEquals(data[id - 1], val);
 
   // Clean up
   await Deno.remove("test.db");
@@ -241,10 +312,9 @@ test(function invalidSQL() {
   const queries = [
     "INSERT INTO does_not_exist (balance) VALUES (5)",
     "this is not sql",
-    { sql: "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)" },
+    { sql: "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)" }
   ];
-  for (const query of queries)
-    assertThrows(() => db.query(query));
+  for (const query of queries) assertThrows(() => db.query(query));
 
   db.close();
 });
@@ -253,23 +323,25 @@ test(function invalidSQL() {
 test(function foreignKeys() {
   const db = new DB();
   db.query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)");
-  db.query("CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, user INTEGER, FOREIGN KEY(user) REFERENCES users(id))");
+  db.query(
+    "CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, user INTEGER, FOREIGN KEY(user) REFERENCES users(id))"
+  );
 
   db.query("INSERT INTO users (id) VALUES (1)");
   const [[id]] = [...db.query("SELECT id FROM users")];
 
   // User must exist
   assertThrows(() => {
-    db.query("INSERT INTO orders (user) VALUES (:id)", { id: id+1 });
+    db.query("INSERT INTO orders (user) VALUES (?)", [id + 1]);
   });
-  db.query("INSERT INTO orders (user) VALUES (:id)", { id });
+  db.query("INSERT INTO orders (user) VALUES (?)", [id]);
   // Can't delete if that violates the constraint
   assertThrows(() => {
-    db.query("DELETE FROM users WHERE id = :id", { id });
+    db.query("DELETE FROM users WHERE id = ?", [id]);
   });
   // Now deleting is OK
-  db.query("DELETE FROM orders WHERE user = :id", { id });
-  db.query("DELETE FROM users WHERE id = :id", { id });
+  db.query("DELETE FROM orders WHERE user = ?", [id]);
+  db.query("DELETE FROM users WHERE id = ?", [id]);
 
   db.close();
 });
@@ -281,8 +353,7 @@ test(function dbLimit() {
   try {
     // try to open too many DBs
     // (we currently do not guarantee what the limit is)
-    for (let i = 0; i < 10_000; i ++)
-      dbs.push(new DB());
+    for (let i = 0; i < 10_000; i++) dbs.push(new DB());
   } catch {
     limitReached = true;
   }
@@ -328,7 +399,7 @@ test(function closeDB() {
 test(function openQueriesBlockClose() {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
-  db.query("INSERT INTO test (name) VALUES (:name)", { name: "Deno" });
+  db.query("INSERT INTO test (name) VALUES (?)", ["Deno"]);
   const rows = db.query("SELECT name FROM test");
 
   // We have an open query
@@ -338,30 +409,38 @@ test(function openQueriesBlockClose() {
   db.close();
 });
 
-/** Test SQLite constraint error code */
+/** Test SQLite constraint error code. */
 test(function constraintErrorCode() {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
-  db.query("INSERT INTO test (name) VALUES (:name)", { name: "A" });
+  db.query("INSERT INTO test (name) VALUES (?)", ["A"]);
 
-  const e = assertThrows(() => db.query("INSERT INTO test (name) VALUES (:name)", { name: "A" })) as SqliteError;
+  const e = assertThrows(() =>
+    db.query("INSERT INTO test (name) VALUES (?)", ["A"])
+  ) as SqliteError;
   assertEquals(e.code, status.sqliteConstraint, "Got wrong error code");
 });
 
-/** Test SQLite syntax error error code */
+/** Test SQLite syntax error error code. */
 test(function syntaxErrorErrorCode() {
   const db = new DB();
 
-  const e = assertThrows(() => db.query("CREATE TABLEX test (name TEXT PRIMARY KEY)")) as SqliteError;
+  const e = assertThrows(() =>
+    db.query("CREATE TABLEX test (name TEXT PRIMARY KEY)")
+  ) as SqliteError;
   assertEquals(e.code, status.sqliteError, "Got wrong error code");
 });
 
 // Skip this tests if we don't have read or write
 // permissions.
 const skip = [];
-const write = (await Deno.permissions.query({ name: "write" })).state === "granted";
-const read = (await Deno.permissions.query({ name: "read" })).state === "granted";
-if (!write || !read)
-  skip.push(...["saveToFile"]);
+const write =
+  (await Deno.permissions.query({ name: "write" })).state === "granted";
+const read =
+  (await Deno.permissions.query({ name: "read" })).state === "granted";
+if (!write || !read) skip.push(...["saveToFile"]);
 
-runIfMain(import.meta, { skip: new RegExp(`^${skip.join("|")}$`), exitOnFail: false });
+runIfMain(import.meta, {
+  skip: new RegExp(`^${skip.join("|")}$`),
+  exitOnFail: false
+});

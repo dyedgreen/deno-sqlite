@@ -50,13 +50,28 @@ export class DB {
   /**
    * DB.query
    *
-   * Run a query against the database. The SQL
-   * query can contain named placeholders
+   * Run a query against the database. The query
+   * can contain placeholder parameters, which
+   * are bound to the values passed in 'values'.
    *
-   *     db.query(
-   *       "SELECT name, email FROM users WHERE subscribed = :subscribed AND list LIKE :listName",
-   *       { subscribed: true, listName }
-   *     );
+   *     db.query("SELECT name, email FROM users WHERE subscribed = ? AND list LIKE ?", true, listName);
+   *
+   * This supports positional and named parameters.
+   * Positional parameters can be set by passing an
+   * array for values. Named parameters can be set
+   * by passing an object for values.
+   *
+   * While they can be mixed in principle, this is
+   * not recommended.
+   *
+   * | Parameter     | Values                  |
+   * |---------------|-------------------------|
+   * | `?NNN` or `?` | NNN-th value in array   |
+   * | `:AAAA`       | value `AAAA` or `:AAAA` |
+   * | `@AAAA`       | value `@AAAA`           |
+   * | `$AAAA`       | value `$AAAA`           |
+   *
+   * (see https://www.sqlite.org/lang_expr.html)
    *
    * Values may only be of the following
    * types and are converted as follows:
@@ -70,6 +85,9 @@ export class DB {
    * | null       | NULL            | null       |
    * | undefined  | NULL            | null       |
    *
+   * If no value is provided to a given parameter,
+   * SQLite will default to NULL.
+   *
    * This always returns an iterable Rows object.
    * As a special case, if the query has no rows
    * to return this returns the Empty row (which
@@ -79,7 +97,7 @@ export class DB {
    * iterated over or discarded by calling
    * `.done()`.
    */
-  query(sql, values={}) {
+  query(sql, values) {
     if (!this._open)
       throw new SqliteError("Database was closed.");
     if (typeof sql !== "string")
@@ -90,46 +108,64 @@ export class DB {
     setStr(this._wasm, sql, ptr => {
       id = this._wasm.prepare(this._id, ptr);
     });
-    if (id === constants.values.error)
-      throw this._error();
+    if (id === constants.values.error) throw this._error();
 
-    for (const [name, value] of Object.entries(values)) {
-      let parameterId, status;
-      setStr(this._wasm, ":" + name, ptr => {
-        parameterId = this._wasm.bind_named_parameter(this._id, id, ptr);
-      });
-      if (parameterId === 0) {
-        this._wasm.finalize(this._id, id); // TODO(hsjoberg) sqlite crashes without this
-        throw new Error("Unknown parameter " + name);
+    // Prepare parameter array
+    let parameters = [];
+    if (Array.isArray(values)) {
+      // Positional values correspond to parameters
+      parameters = values;
+    } else if (typeof values === "object") {
+      // Named values need to have their index resolved
+      for (const key of Object.keys(values)) {
+        let idx;
+        // Prepend ':' to name, if it does not have a special starting character
+        let name = key;
+        if (name[0] !== ":" && name[0] !== "@" && name[0] !== "$")
+          name = `:${name}`;
+        setStr(this._wasm, name, ptr => {
+          idx = this._wasm.bind_parameter_index(this._id, id, ptr);
+        });
+        if (idx === constants.values.error) {
+          this._wasm.finalize(this._id, id);
+          throw new Error(`No parameter named '${name}'.`);
+        }
+        parameters[idx - 1] = values[key];
       }
+    }
 
+    // Bind parameters
+    for (let i = 0; i < parameters.length; i++) {
+      let value = parameters[i],
+        status;
       switch (typeof value) {
         case "boolean":
-          values = value ? 1 : 0;
+          value = value ? 1 : 0;
         // fall through
         case "number":
           if (Math.floor(value) === value) {
-            status = this._wasm.bind_int(this._id, id, parameterId, value);
+            status = this._wasm.bind_int(this._id, id, i+1, value);
           } else {
-            status = this._wasm.bind_double(this._id, id, parameterId, value);
+            status = this._wasm.bind_double(this._id, id, i+1, value);
           }
           break;
         case "string":
           setStr(this._wasm, value, ptr => {
-            status = this._wasm.bind_text(this._id, id, parameterId, ptr);
+            status = this._wasm.bind_text(this._id, id, i+1, ptr);
           });
           break;
         default:
           if (value instanceof Uint8Array) {
             // Uint8Arrays are allowed and bound to BLOB
             setArr(this._wasm, value, ptr => {
-              status = this._wasm.bind_blob(this._id, id, parameterId, ptr, value.length);
+              status = this._wasm.bind_blob(this._id, id, i+1, ptr, value.length);
             });
           } else if (value === null || value === undefined) {
             // Both null and undefined result in a NULL entry
-            status = this._wasm.bind_null(this._id, id, parameterId);
+            status = this._wasm.bind_null(this._id, id, i+1);
           } else {
-            throw new SqliteError("Can not bind ".concat(value));
+            this._wasm.finalize(this._id, id);
+            throw new SqliteError(`Can not bind '${value}'.`);
           }
           break;
       }
