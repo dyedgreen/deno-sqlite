@@ -431,6 +431,22 @@ test(function syntaxErrorErrorCode() {
   assertEquals(e.code, status.sqliteError, "Got wrong error code");
 });
 
+/** Test invalid value does not cause statement leakage. */
+test(function invalidBindDoesNotLeakStatements() {
+  const db = new DB();
+  db.query("CREATE TABLE test (id INTEGER)");
+
+  for (let n = 0; n < 100; n ++) {
+    try {
+      db.query("INSERT INTO test (id) VALUES (?)", [{}]);
+    } catch {}
+  }
+
+  db.query("INSERT INTO test (id) VALUES (1)");
+
+  db.close();
+});
+
 // Skip this tests if we don't have read or write
 // permissions.
 const skip = [];
