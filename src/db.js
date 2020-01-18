@@ -54,7 +54,7 @@ export class DB {
    * can contain placeholder parameters, which
    * are bound to the values passed in 'values'.
    *
-   *     db.query("SELECT name, email FROM users WHERE subscribed = ? AND list LIKE ?", true, listName);
+   *     db.query("SELECT name, email FROM users WHERE subscribed = ? AND list LIKE ?", [true, listName]);
    *
    * This supports positional and named parameters.
    * Positional parameters can be set by passing an
@@ -108,7 +108,8 @@ export class DB {
     setStr(this._wasm, sql, ptr => {
       id = this._wasm.prepare(this._id, ptr);
     });
-    if (id === constants.values.error) throw this._error();
+    if (id === constants.values.error)
+      throw this._error();
 
     // Prepare parameter array
     let parameters = [];
