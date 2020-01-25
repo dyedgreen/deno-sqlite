@@ -19,7 +19,7 @@ async function open(path: string, ignoreNotFound=true): Promise<DB> {
   try {
     bytes = await Deno.readFile(path);
   } catch (err) {
-    if (!ignoreNotFound || err.kind != Deno.ErrorKind.NotFound)
+    if (!ignoreNotFound || err.kind != Deno.ErrorKind.NotFound)
       throw err;
   }
   const db: any = new DB(bytes);
@@ -35,7 +35,7 @@ async function open(path: string, ignoreNotFound=true): Promise<DB> {
  * is optional.
  */
 async function save(db: DB, path?: string): Promise<void> {
-  path = path || (db as any)._save_path;
+  path = path || (db as any)._save_path;
   if (!db._open)
     throw new SqliteError("Database was closed.");
   // We obtain the data array ourselves to avoid

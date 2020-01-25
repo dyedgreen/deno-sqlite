@@ -218,6 +218,24 @@ int KEEPALIVE bind_null(int entry_id, int stmt_id, int idx) {
   return last_status;
 }
 
+// Determine parameter index for named parameters
+int KEEPALIVE bind_parameter_index(int entry_id, int stmt_id, const char* name) {
+  // Can't use guard as we don't return a status
+  sqlite3_stmt* stmt = get_reg_entry_stmt(entry_id, stmt_id);
+  if (stmt == NULL) {
+    debug_printf("statement for parameter does not exist\n");
+    return ERROR_VAL;
+  }
+  int index = sqlite3_bind_parameter_index(stmt, name);
+  if (index == 0) {
+    debug_printf("parameter '%s' does not exist", name);
+    // Normalize SQLite returning 0 for not found to ERROR_VAL
+    return ERROR_VAL;
+  }
+  debug_printf("obtained parameter index (param '%s', index %i)\n", name, index);
+  return index;
+}
+
 // Wraps running statements, this returns the status directly
 int KEEPALIVE step(int entry_id, int stmt_id) {
   GUARD_STMT(entry_id, stmt_id);

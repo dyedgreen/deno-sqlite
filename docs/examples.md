@@ -9,7 +9,7 @@ Database Files can be opened and saved like this:
 ```javascript
 import { open, save } from "https://deno.land/x/sqlite/mod.ts";
 
-const db =  await open("test.db");
+const db = await open("test.db");
 
 // do something with db
 
@@ -46,7 +46,7 @@ You can easily bind values from variables into your queries.
 const name = "Peter Parker";
 const email = "peter.parker@deno.land";
 
-db.query("INSERT INTO people (name, email) VALUES (?, ?)", name, email);
+db.query("INSERT INTO people (name, email) VALUES (?, ?)", [name, email]);
 ```
 
 !> Always bind user provided data and don't use string interpolation to avoid
@@ -54,6 +54,22 @@ db.query("INSERT INTO people (name, email) VALUES (?, ?)", name, email);
 
 ?> Queries like `INSERT INTO` don't return any rows. For these queries `.done()`
 is called automatically.
+
+
+## Named Query Parameters
+
+SQLite supports named query parameters. Use them like this:
+```javascript
+// somehow obtain a db
+
+const name = "Peter Parker";
+const email = "peter.parker@deno.land";
+
+db.query("INSERT INTO people (name, email) VALUES (:name, :email)", { name, email });
+```
+
+?> Using named parameters can make your code more readable.
+
 
 ## Error handling
 
@@ -68,6 +84,7 @@ try {
   console.log(error.codeName);
 }
 ```
+
 
 ## Copying a Database
 

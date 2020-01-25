@@ -51,13 +51,30 @@ file written by SQLite.
 
 ### DB.query
 ```javascript
-query(sql, ...values)
+query(sql, values)
 ```
-Run a query against the database. The SQL
-query can contain placeholders which are
-bound to the following parameters in order.
+Run a query against the database. The query
+can contain placeholder parameters, which
+are bound to the values passed in 'values'.
 
     db.query("SELECT name, email FROM users WHERE subscribed = ? AND list LIKE ?", true, listName);
+
+This supports positional and named parameters.
+Positional parameters can be set by passing an
+array for values. Named parameters can be set
+by passing an object for values.
+
+While they can be mixed in principle, this is
+not recommended.
+
+| Parameter     | Values                  |
+|---------------|-------------------------|
+| `?NNN` or `?` | NNN-th value in array   |
+| `:AAAA`       | value `AAAA` or `:AAAA` |
+| `@AAAA`       | value `@AAAA`           |
+| `$AAAA`       | value `$AAAA`           |
+
+(see https://www.sqlite.org/lang_expr.html)
 
 Values may only be of the following
 types and are converted as follows:
@@ -70,6 +87,9 @@ types and are converted as follows:
 | Uint8Array | BLOB            | Uint8Array |
 | null       | NULL            | null       |
 | undefined  | NULL            | null       |
+
+If no value is provided to a given parameter,
+SQLite will default to NULL.
 
 This always returns an iterable Rows object.
 As a special case, if the query has no rows
