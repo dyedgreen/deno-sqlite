@@ -9,7 +9,7 @@ db.query(
 
 /** Performance of insert statements (1 insert). */
 let n = 0;
-const names = "Deno Land Peter Parker Clark Kent Robert Parr";
+const names = "Deno Land Peter Parker Clark Kent Robert Parr".split(" ");
 
 bench({
   name: "insert (named)",
