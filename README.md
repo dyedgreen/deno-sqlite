@@ -35,17 +35,3 @@ for (const [name] of db.query("SELECT name FROM people"))
 save(db);
 db.close();
 ```
-
-## TODO - Goals
-
-- [x] Initial API draft
-- [x] Tests
-- [x] Support BLOBs
-- [x] The WASM context seems to prevent Deno from exiting when an error is thrown ([fixed by deno 3503](https://github.com/denoland/deno/pull/3503))
-- [x] Benchmarks
-- [x] Documentation (there are in-file comments)
-- [x] Replace EMSCRIPTEN with WASI
-- [ ] More tests (high-load, edge-cases, issues as they arise)
-- [ ] Documentation on general design and best practices
-- [ ] More/ better benchmarks
-- [ ] Rewrite internals to use TypeScript

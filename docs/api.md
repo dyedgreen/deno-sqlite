@@ -57,7 +57,7 @@ Run a query against the database. The query
 can contain placeholder parameters, which
 are bound to the values passed in 'values'.
 
-    db.query("SELECT name, email FROM users WHERE subscribed = ? AND list LIKE ?", true, listName);
+    db.query("SELECT name, email FROM users WHERE subscribed = ? AND list LIKE ?", [true, listName]);
 
 This supports positional and named parameters.
 Positional parameters can be set by passing an
