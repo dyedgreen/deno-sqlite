@@ -14,7 +14,7 @@ export class DB {
   /**
    * DB
    *
-   * Create a new database. If a Uint8Array
+   * Create a new database. If a `Uint8Array`
    * is provided as the first argument the
    * database is pre-loaded with the array as the
    * database file. If no arguments are provided
@@ -129,7 +129,7 @@ export class DB {
         });
         if (idx === constants.values.error) {
           this._wasm.finalize(this._id, id);
-          throw new Error(`No parameter named '${name}'.`);
+          throw new SqliteError(`No parameter named '${name}'.`);
         }
         parameters[idx - 1] = values[key];
       }
