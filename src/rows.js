@@ -68,6 +68,19 @@ export class Rows {
     return { value: row, done: false };
   }
 
+  columns() {
+    if (this._done) {
+      return [];
+    }
+
+    const columnCount = this._db._wasm.column_count(this._db._id, this._id);
+    const columns = [];
+    for (let i = 0; i < columnCount; i++) {
+      columns.push(getStr(this._db._wasm, this._db._wasm.column_name(this._db._id, this._id, i)));
+    }
+    return columns;
+  }
+
   [Symbol.iterator]() {
     return this;
   }

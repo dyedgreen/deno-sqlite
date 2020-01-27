@@ -214,6 +214,19 @@ Always use `.done()` instead of `break`.
         rows.done();
     }
 
+### Rows.columns
+```javascript
+columns()
+```
+Call this if you need column names from the result of a select query.
+
+```javascript
+  db.query("CREATE TABLE test (id INTEGER, name TEXT)");
+  db.query("INSERT INTO test (id, name) VALUES (?, ?)", [1, "name"]);
+
+  const rows = db.query("SELECT id as test_id, name as test_name from test");
+  const columns = rows.columns(); // ["test_id", "test_name"]
+```
 
 ## Empty
 

@@ -447,6 +447,19 @@ test(function invalidBindDoesNotLeakStatements() {
   db.close();
 });
 
+test(function getColumnsFromRows()
+{
+  const db = new DB();
+
+  db.query("CREATE TABLE test (id INTEGER, name TEXT)");
+  db.query("INSERT INTO test (id, name) VALUES (?, ?)", [1, "name"]);
+
+  const rows = db.query("SELECT id as test_id, name as test_name from test");
+  const columns = rows.columns();
+
+  assertEquals(columns, ["test_id", "test_name"]);
+});
+
 // Skip this tests if we don't have read or write
 // permissions.
 const skip = [];
