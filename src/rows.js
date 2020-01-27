@@ -68,6 +68,11 @@ export class Rows {
     return { value: row, done: false };
   }
 
+  /**
+   * Rows.columns
+   *
+   * Call this if you need column names from the result of a select query.
+   */
   columns() {
     if (this._done) {
       return [];
