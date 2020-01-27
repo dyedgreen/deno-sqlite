@@ -447,8 +447,7 @@ test(function invalidBindDoesNotLeakStatements() {
   db.close();
 });
 
-test(function getColumnsFromRows()
-{
+test(function getColumnsFromRows() {
   const db = new DB();
 
   db.query("CREATE TABLE test (id INTEGER, name TEXT)");
