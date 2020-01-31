@@ -41,6 +41,7 @@ SQLFLG = -DSQLITE_DQS=0 -DSQLITE_THREADSAFE=0 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS\
 # SQLITE_OS_OTHER -> we provide our own vfs
 # SQLITE_OMIT_COMPLETE -> we don't need these
 # SQLITE_OMIT_WAL -> we don't use it
+# SQLITE_ENABLE_COLUMN_METADATA -> we depend on column metadata interfaces (`sqlite3_column_table_name` and `sqlite3_column_origin_name`)
 
 all: release
 
