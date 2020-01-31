@@ -74,7 +74,7 @@ export class Rows {
    *
    * Call this if you need column names from the result of a select query.
    *
-   * This method returns an array of objects, where each object has the following properties.
+   * This method returns an array of objects, where each object has the following properties:
    *
    * | Property     | Value                                      |
    * |--------------|--------------------------------------------|
