@@ -1,5 +1,6 @@
 import { getStr } from "./wasm.js";
 import * as constants from "./constants.js";
+import SqliteError from "./error.js";
 
 export class Rows {
   /**
@@ -83,7 +84,7 @@ export class Rows {
    */
   columns() {
     if (this._done) {
-      return [];
+      throw new SqliteError("Unable to retrieve column names as transaction is finalised.")
     }
 
     const columnCount = this._db._wasm.column_count(this._db._id, this._id);

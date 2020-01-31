@@ -460,6 +460,13 @@ test(function getColumnsFromRows() {
     { name: "test_id", originName: "id", tableName: "test" },
     { name: "test_name", originName: "name", tableName: "test" }
   ]);
+
+  rows.done();
+
+  // after iteration is done
+  assertThrows(() => {
+    rows.columns();
+  });
 });
 
 // Skip this tests if we don't have read or write
