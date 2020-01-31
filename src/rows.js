@@ -81,7 +81,10 @@ export class Rows {
     const columnCount = this._db._wasm.column_count(this._db._id, this._id);
     const columns = [];
     for (let i = 0; i < columnCount; i++) {
-      columns.push(getStr(this._db._wasm, this._db._wasm.column_name(this._db._id, this._id, i)));
+      const name = getStr(this._db._wasm, this._db._wasm.column_name(this._db._id, this._id, i));
+      const originName = getStr(this._db._wasm, this._db._wasm.column_origin_name(this._db._id, this._id, i));
+      const tableName = getStr(this._db._wasm, this._db._wasm.column_table_name(this._db._id, this._id, i));
+      columns.push({ name, originName, tableName });
     }
     return columns;
   }

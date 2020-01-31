@@ -450,13 +450,16 @@ test(function invalidBindDoesNotLeakStatements() {
 test(function getColumnsFromRows() {
   const db = new DB();
 
-  db.query("CREATE TABLE test (id INTEGER, name TEXT)");
-  db.query("INSERT INTO test (id, name) VALUES (?, ?)", [1, "name"]);
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)");
+  db.query("INSERT INTO test (name) VALUES (?)", ["name"]);
 
   const rows = db.query("SELECT id as test_id, name as test_name from test");
   const columns = rows.columns();
 
-  assertEquals(columns, ["test_id", "test_name"]);
+  assertEquals(columns, [
+    { name: "test_id", originName: "id", tableName: "test" },
+    { name: "test_name", originName: "name", tableName: "test" }
+  ]);
 });
 
 // Skip this tests if we don't have read or write
