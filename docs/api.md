@@ -220,12 +220,24 @@ columns()
 ```
 Call this if you need column names from the result of a select query.
 
+This method returns an array of objects, where each object has the following properties.
+
+| Property     | Value                                      |
+|--------------|--------------------------------------------|
+| `name`       | the result of `sqlite3_column_name`        |
+| `originName` | the result of `sqlite3_column_origin_name` |
+| `tableName`  | the result of `sqlite3_column_table_name`  |
+
 ```javascript
-  db.query("CREATE TABLE test (id INTEGER, name TEXT)");
-  db.query("INSERT INTO test (id, name) VALUES (?, ?)", [1, "name"]);
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)");
+  db.query("INSERT INTO test (name) VALUES (?)", ["name"]);
 
   const rows = db.query("SELECT id as test_id, name as test_name from test");
-  const columns = rows.columns(); // ["test_id", "test_name"]
+  const columns = rows.columns();
+  // [
+  //   { name: "test_id", originName: "id", tableName: "test" },
+  //   { name: "test_name", originName: "name", tableName: "test" }
+  // ]
 ```
 
 ## Empty
