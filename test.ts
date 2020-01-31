@@ -447,19 +447,42 @@ test(function invalidBindDoesNotLeakStatements() {
   db.close();
 });
 
-test(function getColumnsFromRows() {
+test(function getColumnsWithoutNames() {
   const db = new DB();
 
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)");
   db.query("INSERT INTO test (name) VALUES (?)", ["name"]);
 
-  const rows = db.query("SELECT id as test_id, name as test_name from test");
+  const rows = db.query("SELECT id, name from test");
+  const columns = rows.columns();
+
+  assertEquals(columns, [
+    { name: "id", originName: "id", tableName: "test" },
+    { name: "name", originName: "name", tableName: "test" }
+  ]);
+});
+
+test(function getColumnsWithNames() {
+  const db = new DB();
+
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)");
+  db.query("INSERT INTO test (name) VALUES (?)", ["name"]);
+
+  const rows = db.query("SELECT id AS test_id, name AS test_name from test");
   const columns = rows.columns();
 
   assertEquals(columns, [
     { name: "test_id", originName: "id", tableName: "test" },
     { name: "test_name", originName: "name", tableName: "test" }
   ]);
+});
+
+test(function getColumnsFromFinalizedRows() {
+  const db = new DB();
+
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
+
+  const rows = db.query("SELECT id from test");
 
   rows.done();
 
