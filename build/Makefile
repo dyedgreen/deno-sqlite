@@ -10,7 +10,10 @@ endif
 OUT_JS = "debug.js"
 OUT_WA = "sqlite.wasm"
 
-CSRC  = $(shell find . -name "*.c")
+CSRC  = ""
+CSRC += $(shell find ./src  -name "*.c")
+CSRC += $(shell find ./lib  -name "*.c")
+CSRC += $(shell find ./hask -name "*.c")
 FLGS  = -Wall
 RFLG  = -Os
 DFLG  = -DDEBUG_BUILD
@@ -24,7 +27,8 @@ SQLFLG = -DSQLITE_DQS=0 -DSQLITE_THREADSAFE=0 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS\
          -DSQLITE_DEFAULT_FOREIGN_KEYS=1 -DSQLITE_TEMP_STORE=3 -DSQLITE_DISABLE_LFS\
          -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_UTF16 -DSQLITE_OMIT_SHARED_CACHE\
          -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_PROGRESS_CALLBACK -DSQLITE_OMIT_TRACE\
-         -DSQLITE_OS_OTHER=1 -DSQLITE_OMIT_COMPLETE -DSQLITE_OMIT_WAL
+         -DSQLITE_OS_OTHER=1 -DSQLITE_OMIT_COMPLETE -DSQLITE_OMIT_WAL -DSQLITE_OMIT_ATTACH\
+         -DNDEBUG=1
 # Rational:
 # SQLITE_DQS -> we do not need to have backwards comp
 # SQLITE_THREADSAFE -> we run single-threaded
@@ -41,8 +45,16 @@ SQLFLG = -DSQLITE_DQS=0 -DSQLITE_THREADSAFE=0 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS\
 # SQLITE_OS_OTHER -> we provide our own vfs
 # SQLITE_OMIT_COMPLETE -> we don't need these
 # SQLITE_OMIT_WAL -> we don't use it
+# SQLITE_OMIT_ATTACH -> attach to file will not work as expected with provided VFS
+# DNDEBUG -> "use for maximum speed"
 
 all: release
+
+amalgamation:
+	make -C sqlite-src clean
+	make -C sqlite-src sqlite3.c SQLFLG="$(SQLFLG)"
+	mv sqlite-src/sqlite3.c lib/sqlite3.c
+	mv sqlite-src/sqlite3.h lib/sqlite3.h
 
 build:
 	$(CC) $(WAFLG) $(FLGS) $(INCS) $(CSRC) $(SQLFLG) -o $(OUT_WA)
@@ -58,4 +70,4 @@ debug: emscripten
 release: FLGS += $(RFLG)
 release: build
 
-.PHONY: build
+.PHONY: build amalgamation
