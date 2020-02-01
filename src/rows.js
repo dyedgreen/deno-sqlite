@@ -84,7 +84,7 @@ export class Rows {
    */
   columns() {
     if (this._done) {
-      throw new SqliteError("Unable to retrieve column names as transaction is finalized.")
+      throw new SqliteError("Unable to retrieve column names as transaction is finalized.");
     }
 
     const columnCount = this._db._wasm.column_count(this._db._id, this._id);
