@@ -7,6 +7,7 @@ debug.js
 # Misc
 hack.js
 test.db
+build/sqlite-src
 
 # NPM garbage
 node_modules

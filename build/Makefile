@@ -10,6 +10,9 @@ endif
 OUT_JS = "debug.js"
 OUT_WA = "sqlite.wasm"
 
+SQLITE_DLD = "https://sqlite.org/2020/sqlite-src-3310100.zip"
+SQLITE_DIR = "sqlite-src-3310100"
+
 CSRC  = ""
 CSRC += $(shell find ./src  -name "*.c")
 CSRC += $(shell find ./lib  -name "*.c")
@@ -50,12 +53,6 @@ SQLFLG = -DSQLITE_DQS=0 -DSQLITE_THREADSAFE=0 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS\
 
 all: release
 
-amalgamation:
-	make -C sqlite-src clean
-	make -C sqlite-src sqlite3.c SQLFLG="$(SQLFLG)"
-	mv sqlite-src/sqlite3.c lib/sqlite3.c
-	mv sqlite-src/sqlite3.h lib/sqlite3.h
-
 build:
 	$(CC) $(WAFLG) $(FLGS) $(INCS) $(CSRC) $(SQLFLG) -o $(OUT_WA)
 	$(DENO) --allow-read --allow-write hack/patch.js $(OUT_WA)
@@ -70,4 +67,21 @@ debug: emscripten
 release: FLGS += $(RFLG)
 release: build
 
-.PHONY: build amalgamation
+# Helpers for generating new amalgamation files
+# if needed (i.e. if build flags for SQLite change)
+download:
+	curl "$(SQLITE_DLD)" -o "sqlite_dl.zip"
+	shasum -c ".checksums"
+	rm -rf "sqlite-src"
+	unzip "sqlite_dl.zip"
+	mv $(SQLITE_DIR) "sqlite-src"
+	cp "Makefile.sqlite" "sqlite-src/Makefile"
+	rm "sqlite_dl.zip"
+
+amalgamation:
+	make -C sqlite-src clean
+	make -C sqlite-src sqlite3.c SQLFLG="$(SQLFLG)"
+	mv sqlite-src/sqlite3.c lib/sqlite3.c
+	mv sqlite-src/sqlite3.h lib/sqlite3.h
+
+.PHONY: build amalgamation download
