@@ -311,3 +311,30 @@ int KEEPALIVE column_bytes(int entry_id, int stmt_id, int col) {
   }
   return sqlite3_column_bytes(stmt, col);
 }
+
+const char* KEEPALIVE column_name(int entry_id, int stmt_id, int col) {
+  sqlite3_stmt* stmt = get_reg_entry_stmt(entry_id, stmt_id);
+  if (stmt == NULL) {
+    debug_printf("column_name failed silently\n");
+    return "";
+  }
+  return sqlite3_column_name(stmt, col);
+}
+
+const char* KEEPALIVE column_origin_name(int entry_id, int stmt_id, int col) {
+  sqlite3_stmt* stmt = get_reg_entry_stmt(entry_id, stmt_id);
+  if (stmt == NULL) {
+    debug_printf("column_origin_name failed silently\n");
+    return "";
+  }
+  return sqlite3_column_origin_name(stmt, col);
+}
+
+const char* KEEPALIVE column_table_name(int entry_id, int stmt_id, int col) {
+  sqlite3_stmt* stmt = get_reg_entry_stmt(entry_id, stmt_id);
+  if (stmt == NULL) {
+    debug_printf("column_table_name failed silently\n");
+    return "";
+  }
+  return sqlite3_column_table_name(stmt, col);
+}
