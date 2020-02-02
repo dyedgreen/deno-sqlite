@@ -1,5 +1,6 @@
 import { getStr } from "./wasm.js";
 import * as constants from "./constants.js";
+import SqliteError from "./error.js";
 
 export class Rows {
   /**
@@ -66,6 +67,35 @@ export class Rows {
         break;
     }
     return { value: row, done: false };
+  }
+
+  /**
+   * Rows.columns
+   *
+   * Call this if you need column names from the result of a select query.
+   *
+   * This method returns an array of objects, where each object has the following properties:
+   *
+   * | Property     | Value                                      |
+   * |--------------|--------------------------------------------|
+   * | `name`       | the result of `sqlite3_column_name`        |
+   * | `originName` | the result of `sqlite3_column_origin_name` |
+   * | `tableName`  | the result of `sqlite3_column_table_name`  |
+   */
+  columns() {
+    if (this._done) {
+      throw new SqliteError("Unable to retrieve column names as transaction is finalized.");
+    }
+
+    const columnCount = this._db._wasm.column_count(this._db._id, this._id);
+    const columns = [];
+    for (let i = 0; i < columnCount; i++) {
+      const name = getStr(this._db._wasm, this._db._wasm.column_name(this._db._id, this._id, i));
+      const originName = getStr(this._db._wasm, this._db._wasm.column_origin_name(this._db._id, this._id, i));
+      const tableName = getStr(this._db._wasm, this._db._wasm.column_table_name(this._db._id, this._id, i));
+      columns.push({ name, originName, tableName });
+    }
+    return columns;
   }
 
   [Symbol.iterator]() {

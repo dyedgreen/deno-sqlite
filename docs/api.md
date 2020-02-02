@@ -214,6 +214,20 @@ Always use `.done()` instead of `break`.
         rows.done();
     }
 
+### Rows.columns
+```javascript
+columns()
+```
+Call this if you need column names from the result of a select query.
+
+This method returns an array of objects, where each object has the following properties:
+
+| Property     | Value                                      |
+|--------------|--------------------------------------------|
+| `name`       | the result of `sqlite3_column_name`        |
+| `originName` | the result of `sqlite3_column_origin_name` |
+| `tableName`  | the result of `sqlite3_column_table_name`  |
+
 
 ## Empty
 
