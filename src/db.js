@@ -1,7 +1,4 @@
-// TODO: Fix this once https://github.com/denoland/deno/issues/3521
-//       is fixed/ addressed.
-// import * as wasm from "../build/sqlite.wasm";
-import wasm from "../build/sqlite.js";
+import * as wasm from "../build/sqlite.wasm";
 import { getStr, setStr, setArr } from "./wasm.js";
 import * as constants from "./constants.js";
 import { Rows, Empty } from "./rows.js";

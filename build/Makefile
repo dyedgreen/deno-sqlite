@@ -56,7 +56,6 @@ all: release
 
 build:
 	$(CC) $(WAFLG) $(FLGS) $(INCS) $(CSRC) $(SQLFLG) -o $(OUT_WA)
-	$(DENO) --allow-read --allow-write hack/patch.js $(OUT_WA)
 
 emscripten:
 	$(EMCC) $(JSFLG) $(FLGS) $(INCS) $(CSRC) $(SQLFLG) -o $(OUT_JS)
