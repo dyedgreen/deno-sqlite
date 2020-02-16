@@ -8,13 +8,6 @@ function hexEncode(bytes) {
     fragments[i] = bytes[i].toString(16).padStart(2, "0");
   return fragments.join("");
 }
-function b64Encode(bytes) {
-  let binary = "";
-  let len = bytes.length;
-  for (var i = 0; i < len; i++)
-    binary += String.fromCharCode(bytes[i]);
-  return window.btoa(binary).replace(/\n/g, "");
-}
 
 // Patch emscripten builds for use with deno
 async function mainEmscripten(file) {
@@ -40,12 +33,7 @@ async function mainEmscripten(file) {
 
 // Bundle sqlite.wasm into sqlite.js
 async function mainBundle(file) {
-  const wasm = await Deno.readFile(file);
-  const jsFile = file.replace(".wasm", ".js");
-
-  let data = new TextDecoder().decode(await Deno.readFile(jsFile));
-  data = data.replace(/const wasmBase64 = ".+";/, `const wasmBase64 = "${b64Encode(wasm)}";`);
-  await Deno.writeFile(jsFile, new TextEncoder().encode(data));
+  throw new Error("Deprecated, WASI build is no longer bundled.");
 }
 
 // Run appropriate patches
