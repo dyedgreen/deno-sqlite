@@ -490,8 +490,7 @@ Deno.test(function getColumnsFromFinalizedRows() {
   });
 });
 
-// Skip this tests if we don't have read or write
-// permissions.
+// Skip these tests if we don't have read or write permissions.
 const skip = [];
 const write =
   (await Deno.permissions.query({ name: "write" })).state === "granted";
