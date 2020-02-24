@@ -43,7 +43,7 @@ async function save(db: DB, path?: string): Promise<void> {
   const ptr = db._wasm.get_db_file(db._id);
   const len = db._wasm.get_db_file_size(db._id);
   const data = new Uint8Array(db._wasm.memory.buffer, ptr, len);
-  return Deno.writeFile(path, data);
+  return Deno.writeFile(path as string, data);
 }
 
 export { open, save, DB, Empty, status };
