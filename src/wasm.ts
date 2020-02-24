@@ -1,7 +1,7 @@
-import SqliteError from "./error.js";
+import SqliteError from "./error.ts";
 
 // Move string to C
-export function setStr(wasm, str, closure) {
+export function setStr(wasm: any, str: string, closure: (ptr: number) => void) {
   const bytes = new TextEncoder().encode(str);
   const ptr = wasm.malloc(bytes.length + 1);
   if (ptr === 0)
@@ -14,7 +14,7 @@ export function setStr(wasm, str, closure) {
 }
 
 // Move Uint8Array to C
-export function setArr(wasm, arr, closure) {
+export function setArr(wasm: any, arr: Uint8Array, closure: (ptr: number) => void) {
   const ptr = wasm.malloc(arr.length);
   if (ptr === 0)
     throw new SqliteError("Out of memory.");
@@ -25,7 +25,7 @@ export function setArr(wasm, arr, closure) {
 }
 
 // Read string from C
-export function getStr(wasm, ptr) {
+export function getStr(wasm: any, ptr: number): string {
   const len = wasm.str_len(ptr);
   const bytes = new Uint8Array(wasm.memory.buffer, ptr, len);
   if (len > 16) {

@@ -1,4 +1,4 @@
-import { status } from "./constants.js";
+import { Status } from "./constants.ts";
 
 export default class SqliteError extends Error {
   /**
@@ -12,10 +12,10 @@ export default class SqliteError extends Error {
    * should only be obtained from exceptions raised
    * in this module.
    */
-  constructor(message, code) {
+  constructor(message: string, code?: number) {
     super(message);
     this.name = "SqliteError";
-    this.code = code ?? null;
+    this.code = code ?? undefined;
   }
 
   /**
@@ -53,21 +53,20 @@ export default class SqliteError extends Error {
    * | sqliteSchema     | 17   |                  |      |
    *
    * These codes are accessible via
-   * the exported `status` object.
+   * the exported `Status` object.
    */
+   code?: number;
 
-  /**
+   /**
    * SqliteError.codeName
    *
    * Key of code in exported `status`
    * object.
    *
    * E.g. if `code` is `19`,
-   * `codeName` would be `sqliteConstraint`.
+   * `codeName` would be `SqliteConstraint`.
    */
-  get codeName() {
-    return Object.keys(status).find(
-      key => status[key] === this.code
-    );
+  get codeName(): string | undefined {
+    return this.code ? Status[this.code] : undefined;
   }
 }

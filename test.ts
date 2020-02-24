@@ -1,6 +1,6 @@
 import { assert, assertEquals, assertMatch, assertThrows } from "https://deno.land/std/testing/asserts.ts";
-import { open, save, DB, Empty, status } from "./mod.ts";
-import SqliteError from "./src/error.js";
+import { open, save, DB, Empty, Status } from "./mod.ts";
+import SqliteError from "./src/error.ts";
 
 /** Ensure README example works as advertised. */
 Deno.test(function readmeExample() {
@@ -416,7 +416,7 @@ Deno.test(function constraintErrorCode() {
   const e = assertThrows(() =>
     db.query("INSERT INTO test (name) VALUES (?)", ["A"])
   ) as SqliteError;
-  assertEquals(e.code, status.sqliteConstraint, "Got wrong error code");
+  assertEquals(e.code, Status.SqliteConstraint, "Got wrong error code");
 });
 
 /** Test SQLite syntax error error code. */
@@ -426,7 +426,7 @@ Deno.test(function syntaxErrorErrorCode() {
   const e = assertThrows(() =>
     db.query("CREATE TABLEX test (name TEXT PRIMARY KEY)")
   ) as SqliteError;
-  assertEquals(e.code, status.sqliteError, "Got wrong error code");
+  assertEquals(e.code, Status.SqliteError, "Got wrong error code");
 });
 
 /** Test invalid value does not cause statement leakage. */

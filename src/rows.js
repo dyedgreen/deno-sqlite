@@ -1,6 +1,6 @@
-import { getStr } from "./wasm.js";
-import * as constants from "./constants.js";
-import SqliteError from "./error.js";
+import { getStr } from "./wasm.ts";
+import * as constants from "./constants.ts";
+import SqliteError from "./error.ts";
 
 export class Rows {
   /**
@@ -55,10 +55,10 @@ export class Rows {
     const row = this._get();
     const status = this._db._wasm.step(this._db._id, this._id);
     switch (status) {
-      case constants.status.sqliteRow:
+      case constants.Status.SqliteRow:
         // NO OP
         break;
-      case constants.status.sqliteDone:
+      case constants.Status.SqliteDone:
         this.done();
         break;
       default:
@@ -108,16 +108,16 @@ export class Rows {
     // return row;
     for (let i = 0, c = this._db._wasm.column_count(this._db._id, this._id); i < c; i++) {
       switch (this._db._wasm.column_type(this._db._id, this._id, i)) {
-        case constants.types.integer:
+        case constants.Types.Integer:
           row.push(this._db._wasm.column_int(this._db._id, this._id, i));
           break;
-        case constants.types.float:
+        case constants.Types.Float:
           row.push(this._db._wasm.column_double(this._db._id, this._id, i));
           break;
-        case constants.types.text:
+        case constants.Types.Text:
           row.push(getStr(this._db._wasm, this._db._wasm.column_text(this._db._id, this._id, i)));
           break;
-        case constants.types.blob:
+        case constants.Types.Blob:
           const ptr = this._db._wasm.column_blob(this._db._id, this._id, i);
           if (ptr === 0) {
             // Zero pointer results in null

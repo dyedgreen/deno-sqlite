@@ -1,7 +1,7 @@
 import { DB } from "./src/db.js";
 import { Empty } from "./src/rows.js";
-import { status } from "./src/constants.js";
-import SqliteError from "./src/error.js";
+import { Status } from "./src/constants.ts";
+import SqliteError from "./src/error.ts";
 
 /**
  * open
@@ -46,4 +46,4 @@ async function save(db: DB, path?: string): Promise<void> {
   return Deno.writeFile(path as string, data);
 }
 
-export { open, save, DB, Empty, status };
+export { open, save, DB, Empty, Status };
