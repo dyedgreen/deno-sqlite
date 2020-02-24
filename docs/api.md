@@ -8,7 +8,7 @@ rerun the generator, to avoid loosing the changes.
 
 ## How to import
 ```javascript
-import { open, save, DB, Empty, status } from "https://deno.land/x/sqlite/mod.ts"
+import { open, save, DB, Empty, Status } from "https://deno.land/x/sqlite/mod.ts"
 ```
 The above statement lists all the available imports.
 
@@ -170,7 +170,7 @@ to this library (starting from 1000).
 | sqliteSchema     | 17   |                  |      |
 
 These codes are accessible via
-the exported `status` object.
+the exported `Status` object.
 
 ### SqliteError.codeName
 ```javascript
@@ -180,7 +180,7 @@ Key of code in exported `status`
 object.
 
 E.g. if `code` is `19`,
-`codeName` would be `sqliteConstraint`.
+`codeName` would be `SqliteConstraint`.
 
 
 ## Rows

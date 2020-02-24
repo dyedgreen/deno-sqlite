@@ -55,9 +55,9 @@ export default class SqliteError extends Error {
    * These codes are accessible via
    * the exported `Status` object.
    */
-   code?: number;
+  code?: number;
 
-   /**
+  /**
    * SqliteError.codeName
    *
    * Key of code in exported `status`

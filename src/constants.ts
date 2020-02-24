@@ -34,7 +34,7 @@ enum Status {
   StmtLimit = 1000, // Statement limit was reached: the statement registry is full, no more statements can be opened
   NoStmt = 1001, // Registry entry at this id is empty
   DatabaseLimit = 1002, // Database limit was reached: the database registry is full, no more databases can be opened
-  NoDatabase = 1003, // Registry entry at this id is empty
+  NoDatabase = 1003 // Registry entry at this id is empty
 }
 
 enum Types {
@@ -42,11 +42,11 @@ enum Types {
   Float = 2,
   Text = 3,
   Blob = 4,
-  Null = 5,
+  Null = 5
 }
 
 enum Values {
-  Error = -1,
+  Error = -1
 }
 
 export { Status, Types, Values };
