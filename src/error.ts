@@ -66,7 +66,9 @@ export default class SqliteError extends Error {
    * E.g. if `code` is `19`,
    * `codeName` would be `SqliteConstraint`.
    */
-  get codeName(): string | undefined {
-    return this.code ? Status[this.code] : undefined;
+  get codeName(): keyof typeof Status {
+    return (this.code
+      ? Status[this.code]
+      : Status[Status.Unknown]) as keyof typeof Status;
   }
 }

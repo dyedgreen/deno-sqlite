@@ -458,6 +458,11 @@ Deno.test(function constraintErrorCode() {
     () => db.query("INSERT INTO test (name) VALUES (?)", ["A"])
   ) as SqliteError;
   assertEquals(e.code, Status.SqliteConstraint, "Got wrong error code");
+  assertEquals(
+    Status[e.codeName],
+    Status.SqliteConstraint,
+    "Got wrong error code name"
+  );
 });
 
 /** Test SQLite syntax error error code. */
@@ -468,6 +473,11 @@ Deno.test(function syntaxErrorErrorCode() {
     () => db.query("CREATE TABLEX test (name TEXT PRIMARY KEY)")
   ) as SqliteError;
   assertEquals(e.code, Status.SqliteError, "Got wrong error code");
+  assertEquals(
+    Status[e.codeName],
+    Status.SqliteError,
+    "Got wrong error code name"
+  );
 });
 
 /** Test invalid value does not cause statement leakage. */

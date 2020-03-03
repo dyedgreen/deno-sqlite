@@ -1,4 +1,6 @@
 enum Status {
+  Unknown = -1, // Unknown status
+
   SqliteOk = 0, // Successful result
   SqliteError = 1, // Generic error
   SqliteInternal = 2, // Internal logic error in SQLite
