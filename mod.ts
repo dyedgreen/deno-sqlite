@@ -19,7 +19,7 @@ async function open(path: string, ignoreNotFound = true): Promise<DB> {
   try {
     bytes = await Deno.readFile(path);
   } catch (err) {
-    if (!ignoreNotFound || err.kind != Deno.ErrorKind.NotFound) {
+    if (!ignoreNotFound || !(err instanceof Deno.errors.NotFound)) {
       throw err;
     }
   }
