@@ -1,6 +1,7 @@
 # SQLite for Deno Documentation
 
 [![test status](https://github.com/dyedgreen/deno-sqlite/workflows/tests/badge.svg?branch=master)](https://github.com/dyedgreen/deno-sqlite/actions)
+[![docs status](https://github.com/dyedgreen/deno-sqlite/workflows/docs/badge.svg?branch=master)](https://dyedgreen.github.io/deno-sqlite/)
 
 This is the documentation for the Deno SQLite module. The module
 uses a version of SQLite compiled to WebAssembly to provide a
