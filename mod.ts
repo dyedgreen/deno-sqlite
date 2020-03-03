@@ -36,7 +36,7 @@ async function open(path: string, ignoreNotFound = true): Promise<DB> {
  * is optional.
  */
 async function save(db: DB, path?: string): Promise<void> {
-  path = path || (db as any)._save_path;
+  path = path || (db as any)._save_path as string;
   if (!db._open) {
     throw new SqliteError("Database was closed.");
   }
@@ -45,7 +45,7 @@ async function save(db: DB, path?: string): Promise<void> {
   const ptr = db._wasm.get_db_file(db._id);
   const len = db._wasm.get_db_file_size(db._id);
   const data = new Uint8Array(db._wasm.memory.buffer, ptr, len);
-  return Deno.writeFile(path as string, data);
+  return Deno.writeFile(path, data);
 }
 
 export { open, save, DB, Empty, Status };

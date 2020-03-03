@@ -15,7 +15,7 @@ The above statement lists all the available imports.
 
 ## open
 ```javascript
-async function open(path, ignoreNotFound=true)
+async function open(path, ignoreNotFound = true)
 ```
 Open a new SQLite3 database. The file at
 the path is read and preloaded into the database.
