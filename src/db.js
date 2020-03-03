@@ -1,8 +1,8 @@
 import * as wasm from "../build/sqlite.wasm";
-import { getStr, setStr, setArr } from "./wasm.js";
-import * as constants from "./constants.js";
+import { getStr, setStr, setArr } from "./wasm.ts";
+import * as constants from "./constants.ts";
 import { Rows, Empty } from "./rows.js";
-import SqliteError from "./error.js";
+import SqliteError from "./error.ts";
 
 // Seed random number generator
 wasm.seed_rng(Date.now());
@@ -26,12 +26,12 @@ export class DB {
 
     // Obtain a database id
     this._id = this._wasm.reserve();
-    if (this._id == constants.values.error)
+    if (this._id == constants.Values.Error)
       throw this._error();
 
     // If data is given, write it to db file
     if (data instanceof Uint8Array) {
-      if (this._wasm.grow_db_file(this._id, data.length) !== constants.status.sqliteOk)
+      if (this._wasm.grow_db_file(this._id, data.length) !== constants.Status.SqliteOk)
         throw new SqliteError("Out of memory.");
       const ptr = this._wasm.get_db_file(this._id);
       const view = new Uint8Array(this._wasm.memory.buffer, ptr, data.length);
@@ -39,7 +39,7 @@ export class DB {
     }
 
     // Open database
-    if (this._wasm.init(this._id) !== constants.status.sqliteOk)
+    if (this._wasm.init(this._id) !== constants.Status.SqliteOk)
       throw this._error();
     this._open = true;
   }
@@ -105,7 +105,7 @@ export class DB {
     setStr(this._wasm, sql, ptr => {
       id = this._wasm.prepare(this._id, ptr);
     });
-    if (id === constants.values.error)
+    if (id === constants.Values.Error)
       throw this._error();
 
     // Prepare parameter array
@@ -124,7 +124,7 @@ export class DB {
         setStr(this._wasm, name, ptr => {
           idx = this._wasm.bind_parameter_index(this._id, id, ptr);
         });
-        if (idx === constants.values.error) {
+        if (idx === constants.Values.Error) {
           this._wasm.finalize(this._id, id);
           throw new SqliteError(`No parameter named '${name}'.`);
         }
@@ -167,7 +167,7 @@ export class DB {
           }
           break;
       }
-      if (status !== constants.status.sqliteOk) {
+      if (status !== constants.Status.SqliteOk) {
         this._wasm.finalize(this._id, id);
         throw this._error(status);
       }
@@ -176,11 +176,11 @@ export class DB {
     // Step once to handle case where result is empty
     const status = this._wasm.step(this._id, id);
     switch (status) {
-      case constants.status.sqliteDone:
+      case constants.Status.SqliteDone:
         this._wasm.finalize(this._id, id);
         return Empty;
         break;
-      case constants.status.sqliteRow:
+      case constants.Status.SqliteRow:
         return new Rows(this, id);
         break;
       default:
@@ -222,7 +222,7 @@ export class DB {
   close() {
     if (!this._open)
       return;
-    if (this._wasm.close(this._id) !== constants.status.sqliteOk)
+    if (this._wasm.close(this._id) !== constants.Status.SqliteOk)
       throw this._error();
     this._open = false;
   }
@@ -231,16 +231,16 @@ export class DB {
     if (code === undefined)
       code = this._wasm.get_status();
     switch (code) {
-      case constants.status.stmtLimit:
+      case constants.Status.StmtLimit:
         return new SqliteError("Statement limit reached.", code);
         break;
-      case constants.status.noStmt:
+      case constants.Status.NoStmt:
         return new SqliteError("Statement not found.", code);
         break;
-      case constants.status.databaseLimit:
+      case constants.Status.DatabaseLimit:
         return new SqliteError("Database limit reached.", code);
         break;
-      case constants.status.noDatabase:
+      case constants.Status.NoDatabase:
         return new SqliteError("Database not found.", code);
         break;
       default:

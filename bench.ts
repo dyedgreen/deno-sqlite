@@ -17,7 +17,10 @@ bench({
   func: (b): void => {
     n = (10 * n) % 10_000;
     b.start();
-    db.query("INSERT INTO users (name, balance) VALUES (:name, :balance)", { name: names[n % names.length], balance: n});
+    db.query(
+      "INSERT INTO users (name, balance) VALUES (:name, :balance)",
+      { name: names[n % names.length], balance: n }
+    );
     b.stop();
   }
 });
@@ -28,7 +31,10 @@ bench({
   func: (b): void => {
     n = (10 * n) % 10_000;
     b.start();
-    db.query("INSERT INTO users (name, balance) VALUES (?, ?)", [names[n % names.length], n]);
+    db.query(
+      "INSERT INTO users (name, balance) VALUES (?, ?)",
+      [names[n % names.length], n]
+    );
     b.stop();
   }
 });
@@ -41,8 +47,9 @@ bench({
     b.start();
     for (const [name, balance] of db.query(
       "SELECT name, balance FROM users LIMIT 1000"
-    ))
+    )) {
       continue;
+    }
     b.stop();
   }
 });
@@ -55,8 +62,9 @@ bench({
     b.start();
     for (const [name, balance] of db.query(
       "SELECT name, balance FROM users ORDER BY balance DESC LIMIT 1000"
-    ))
+    )) {
       continue;
+    }
     b.stop();
   }
 });
@@ -69,8 +77,9 @@ bench({
     b.start();
     for (const [name, balance] of db.query(
       "SELECT name, balance FROM users ORDER BY RANDOM() LIMIT 1000"
-    ))
+    )) {
       continue;
+    }
     b.stop();
   }
 });
