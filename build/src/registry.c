@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include "registry.h"
 
-registry_entry** registry = NULL;
+static registry_entry** registry = NULL;
 
 registry_entry* new_entry() {
   registry_entry* entry = malloc(sizeof(registry_entry));

@@ -19,6 +19,12 @@
 #define TEMP_PATH -1
 #define ID_FROM_PATH(path) buffer_reg_id_from_path(path)
 
+// Global variable that contains current time
+// this can be passed in by queries to enable time
+// apis to work correctly.
+// This should not be used once WASI makes it obsolete.
+double global_wasi_current_time = 0;
+
 // Determine buffer registry id from file path. We store files
 // like follows: id=0 -> DB, id=1 -> journal for DB1, ...
 int buffer_reg_id_from_path(const char* path) {
@@ -234,12 +240,8 @@ static int wasiSleep(sqlite3_vfs *pVfs, int nMicro) {
 
 // TODO: This should be done properly once WASI is more mature.
 static int wasiCurrentTime(sqlite3_vfs *pVfs, double *pTime) {
-  *pTime = 0;
-  return SQLITE_ERROR;
-}
-static int wasiCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *pTime) {
-  *pTime = 0;
-  return SQLITE_ERROR;
+  *pTime = global_wasi_current_time;
+  return SQLITE_OK;
 }
 
 // This function returns a pointer to the VFS implemented in this file.
@@ -263,7 +265,7 @@ sqlite3_vfs *sqlite3_wasivfs(void) {
     wasiSleep,                    /* xSleep */
     wasiCurrentTime,              /* xCurrentTime */
     0,                            /* xGetLastError */
-    wasiCurrentTimeInt64,         /* xCurrentTimeInt64 */
+    0                   ,         /* xCurrentTimeInt64 */
     0,                            /* xSetSystemCall */
     0,                            /* xGetSystemCall */
     0,                            /* xNextSystemCall */

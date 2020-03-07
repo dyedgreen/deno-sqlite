@@ -100,6 +100,10 @@ export class DB {
     if (typeof sql !== "string")
       throw new SqliteError("SQL query must be a string.");
 
+    // Update time in WASI for next query
+    // TODO(dyedgreen): should this be called in other places as well?
+    this._wasm.update_time(Date.now() / 1000 / 86400.0 + 2440587.5);
+
     // Prepare sqlite query statement
     let id;
     setStr(this._wasm, sql, ptr => {

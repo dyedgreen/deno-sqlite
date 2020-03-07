@@ -30,6 +30,12 @@ void KEEPALIVE seed_rng(double seed) {
   pcg_seed((uint64_t)seed);
 }
 
+// Update the current global time
+extern double global_wasi_current_time;
+void KEEPALIVE update_time(double now) {
+  global_wasi_current_time = now;
+}
+
 // Return last status encountered. This combines
 // SQLite status codes and wrapper error codes.
 int KEEPALIVE get_status() {
