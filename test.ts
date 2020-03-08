@@ -132,6 +132,15 @@ Deno.test(function bindValues() {
   assertEquals(rows.length, vals.length);
   assertEquals(rows, [1, 0]);
 
+  // date
+  db.query("CREATE TABLE dates (date TEXT NOT NULL)");
+  vals = [new Date(), new Date("2018-11-20"), new Date(123456789)];
+  for (const val of vals) {
+    db.query("INSERT INTO dates (date) VALUES (?)", [val]);
+  }
+  rows = [...db.query("SELECT date FROM dates")].map(([d]) => new Date(d));
+  assertEquals(rows, vals);
+
   // blob
   db.query(
     "CREATE TABLE blobs (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB)"
@@ -543,6 +552,14 @@ Deno.test(function getColumnsFromFinalizedRows() {
   assertThrows(() => {
     rows.columns();
   });
+});
+
+Deno.test(function dateTimeIsCorrect() {
+  const db = new DB();
+  // the date/ time is passed from JS and should be current
+  const [[now]] = [...db.query("SELECT current_timestamp")];
+  assertEquals(new Date(now), new Date());
+  db.close();
 });
 
 // Skip these tests if we don't have read or write permissions.
