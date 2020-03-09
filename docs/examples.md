@@ -55,6 +55,9 @@ db.query("INSERT INTO people (name, email) VALUES (?, ?)", [name, email]);
 ?> Queries like `INSERT INTO` don't return any rows. For these queries `.done()`
 is called automatically.
 
+?> You can bind `Date`s and `Uint8Array`s directly. The wrapper will automatically
+convert them to the appropriate SQLite data types.
+
 
 ## Named Query Parameters
 

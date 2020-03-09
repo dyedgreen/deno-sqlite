@@ -78,12 +78,19 @@ export class DB {
    * | number     | INTEGER or REAL | number     |
    * | boolean    | INTEGER         | number     |
    * | string     | TEXT            | string     |
+   * | Date       | TEXT            | string     |
    * | Uint8Array | BLOB            | Uint8Array |
    * | null       | NULL            | null       |
    * | undefined  | NULL            | null       |
    *
    * If no value is provided to a given parameter,
    * SQLite will default to NULL.
+   *
+   * If a `Date` is bound, it will be converted to
+   * an ISO 8601 string: `YYYY-MM-DDTHH:MM:SS.SSS`.
+   * This format is understood by built-in SQLite
+   * date-time functions. Also see
+   * https://sqlite.org/lang_datefunc.html.
    *
    * This always returns an iterable Rows object.
    * As a special case, if the query has no rows
@@ -99,6 +106,10 @@ export class DB {
       throw new SqliteError("Database was closed.");
     if (typeof sql !== "string")
       throw new SqliteError("SQL query must be a string.");
+
+    // Update time in WASI for next query
+    // TODO(dyedgreen): should this be called in other places as well?
+    this._wasm.update_time(Date.now() / 1000 / 86400.0 + 2440587.5);
 
     // Prepare sqlite query statement
     let id;
@@ -153,7 +164,12 @@ export class DB {
           });
           break;
         default:
-          if (value instanceof Uint8Array) {
+          if (value instanceof Date) {
+            // Dates are allowed and bound to TEXT, formatted `YYYY-MM-DDTHH:MM:SS.SSS`
+            setStr(this._wasm, value.toISOString().slice(0,-1), ptr => {
+              status = this._wasm.bind_text(this._id, id, i+1, ptr);
+            });
+          } else if (value instanceof Uint8Array) {
             // Uint8Arrays are allowed and bound to BLOB
             setArr(this._wasm, value, ptr => {
               status = this._wasm.bind_blob(this._id, id, i+1, ptr, value.length);
@@ -163,7 +179,7 @@ export class DB {
             status = this._wasm.bind_null(this._id, id, i+1);
           } else {
             this._wasm.finalize(this._id, id);
-            throw new SqliteError(`Can not bind '${value}'.`);
+            throw new SqliteError(`Can not bind ${typeof value}.`);
           }
           break;
       }

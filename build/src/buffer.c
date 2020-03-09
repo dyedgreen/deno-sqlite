@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include "buffer.h"
 
-buffer** buffer_registry = NULL;
+static buffer** buffer_registry = NULL;
 
 // Create a new buffer or return NULL.
 buffer* new_buffer() {
