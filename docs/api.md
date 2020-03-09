@@ -84,12 +84,19 @@ types and are converted as follows:
 | number     | INTEGER or REAL | number     |
 | boolean    | INTEGER         | number     |
 | string     | TEXT            | string     |
+| Date       | TEXT            | string     |
 | Uint8Array | BLOB            | Uint8Array |
 | null       | NULL            | null       |
 | undefined  | NULL            | null       |
 
 If no value is provided to a given parameter,
 SQLite will default to NULL.
+
+If a `Date` is bound, it will be converted to
+an ISO 8601 string: `YYYY-MM-DDTHH:MM:SS.SSS`.
+This format is understood by built-in SQLite
+date-time functions. Also see
+https://sqlite.org/lang_datefunc.html.
 
 This always returns an iterable Rows object.
 As a special case, if the query has no rows
