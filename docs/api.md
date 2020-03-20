@@ -93,7 +93,7 @@ If no value is provided to a given parameter,
 SQLite will default to NULL.
 
 If a `Date` is bound, it will be converted to
-an ISO 8601 string: `YYYY-MM-DDTHH:MM:SS.SSS`.
+an ISO 8601 string: `YYYY-MM-DDTHH:MM:SS.SSSZ`.
 This format is understood by built-in SQLite
 date-time functions. Also see
 https://sqlite.org/lang_datefunc.html.
