@@ -26,21 +26,27 @@ export class DB {
 
     // Obtain a database id
     this._id = this._wasm.reserve();
-    if (this._id == constants.Values.Error)
+    if (this._id == constants.Values.Error) {
       throw this._error();
+    }
 
     // If data is given, write it to db file
     if (data instanceof Uint8Array) {
-      if (this._wasm.grow_db_file(this._id, data.length) !== constants.Status.SqliteOk)
+      if (
+        this._wasm.grow_db_file(this._id, data.length) !==
+          constants.Status.SqliteOk
+      ) {
         throw new SqliteError("Out of memory.");
+      }
       const ptr = this._wasm.get_db_file(this._id);
       const view = new Uint8Array(this._wasm.memory.buffer, ptr, data.length);
       view.set(data);
     }
 
     // Open database
-    if (this._wasm.init(this._id) !== constants.Status.SqliteOk)
+    if (this._wasm.init(this._id) !== constants.Status.SqliteOk) {
       throw this._error();
+    }
     this._open = true;
   }
 
@@ -102,10 +108,12 @@ export class DB {
    * `.done()`.
    */
   query(sql, values) {
-    if (!this._open)
+    if (!this._open) {
       throw new SqliteError("Database was closed.");
-    if (typeof sql !== "string")
+    }
+    if (typeof sql !== "string") {
       throw new SqliteError("SQL query must be a string.");
+    }
 
     // Update time in WASI for next query
     // TODO(dyedgreen): should this be called in other places as well?
@@ -116,8 +124,9 @@ export class DB {
     setStr(this._wasm, sql, ptr => {
       id = this._wasm.prepare(this._id, ptr);
     });
-    if (id === constants.Values.Error)
+    if (id === constants.Values.Error) {
       throw this._error();
+    }
 
     // Prepare parameter array
     let parameters = [];
@@ -130,8 +139,9 @@ export class DB {
         let idx;
         // Prepend ':' to name, if it does not have a special starting character
         let name = key;
-        if (name[0] !== ":" && name[0] !== "@" && name[0] !== "$")
+        if (name[0] !== ":" && name[0] !== "@" && name[0] !== "$") {
           name = `:${name}`;
+        }
         setStr(this._wasm, name, ptr => {
           idx = this._wasm.bind_parameter_index(this._id, id, ptr);
         });
@@ -145,38 +155,43 @@ export class DB {
 
     // Bind parameters
     for (let i = 0; i < parameters.length; i++) {
-      let value = parameters[i],
-        status;
+      let value = parameters[i], status;
       switch (typeof value) {
         case "boolean":
           value = value ? 1 : 0;
         // fall through
         case "number":
           if (Math.floor(value) === value) {
-            status = this._wasm.bind_int(this._id, id, i+1, value);
+            status = this._wasm.bind_int(this._id, id, i + 1, value);
           } else {
-            status = this._wasm.bind_double(this._id, id, i+1, value);
+            status = this._wasm.bind_double(this._id, id, i + 1, value);
           }
           break;
         case "string":
           setStr(this._wasm, value, ptr => {
-            status = this._wasm.bind_text(this._id, id, i+1, ptr);
+            status = this._wasm.bind_text(this._id, id, i + 1, ptr);
           });
           break;
         default:
           if (value instanceof Date) {
             // Dates are allowed and bound to TEXT, formatted `YYYY-MM-DDTHH:MM:SS.SSSZ`
             setStr(this._wasm, value.toISOString(), ptr => {
-              status = this._wasm.bind_text(this._id, id, i+1, ptr);
+              status = this._wasm.bind_text(this._id, id, i + 1, ptr);
             });
           } else if (value instanceof Uint8Array) {
             // Uint8Arrays are allowed and bound to BLOB
             setArr(this._wasm, value, ptr => {
-              status = this._wasm.bind_blob(this._id, id, i+1, ptr, value.length);
+              status = this._wasm.bind_blob(
+                this._id,
+                id,
+                i + 1,
+                ptr,
+                value.length
+              );
             });
           } else if (value === null || value === undefined) {
             // Both null and undefined result in a NULL entry
-            status = this._wasm.bind_null(this._id, id, i+1);
+            status = this._wasm.bind_null(this._id, id, i + 1);
           } else {
             this._wasm.finalize(this._id, id);
             throw new SqliteError(`Can not bind ${typeof value}.`);
@@ -218,8 +233,9 @@ export class DB {
    * this: `const copy = new DB(original.data());`
    */
   data() {
-    if (!this._open)
+    if (!this._open) {
       throw new SqliteError("Database was closed.");
+    }
     const ptr = this._wasm.get_db_file(this._id);
     const len = this._wasm.get_db_file_size(this._id);
     return new Uint8Array(this._wasm.memory.buffer, ptr, len).slice();
@@ -236,16 +252,19 @@ export class DB {
    * connections.
    */
   close() {
-    if (!this._open)
+    if (!this._open) {
       return;
-    if (this._wasm.close(this._id) !== constants.Status.SqliteOk)
+    }
+    if (this._wasm.close(this._id) !== constants.Status.SqliteOk) {
       throw this._error();
+    }
     this._open = false;
   }
 
   _error(code) {
-    if (code === undefined)
+    if (code === undefined) {
       code = this._wasm.get_status();
+    }
     switch (code) {
       case constants.Status.StmtLimit:
         return new SqliteError("Statement limit reached.", code);
@@ -261,7 +280,10 @@ export class DB {
         break;
       default:
         // SQLite error
-        const msg = getStr(this._wasm, this._wasm.get_sqlite_error_str(this._id));
+        const msg = getStr(
+          this._wasm,
+          this._wasm.get_sqlite_error_str(this._id)
+        );
         return new SqliteError(msg, code);
         break;
     }

@@ -1,5 +1,9 @@
-import { assert, assertEquals, assertMatch,
-  assertThrows } from "https://deno.land/std/testing/asserts.ts";
+import {
+  assert,
+  assertEquals,
+  assertMatch,
+  assertThrows
+} from "https://deno.land/std/testing/asserts.ts";
 import { open, save, DB, Empty, Status } from "./mod.ts";
 import SqliteError from "./src/error.ts";
 
@@ -46,13 +50,15 @@ Deno.test(async function readmeExampleOld() {
     ]);
   }
 
-  for (const [
-    name,
-    email
-  ] of db.query(
-    "SELECT name, email FROM users WHERE subscribed = ? LIMIT 100",
-    [true]
-  )) {
+  for (
+    const [
+      name,
+      email
+    ] of db.query(
+      "SELECT name, email FROM users WHERE subscribed = ? LIMIT 100",
+      [true]
+    )
+  ) {
     assertMatch(name, /(Bruce|Clark|Peter) (Wane|Kent|Parker)/);
     assertEquals(email, `${name.replace(" ", "-")}@deno.land`);
   }
@@ -259,8 +265,9 @@ Deno.test(function bindNamedParameters() {
   });
 
   // Make sure the data came through correctly
-  const vals = [...db.query("SELECT val FROM test ORDER BY id ASC")].map(
-    (row) => row[0]
+  const vals = [...db.query("SELECT val FROM test ORDER BY id ASC")].map((
+    row
+  ) => row[0]
   );
   assertEquals(
     vals,
@@ -463,8 +470,8 @@ Deno.test(function constraintErrorCode() {
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
   db.query("INSERT INTO test (name) VALUES (?)", ["A"]);
 
-  const e = assertThrows(
-    () => db.query("INSERT INTO test (name) VALUES (?)", ["A"])
+  const e = assertThrows(() =>
+    db.query("INSERT INTO test (name) VALUES (?)", ["A"])
   ) as SqliteError;
   assertEquals(e.code, Status.SqliteConstraint, "Got wrong error code");
   assertEquals(
@@ -478,8 +485,8 @@ Deno.test(function constraintErrorCode() {
 Deno.test(function syntaxErrorErrorCode() {
   const db = new DB();
 
-  const e = assertThrows(
-    () => db.query("CREATE TABLEX test (name TEXT PRIMARY KEY)")
+  const e = assertThrows(() =>
+    db.query("CREATE TABLEX test (name TEXT PRIMARY KEY)")
   ) as SqliteError;
   assertEquals(e.code, Status.SqliteError, "Got wrong error code");
   assertEquals(

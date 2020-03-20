@@ -19,8 +19,9 @@ export class Rows {
     this._id = id;
     this._done = false;
 
-    if (!this._db)
+    if (!this._db) {
       this._done = true;
+    }
   }
 
   /**
@@ -42,8 +43,9 @@ export class Rows {
    *     }
    */
   done() {
-    if (this._done)
+    if (this._done) {
       return;
+    }
     // Release transaction slot
     this._db._wasm.finalize(this._db._id, this._id);
     this._done = true;
@@ -84,15 +86,26 @@ export class Rows {
    */
   columns() {
     if (this._done) {
-      throw new SqliteError("Unable to retrieve column names as transaction is finalized.");
+      throw new SqliteError(
+        "Unable to retrieve column names as transaction is finalized."
+      );
     }
 
     const columnCount = this._db._wasm.column_count(this._db._id, this._id);
     const columns = [];
     for (let i = 0; i < columnCount; i++) {
-      const name = getStr(this._db._wasm, this._db._wasm.column_name(this._db._id, this._id, i));
-      const originName = getStr(this._db._wasm, this._db._wasm.column_origin_name(this._db._id, this._id, i));
-      const tableName = getStr(this._db._wasm, this._db._wasm.column_table_name(this._db._id, this._id, i));
+      const name = getStr(
+        this._db._wasm,
+        this._db._wasm.column_name(this._db._id, this._id, i)
+      );
+      const originName = getStr(
+        this._db._wasm,
+        this._db._wasm.column_origin_name(this._db._id, this._id, i)
+      );
+      const tableName = getStr(
+        this._db._wasm,
+        this._db._wasm.column_table_name(this._db._id, this._id, i)
+      );
       columns.push({ name, originName, tableName });
     }
     return columns;
@@ -106,7 +119,11 @@ export class Rows {
     // Get results from row
     const row = [];
     // return row;
-    for (let i = 0, c = this._db._wasm.column_count(this._db._id, this._id); i < c; i++) {
+    for (
+      let i = 0, c = this._db._wasm.column_count(this._db._id, this._id);
+      i < c;
+      i++
+    ) {
       switch (this._db._wasm.column_type(this._db._id, this._id, i)) {
         case constants.Types.Integer:
           row.push(this._db._wasm.column_int(this._db._id, this._id, i));
@@ -115,7 +132,12 @@ export class Rows {
           row.push(this._db._wasm.column_double(this._db._id, this._id, i));
           break;
         case constants.Types.Text:
-          row.push(getStr(this._db._wasm, this._db._wasm.column_text(this._db._id, this._id, i)));
+          row.push(
+            getStr(
+              this._db._wasm,
+              this._db._wasm.column_text(this._db._id, this._id, i)
+            )
+          );
           break;
         case constants.Types.Blob:
           const ptr = this._db._wasm.column_blob(this._db._id, this._id, i);
@@ -123,9 +145,15 @@ export class Rows {
             // Zero pointer results in null
             row.push(null);
           } else {
-            const length = this._db._wasm.column_bytes(this._db._id, this._id, i);
+            const length = this._db._wasm.column_bytes(
+              this._db._id,
+              this._id,
+              i
+            );
             // Slice should copy the bytes, as it makes a shallow copy
-            row.push(new Uint8Array(this._db._wasm.memory.buffer, ptr, length).slice());
+            row.push(
+              new Uint8Array(this._db._wasm.memory.buffer, ptr, length).slice()
+            );
           }
           break;
         default:

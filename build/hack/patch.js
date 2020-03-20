@@ -4,8 +4,9 @@
 
 function hexEncode(bytes) {
   const fragments = new Array(bytes.length);
-  for (let i = 0; i < bytes.length; i ++)
+  for (let i = 0; i < bytes.length; i++) {
     fragments[i] = bytes[i].toString(16).padStart(2, "0");
+  }
   return fragments.join("");
 }
 
@@ -16,16 +17,34 @@ async function mainEmscripten(file) {
   // Patches (applied consecutively!)
   const patches = [
     // write WASM hex
-    {regexp: /const wasmHex = "[^"]+";/, replace: `const wasmHex = "${hexEncode(wasm)}";`},
+    {
+      regexp: /const wasmHex = "[^"]+";/,
+      replace: `const wasmHex = "${hexEncode(wasm)}";`
+    },
     // fill in file-loading functions
-    {regexp: /^/g, replace: `function read() {var d="${hexEncode(wasm)}";var b=new Uint8Array(d.length/2);for(var i=0;i<d.length;i+=2){b[i/2]=parseInt(d.substr(i,2),16);}return b;}\n`},
+    {
+      regexp: /^/g,
+      replace: `function read() {var d="${hexEncode(
+        wasm
+      )}";var b=new Uint8Array(d.length/2);for(var i=0;i<d.length;i+=2){b[i/2]=parseInt(d.substr(i,2),16);}return b;}\n`
+    },
     // fix some Deno-specific problems with the provided runtime
-    {regexp: /var UTF16Decoder ?=[^;]+;/g, replace: "var UTF16Decoder = undefined;"},
-    {regexp: /if ?\(.+\) ?throw new Error\('not compiled for this environment[^;]+\);/g, replace: ""},
+    {
+      regexp: /var UTF16Decoder ?=[^;]+;/g,
+      replace: "var UTF16Decoder = undefined;"
+    },
+    {
+      regexp:
+        /if ?\(.+\) ?throw new Error\('not compiled for this environment[^;]+\);/g,
+      replace: ""
+    }
   ];
 
   let data = new TextDecoder().decode(await Deno.readFile(file));
-  data = patches.reduce((acc, {regexp, replace}) => acc.replace(regexp, replace), data);
+  data = patches.reduce(
+    (acc, { regexp, replace }) => acc.replace(regexp, replace),
+    data
+  );
 
   await Deno.writeFile(file, new TextEncoder().encode(data));
   await Deno.remove(file.replace(".js", ".wasm"));
