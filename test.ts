@@ -21,7 +21,7 @@ Deno.test(function readmeExample() {
   for (const [name] of db.query("SELECT name FROM people")) continue; // no console.log ;)
 
   // Save and close connection
-  // save(db);
+  // await save(db);
   db.close();
 });
 

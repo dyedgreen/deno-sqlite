@@ -33,6 +33,6 @@ for (const [name] of db.query("SELECT name FROM people"))
   console.log(name);
 
 // Save and close connection
-save(db);
+await save(db);
 db.close();
 ```

@@ -4,10 +4,12 @@
 [![docs status](https://github.com/dyedgreen/deno-sqlite/workflows/docs/badge.svg?branch=master)](https://dyedgreen.github.io/deno-sqlite/)
 
 This is an SQLite module for JavaScript. The wrapper is targeted at [Deno](https://deno.land)
-and uses a version of SQLite3 compiled to WebAssembly (WASM).
+and uses a version of SQLite3 compiled to WebAssembly (WASM). This module focuses on performance
+and ease of use.
 
-This is still in an early stage of development. If you use this in a project, please report any
-issues you encounter, as well any other feedback by opening an issue.
+While Deno remains unstable, this module does not make any stability guarantees. If you use this in a
+project, please report any issues you encounter, as well any other feedback by opening an issue. Pull
+requests are welcome!
 
 ## Documentation
 
@@ -33,6 +35,6 @@ for (const [name] of db.query("SELECT name FROM people"))
   console.log(name);
 
 // Save and close connection
-save(db);
+await save(db);
 db.close();
 ```
