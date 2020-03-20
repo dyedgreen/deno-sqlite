@@ -87,7 +87,7 @@ export class DB {
    * SQLite will default to NULL.
    *
    * If a `Date` is bound, it will be converted to
-   * an ISO 8601 string: `YYYY-MM-DDTHH:MM:SS.SSS`.
+   * an ISO 8601 string: `YYYY-MM-DDTHH:MM:SS.SSSZ`.
    * This format is understood by built-in SQLite
    * date-time functions. Also see
    * https://sqlite.org/lang_datefunc.html.
@@ -165,8 +165,8 @@ export class DB {
           break;
         default:
           if (value instanceof Date) {
-            // Dates are allowed and bound to TEXT, formatted `YYYY-MM-DDTHH:MM:SS.SSS`
-            setStr(this._wasm, value.toISOString().slice(0,-1), ptr => {
+            // Dates are allowed and bound to TEXT, formatted `YYYY-MM-DDTHH:MM:SS.SSSZ`
+            setStr(this._wasm, value.toISOString(), ptr => {
               status = this._wasm.bind_text(this._id, id, i+1, ptr);
             });
           } else if (value instanceof Uint8Array) {

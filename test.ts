@@ -556,9 +556,9 @@ Deno.test(function getColumnsFromFinalizedRows() {
 
 Deno.test(function dateTimeIsCorrect() {
   const db = new DB();
-  // the date/ time is passed from JS and should be current
+  // the date/ time is passed from JS and should be current (note that it is GMT)
   const [[now]] = [...db.query("SELECT current_timestamp")];
-  assertEquals(new Date(now), new Date());
+  assertEquals(new Date(now + "Z"), new Date());
   db.close();
 });
 
