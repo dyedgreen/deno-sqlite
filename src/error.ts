@@ -1,4 +1,4 @@
-  import { Status } from "./constants.ts";
+import { Status } from "./constants.ts";
 
 export default class SqliteError extends Error {
   /**
