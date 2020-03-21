@@ -1,4 +1,4 @@
-  import * as wasm from "../build/sqlite.wasm";
+import * as wasm from "../build/sqlite.wasm";
 import { getStr, setStr, setArr } from "./wasm.ts";
 import * as constants from "./constants.ts";
 import { Rows, Empty } from "./rows.js";
