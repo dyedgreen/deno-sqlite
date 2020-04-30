@@ -87,7 +87,7 @@ export class Rows {
   columns() {
     if (this._done) {
       throw new SqliteError(
-        "Unable to retrieve column names as transaction is finalized."
+        "Unable to retrieve column names as transaction is finalized.",
       );
     }
 
@@ -96,15 +96,15 @@ export class Rows {
     for (let i = 0; i < columnCount; i++) {
       const name = getStr(
         this._db._wasm,
-        this._db._wasm.column_name(this._db._id, this._id, i)
+        this._db._wasm.column_name(this._db._id, this._id, i),
       );
       const originName = getStr(
         this._db._wasm,
-        this._db._wasm.column_origin_name(this._db._id, this._id, i)
+        this._db._wasm.column_origin_name(this._db._id, this._id, i),
       );
       const tableName = getStr(
         this._db._wasm,
-        this._db._wasm.column_table_name(this._db._id, this._id, i)
+        this._db._wasm.column_table_name(this._db._id, this._id, i),
       );
       columns.push({ name, originName, tableName });
     }
@@ -135,8 +135,8 @@ export class Rows {
           row.push(
             getStr(
               this._db._wasm,
-              this._db._wasm.column_text(this._db._id, this._id, i)
-            )
+              this._db._wasm.column_text(this._db._id, this._id, i),
+            ),
           );
           break;
         case constants.Types.Blob:
@@ -148,11 +148,11 @@ export class Rows {
             const length = this._db._wasm.column_bytes(
               this._db._id,
               this._id,
-              i
+              i,
             );
             // Slice should copy the bytes, as it makes a shallow copy
             row.push(
-              new Uint8Array(this._db._wasm.memory.buffer, ptr, length).slice()
+              new Uint8Array(this._db._wasm.memory.buffer, ptr, length).slice(),
             );
           }
           break;

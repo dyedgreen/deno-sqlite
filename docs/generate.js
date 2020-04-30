@@ -11,12 +11,12 @@ function collect(src) {
     src = src.replace(regexp, "");
   }
   // Parse out decorations
-  return raw.map(item => {
+  return raw.map((item) => {
     item.body = item.body
       .replace(/\/\*\* *\n/, "")
       .replace(/\n *\*\//, "")
       .split("\n")
-      .map(line => line.replace(/^ *\*( |$)/, ""))
+      .map((line) => line.replace(/^ *\*( |$)/, ""))
       .join("\n");
     if (item.declaration) {
       item.declaration = item.declaration.replace(/\??: [a-zA-Z<>]+/g, "");
@@ -57,7 +57,7 @@ function heading(text, level) {
 }
 
 function keys(obj) {
-  return Object.keys(obj).filter(key =>
+  return Object.keys(obj).filter((key) =>
     obj.hasOwnProperty(key) && ["body", "declaration"].indexOf(key) === -1
   );
 }
@@ -90,7 +90,7 @@ function generate(root, md, path = []) {
 if (Deno.args.length < 4) {
   console.log("use as:");
   console.log(
-    "deno --allow-read --allow-write docs/generate.js docs/api.md mod.ts src/**"
+    "deno --allow-read --allow-write docs/generate.js docs/api.md mod.ts src/**",
   );
   Deno.exit(1);
 }
@@ -110,7 +110,7 @@ const root = parse(comments);
 
 // Collect exports from mod
 const modExports = /export {([^}]+)}/.exec(
-  new TextDecoder().decode(await Deno.readFile(Deno.args[1]))
+  new TextDecoder().decode(await Deno.readFile(Deno.args[1])),
 )[1];
 
 // Preamble

@@ -121,7 +121,7 @@ export class DB {
 
     // Prepare sqlite query statement
     let id;
-    setStr(this._wasm, sql, ptr => {
+    setStr(this._wasm, sql, (ptr) => {
       id = this._wasm.prepare(this._id, ptr);
     });
     if (id === constants.Values.Error) {
@@ -142,7 +142,7 @@ export class DB {
         if (name[0] !== ":" && name[0] !== "@" && name[0] !== "$") {
           name = `:${name}`;
         }
-        setStr(this._wasm, name, ptr => {
+        setStr(this._wasm, name, (ptr) => {
           idx = this._wasm.bind_parameter_index(this._id, id, ptr);
         });
         if (idx === constants.Values.Error) {
@@ -168,25 +168,25 @@ export class DB {
           }
           break;
         case "string":
-          setStr(this._wasm, value, ptr => {
+          setStr(this._wasm, value, (ptr) => {
             status = this._wasm.bind_text(this._id, id, i + 1, ptr);
           });
           break;
         default:
           if (value instanceof Date) {
             // Dates are allowed and bound to TEXT, formatted `YYYY-MM-DDTHH:MM:SS.SSSZ`
-            setStr(this._wasm, value.toISOString(), ptr => {
+            setStr(this._wasm, value.toISOString(), (ptr) => {
               status = this._wasm.bind_text(this._id, id, i + 1, ptr);
             });
           } else if (value instanceof Uint8Array) {
             // Uint8Arrays are allowed and bound to BLOB
-            setArr(this._wasm, value, ptr => {
+            setArr(this._wasm, value, (ptr) => {
               status = this._wasm.bind_blob(
                 this._id,
                 id,
                 i + 1,
                 ptr,
-                value.length
+                value.length,
               );
             });
           } else if (value === null || value === undefined) {
@@ -282,7 +282,7 @@ export class DB {
         // SQLite error
         const msg = getStr(
           this._wasm,
-          this._wasm.get_sqlite_error_str(this._id)
+          this._wasm.get_sqlite_error_str(this._id),
         );
         return new SqliteError(msg, code);
         break;

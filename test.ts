@@ -2,21 +2,27 @@ import {
   assert,
   assertEquals,
   assertMatch,
-  assertThrows
+  assertThrows,
 } from "https://deno.land/std/testing/asserts.ts";
 import { open, save, DB, Empty, Status } from "./mod.ts";
 import SqliteError from "./src/error.ts";
 
+// permissions for skipping tests which require them
+const permWrite =
+  (await Deno.permissions.query({ name: "write" })).state === "granted";
+const permRead =
+  (await Deno.permissions.query({ name: "read" })).state === "granted";
+
 /** Ensure README example works as advertised. */
-Deno.test(function readmeExample() {
+Deno.test("readmeExample", function () {
   // Open a database (no file permission version of open)
   const db = new DB();
   db.query(
-    "CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)"
+    "CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)",
   );
 
-  const name = ["Peter Parker", "Clark Kent", "Bruce Wane"]
-    [Math.floor(Math.random() * 3)];
+  const name =
+    ["Peter Parker", "Clark Kent", "Bruce Wane"][Math.floor(Math.random() * 3)];
 
   // Run a simple query
   db.query("INSERT INTO people (name) VALUES (?)", [name]);
@@ -30,33 +36,36 @@ Deno.test(function readmeExample() {
 });
 
 /** Ensure the old README examples works as advertised. */
-Deno.test(async function readmeExampleOld() {
+Deno.test("readmeExampleOld", async function () {
   const db = new DB();
   const first = ["Bruce", "Clark", "Peter"];
   const last = ["Wane", "Kent", "Parker"];
   db.query(
-    "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, email TEXT, subscribed INTEGER)"
+    "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, email TEXT, subscribed INTEGER)",
   );
 
   for (let i = 0; i < 100; i++) {
-    const name = `${first[Math.floor(Math.random() * first.length)]} ${last
-      [Math.floor(Math.random() * last.length)]}`;
+    const name = `${first[Math.floor(Math.random() * first.length)]} ${
+      last[Math.floor(
+        Math.random() * last.length,
+      )]
+    }`;
     const email = `${name.replace(" ", "-")}@deno.land`;
     const subscribed = Math.random() > 0.5 ? true : false;
     db.query("INSERT INTO users (name, email, subscribed) VALUES (?, ?, ?)", [
       name,
       email,
-      subscribed
+      subscribed,
     ]);
   }
 
   for (
     const [
       name,
-      email
+      email,
     ] of db.query(
       "SELECT name, email FROM users WHERE subscribed = ? LIMIT 100",
-      [true]
+      [true],
     )
   ) {
     assertMatch(name, /(Bruce|Clark|Peter) (Wane|Kent|Parker)/);
@@ -64,7 +73,7 @@ Deno.test(async function readmeExampleOld() {
   }
 
   const res = db.query("SELECT email FROM users WHERE name LIKE ?", [
-    "Robert Parr"
+    "Robert Parr",
   ]);
   assertEquals(res, Empty);
   res.done();
@@ -74,7 +83,7 @@ Deno.test(async function readmeExampleOld() {
 
   const subscribers = db.query(
     "SELECT name, email FROM users WHERE subscribed = ?",
-    [true]
+    [true],
   );
   for (const [name, email] of subscribers) {
     if (Math.random() > 0.5) continue;
@@ -85,13 +94,13 @@ Deno.test(async function readmeExampleOld() {
 });
 
 /** Ensure binding values works correctly. */
-Deno.test(function bindValues() {
+Deno.test("bindValues", function () {
   const db = new DB();
   let vals, rows;
 
   // string
   db.query(
-    "CREATE TABLE strings (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)"
+    "CREATE TABLE strings (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)",
   );
   vals = ["Hello World!", "I love Deno.", "Täst strüng..."];
   for (const val of vals) {
@@ -103,7 +112,7 @@ Deno.test(function bindValues() {
 
   // integer
   db.query(
-    "CREATE TABLE ints (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)"
+    "CREATE TABLE ints (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)",
   );
   vals = [42, 1, 2, 3, 4, 3453246, 4536787093, 45536787093];
   for (const val of vals) db.query("INSERT INTO ints (val) VALUES (?)", [val]);
@@ -113,7 +122,7 @@ Deno.test(function bindValues() {
 
   // float
   db.query(
-    "CREATE TABLE floats (id INTEGER PRIMARY KEY AUTOINCREMENT, val REAL)"
+    "CREATE TABLE floats (id INTEGER PRIMARY KEY AUTOINCREMENT, val REAL)",
   );
   vals = [42.1, 1.235, 2.999, 1 / 3, 4.2345, 345.3246, 4536787.953e-8];
   for (const val of vals) {
@@ -125,13 +134,13 @@ Deno.test(function bindValues() {
 
   // boolean
   db.query(
-    "CREATE TABLE bools (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)"
+    "CREATE TABLE bools (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)",
   );
   vals = [true, false];
   for (const val of vals) {
     db.query(
       "INSERT INTO bools (val) VALUES (?)",
-      [val]
+      [val],
     );
   }
   rows = [...db.query("SELECT val FROM bools")].map(([v]) => v);
@@ -149,16 +158,16 @@ Deno.test(function bindValues() {
 
   // blob
   db.query(
-    "CREATE TABLE blobs (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB)"
+    "CREATE TABLE blobs (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB)",
   );
   vals = [
     new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 0]),
-    new Uint8Array([3, 57, 45])
+    new Uint8Array([3, 57, 45]),
   ];
   for (const val of vals) {
     db.query(
       "INSERT INTO blobs (val) VALUES (?)",
-      [val]
+      [val],
     );
   }
   rows = [...db.query("SELECT val FROM blobs")].map(([v]) => v);
@@ -167,13 +176,13 @@ Deno.test(function bindValues() {
 
   // null & undefined
   db.query(
-    "CREATE TABLE nulls (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)"
+    "CREATE TABLE nulls (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)",
   );
   vals = [null, undefined];
   for (const val of vals) {
     db.query(
       "INSERT INTO nulls (val) VALUES (?)",
-      [val]
+      [val],
     );
   }
   rows = [...db.query("SELECT val FROM nulls")].map(([v]) => v);
@@ -182,12 +191,12 @@ Deno.test(function bindValues() {
 
   // mixed
   db.query(
-    "CREATE TABLE mix (id INTEGER PRIMARY KEY AUTOINCREMENT, val1 INTEGER, val2 TEXT, val3 REAL, val4 TEXT)"
+    "CREATE TABLE mix (id INTEGER PRIMARY KEY AUTOINCREMENT, val1 INTEGER, val2 TEXT, val3 REAL, val4 TEXT)",
   );
   vals = [42, "Hello World!", 0.33333, null];
   db.query(
     "INSERT INTO mix (val1, val2, val3, val4) VALUES (?, ?, ?, ?)",
-    vals
+    vals,
   );
   rows = [...db.query("SELECT val1, val2, val3, val4 FROM mix")];
   assertEquals(rows.length, 1);
@@ -210,14 +219,14 @@ Deno.test(function bindValues() {
       "SELECT * FROM mix WHERE val1 = ? AND val2 = ? AND val3 = ? LIMIT ?",
       [
         1,
-        "second"
-      ]
+        "second",
+      ],
     );
   });
 
   // omitted is null
   db.query(
-    "CREATE TABLE omit_is_null (idx INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)"
+    "CREATE TABLE omit_is_null (idx INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)",
   );
   db.query("INSERT INTO omit_is_null (val) VALUES (?)");
   rows = [...db.query("SELECT val FROM omit_is_null")].map(([val]) => val);
@@ -227,30 +236,30 @@ Deno.test(function bindValues() {
 });
 
 /** Ensure binding named values works as advertised. */
-Deno.test(function bindNamedParameters() {
+Deno.test("bindNamedParameters", function () {
   const db = new DB();
 
   db.query(
-    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)"
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)",
   );
 
   // default named syntax
   db.query("INSERT INTO test (val) VALUES (:val)", { val: "value" });
   db.query(
     "INSERT INTO test (val) VALUES (:otherVal)",
-    { otherVal: "value other" }
+    { otherVal: "value other" },
   );
 
   // @ named syntax
   db.query(
     "INSERT INTO test (val) VALUES (@someName)",
-    { ["@someName"]: "@value" }
+    { ["@someName"]: "@value" },
   );
 
   // $ names syntax
   db.query(
     "INSERT INTO test (val) VALUES ($var::Name)",
-    { ["$var::Name"]: "$value" }
+    { ["$var::Name"]: "$value" },
   );
 
   // explicit positional syntax
@@ -260,29 +269,28 @@ Deno.test(function bindNamedParameters() {
   assertThrows(() => {
     db.query(
       "INSERT INTO test (val) VALUES (:val)",
-      { Val: "miss-spelled :(" }
+      { Val: "miss-spelled :(" },
     );
   });
 
   // Make sure the data came through correctly
-  const vals = [...db.query("SELECT val FROM test ORDER BY id ASC")].map((
-    row
-  ) => row[0]
+  const vals = [...db.query("SELECT val FROM test ORDER BY id ASC")].map(
+    (row) => row[0],
   );
   assertEquals(
     vals,
-    ["value", "value other", "@value", "$value", "this-is-it"]
+    ["value", "value other", "@value", "$value", "this-is-it"],
   );
 
   db.close();
 });
 
 /** Ensure blob data is copied and not viewed. */
-Deno.test(function blobsAreCopies() {
+Deno.test("blobsAreCopies", function () {
   const db = new DB();
 
   db.query(
-    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB)"
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB)",
   );
   const data = new Uint8Array([1, 2, 3, 4, 5]);
   db.query("INSERT INTO test (val) VALUES (?)", [data]);
@@ -307,12 +315,12 @@ Deno.test(function blobsAreCopies() {
 });
 
 /** Ensure data returned works. */
-Deno.test(function data() {
+Deno.test("data", function () {
   const db = new DB();
 
   // Write some data
   db.query(
-    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)"
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)",
   );
   db.query("INSERT INTO test (val) VALUES ('test')");
 
@@ -327,47 +335,53 @@ Deno.test(function data() {
 });
 
 /** Ensure saving to file works. */
-Deno.test(async function saveToFile() {
-  const data = [
-    "Hello World!",
-    "Hello Deno!",
-    "JavaScript <3",
-    "This costs 0€!",
-    "Wéll, hällö thėrè¿"
-  ];
+Deno.test({
+  name: "saveToFile",
+  ignore: !permRead || !permWrite,
+  fn: async function () {
+    const data = [
+      "Hello World!",
+      "Hello Deno!",
+      "JavaScript <3",
+      "This costs 0€!",
+      "Wéll, hällö thėrè¿",
+    ];
 
-  // Ensure test file does not exist
-  try {
+    // Ensure test file does not exist
+    try {
+      await Deno.remove("test.db");
+    } catch {}
+
+    // Write data to db
+    const db = await open("test.db");
+    db.query(
+      "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)",
+    );
+    for (const val of data) {
+      db.query("INSERT INTO test (val) VALUES (?)", [val]);
+    }
+    await save(db);
+
+    // Read db and check the data is restored
+    const db2 = await open("test.db");
+    for (const [id, val] of db2.query("SELECT * FROM test")) {
+      assertEquals(data[id - 1], val);
+    }
+
+    // Clean up
     await Deno.remove("test.db");
-  } catch {}
-
-  // Write data to db
-  const db = await open("test.db");
-  db.query(
-    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)"
-  );
-  for (const val of data) db.query("INSERT INTO test (val) VALUES (?)", [val]);
-  await save(db);
-
-  // Read db and check the data is restored
-  const db2 = await open("test.db");
-  for (const [id, val] of db2.query("SELECT * FROM test")) {
-    assertEquals(data[id - 1], val);
-  }
-
-  // Clean up
-  await Deno.remove("test.db");
-  db.close();
-  db2.close();
+    db.close();
+    db2.close();
+  },
 });
 
 /** Test error is thrown on invalid SQL. */
-Deno.test(function invalidSQL() {
+Deno.test("invalidSQL", function () {
   const db = new DB();
   const queries = [
     "INSERT INTO does_not_exist (balance) VALUES (5)",
     "this is not sql",
-    { sql: "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)" }
+    { sql: "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)" },
   ];
   for (const query of queries) assertThrows(() => db.query(query));
 
@@ -375,11 +389,11 @@ Deno.test(function invalidSQL() {
 });
 
 /** Test default is enforcing foreign key constraints. */
-Deno.test(function foreignKeys() {
+Deno.test("foreignKeys", function () {
   const db = new DB();
   db.query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)");
   db.query(
-    "CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, user INTEGER, FOREIGN KEY(user) REFERENCES users(id))"
+    "CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, user INTEGER, FOREIGN KEY(user) REFERENCES users(id))",
   );
 
   db.query("INSERT INTO users (id) VALUES (1)");
@@ -402,7 +416,7 @@ Deno.test(function foreignKeys() {
 });
 
 /** Test db limit. */
-Deno.test(function dbLimit() {
+Deno.test("dbLimit", function () {
   const dbs = [];
   let limitReached = false;
   try {
@@ -414,13 +428,13 @@ Deno.test(function dbLimit() {
   }
   assertEquals(limitReached, true);
   assertThrows(() => new DB());
-  dbs.forEach(db => db.close());
+  dbs.forEach((db) => db.close());
   const db = new DB();
   db.close();
 });
 
 /** Test query limit. */
-Deno.test(function queryLimit() {
+Deno.test("queryLimit", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
   db.query("INSERT INTO test VALUES (1)");
@@ -435,14 +449,14 @@ Deno.test(function queryLimit() {
   assertThrows(() => {
     db.query("SELECT * FROM test");
   });
-  queries.forEach(query => query.done());
+  queries.forEach((query) => query.done());
   db.query("SELECT * FROM test").done();
 
   db.close();
 });
 
 /** Test close behaves correctly. */
-Deno.test(function closeDB() {
+Deno.test("closeDB", function () {
   const db = new DB();
   db.close();
 
@@ -451,7 +465,7 @@ Deno.test(function closeDB() {
 });
 
 /** Test having open queries blocks closing. */
-Deno.test(function openQueriesBlockClose() {
+Deno.test("openQueriesBlockClose", function () {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
   db.query("INSERT INTO test (name) VALUES (?)", ["Deno"]);
@@ -465,7 +479,7 @@ Deno.test(function openQueriesBlockClose() {
 });
 
 /** Test SQLite constraint error code. */
-Deno.test(function constraintErrorCode() {
+Deno.test("constraintErrorCode", function () {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
   db.query("INSERT INTO test (name) VALUES (?)", ["A"]);
@@ -477,12 +491,12 @@ Deno.test(function constraintErrorCode() {
   assertEquals(
     Status[e.codeName],
     Status.SqliteConstraint,
-    "Got wrong error code name"
+    "Got wrong error code name",
   );
 });
 
 /** Test SQLite syntax error error code. */
-Deno.test(function syntaxErrorErrorCode() {
+Deno.test("syntaxErrorErrorCode", function () {
   const db = new DB();
 
   const e = assertThrows(() =>
@@ -492,12 +506,12 @@ Deno.test(function syntaxErrorErrorCode() {
   assertEquals(
     Status[e.codeName],
     Status.SqliteError,
-    "Got wrong error code name"
+    "Got wrong error code name",
   );
 });
 
 /** Test invalid value does not cause statement leakage. */
-Deno.test(function invalidBindDoesNotLeakStatements() {
+Deno.test("invalidBindDoesNotLeakStatements", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER)");
 
@@ -512,11 +526,11 @@ Deno.test(function invalidBindDoesNotLeakStatements() {
   db.close();
 });
 
-Deno.test(function getColumnsWithoutNames() {
+Deno.test("getColumnsWithoutNames", function () {
   const db = new DB();
 
   db.query(
-    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)"
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)",
   );
   db.query("INSERT INTO test (name) VALUES (?)", ["name"]);
 
@@ -525,15 +539,15 @@ Deno.test(function getColumnsWithoutNames() {
 
   assertEquals(columns, [
     { name: "id", originName: "id", tableName: "test" },
-    { name: "name", originName: "name", tableName: "test" }
+    { name: "name", originName: "name", tableName: "test" },
   ]);
 });
 
-Deno.test(function getColumnsWithNames() {
+Deno.test("getColumnsWithNames", function () {
   const db = new DB();
 
   db.query(
-    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)"
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)",
   );
   db.query("INSERT INTO test (name) VALUES (?)", ["name"]);
 
@@ -542,11 +556,11 @@ Deno.test(function getColumnsWithNames() {
 
   assertEquals(columns, [
     { name: "test_id", originName: "id", tableName: "test" },
-    { name: "test_name", originName: "name", tableName: "test" }
+    { name: "test_name", originName: "name", tableName: "test" },
   ]);
 });
 
-Deno.test(function getColumnsFromFinalizedRows() {
+Deno.test("getColumnsFromFinalizedRows", function () {
   const db = new DB();
 
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
@@ -561,23 +575,10 @@ Deno.test(function getColumnsFromFinalizedRows() {
   });
 });
 
-Deno.test(function dateTimeIsCorrect() {
+Deno.test("dateTimeIsCorrect", function () {
   const db = new DB();
   // the date/ time is passed from JS and should be current (note that it is GMT)
   const [[now]] = [...db.query("SELECT current_timestamp")];
   assertEquals(new Date(now + "Z"), new Date());
   db.close();
-});
-
-// Skip these tests if we don't have read or write permissions.
-const skip = [];
-const write =
-  (await Deno.permissions.query({ name: "write" })).state === "granted";
-const read =
-  (await Deno.permissions.query({ name: "read" })).state === "granted";
-if (!write || !read) skip.push(...["saveToFile"]);
-
-Deno.runTests({
-  skip: new RegExp(`^${skip.join("|")}$`),
-  exitOnFail: false
 });
