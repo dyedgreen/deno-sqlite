@@ -10,8 +10,8 @@ jobs:
       run: curl -fsSL https://deno.land/x/install/install.sh | sh
     - uses: actions/checkout@v1
     - name: Run the formatter
-      run: /home/runner/.local/bin/deno fmt --check
+      run: /home/runner/.deno/bin/deno fmt --check
     - name: Run tests
-      run: /home/runner/.local/bin/deno --allow-read --allow-write test.ts
+      run: /home/runner/.deno/bin/deno --allow-read --allow-write test.ts
     - name: Run benchmarks
-      run: /home/runner/.local/bin/deno bench.ts
+      run: /home/runner/.deno/bin/deno bench.ts
