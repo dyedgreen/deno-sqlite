@@ -14,7 +14,7 @@ const permRead =
   (await Deno.permissions.query({ name: "read" })).state === "granted";
 
 /** Ensure README example works as advertised. */
-Deno.test("readmeExample", function() {
+Deno.test("readmeExample", function () {
   // Open a database (no file permission version of open)
   const db = new DB();
   db.query(
@@ -36,7 +36,7 @@ Deno.test("readmeExample", function() {
 });
 
 /** Ensure the old README examples works as advertised. */
-Deno.test("readmeExampleOld", async function() {
+Deno.test("readmeExampleOld", async function () {
   const db = new DB();
   const first = ["Bruce", "Clark", "Peter"];
   const last = ["Wane", "Kent", "Parker"];
@@ -94,7 +94,7 @@ Deno.test("readmeExampleOld", async function() {
 });
 
 /** Ensure binding values works correctly. */
-Deno.test("bindValues", function() {
+Deno.test("bindValues", function () {
   const db = new DB();
   let vals, rows;
 
@@ -236,7 +236,7 @@ Deno.test("bindValues", function() {
 });
 
 /** Ensure binding named values works as advertised. */
-Deno.test("bindNamedParameters", function() {
+Deno.test("bindNamedParameters", function () {
   const db = new DB();
 
   db.query(
@@ -286,7 +286,7 @@ Deno.test("bindNamedParameters", function() {
 });
 
 /** Ensure blob data is copied and not viewed. */
-Deno.test("blobsAreCopies", function() {
+Deno.test("blobsAreCopies", function () {
   const db = new DB();
 
   db.query(
@@ -315,7 +315,7 @@ Deno.test("blobsAreCopies", function() {
 });
 
 /** Ensure data returned works. */
-Deno.test("data", function() {
+Deno.test("data", function () {
   const db = new DB();
 
   // Write some data
@@ -338,7 +338,7 @@ Deno.test("data", function() {
 Deno.test({
   name: "saveToFile",
   ignore: !permRead || !permWrite,
-  fn: async function() {
+  fn: async function () {
     const data = [
       "Hello World!",
       "Hello Deno!",
@@ -357,7 +357,9 @@ Deno.test({
     db.query(
       "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)",
     );
-    for (const val of data) db.query("INSERT INTO test (val) VALUES (?)", [val]);
+    for (const val of data) {
+      db.query("INSERT INTO test (val) VALUES (?)", [val]);
+    }
     await save(db);
 
     // Read db and check the data is restored
@@ -370,11 +372,11 @@ Deno.test({
     await Deno.remove("test.db");
     db.close();
     db2.close();
-  }
+  },
 });
 
 /** Test error is thrown on invalid SQL. */
-Deno.test("invalidSQL", function() {
+Deno.test("invalidSQL", function () {
   const db = new DB();
   const queries = [
     "INSERT INTO does_not_exist (balance) VALUES (5)",
@@ -387,7 +389,7 @@ Deno.test("invalidSQL", function() {
 });
 
 /** Test default is enforcing foreign key constraints. */
-Deno.test("foreignKeys", function() {
+Deno.test("foreignKeys", function () {
   const db = new DB();
   db.query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)");
   db.query(
@@ -414,7 +416,7 @@ Deno.test("foreignKeys", function() {
 });
 
 /** Test db limit. */
-Deno.test("dbLimit", function() {
+Deno.test("dbLimit", function () {
   const dbs = [];
   let limitReached = false;
   try {
@@ -432,7 +434,7 @@ Deno.test("dbLimit", function() {
 });
 
 /** Test query limit. */
-Deno.test("queryLimit", function() {
+Deno.test("queryLimit", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
   db.query("INSERT INTO test VALUES (1)");
@@ -454,7 +456,7 @@ Deno.test("queryLimit", function() {
 });
 
 /** Test close behaves correctly. */
-Deno.test("closeDB", function() {
+Deno.test("closeDB", function () {
   const db = new DB();
   db.close();
 
@@ -463,7 +465,7 @@ Deno.test("closeDB", function() {
 });
 
 /** Test having open queries blocks closing. */
-Deno.test("openQueriesBlockClose", function() {
+Deno.test("openQueriesBlockClose", function () {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
   db.query("INSERT INTO test (name) VALUES (?)", ["Deno"]);
@@ -477,7 +479,7 @@ Deno.test("openQueriesBlockClose", function() {
 });
 
 /** Test SQLite constraint error code. */
-Deno.test("constraintErrorCode", function() {
+Deno.test("constraintErrorCode", function () {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
   db.query("INSERT INTO test (name) VALUES (?)", ["A"]);
@@ -494,7 +496,7 @@ Deno.test("constraintErrorCode", function() {
 });
 
 /** Test SQLite syntax error error code. */
-Deno.test("syntaxErrorErrorCode", function() {
+Deno.test("syntaxErrorErrorCode", function () {
   const db = new DB();
 
   const e = assertThrows(() =>
@@ -509,7 +511,7 @@ Deno.test("syntaxErrorErrorCode", function() {
 });
 
 /** Test invalid value does not cause statement leakage. */
-Deno.test("invalidBindDoesNotLeakStatements", function() {
+Deno.test("invalidBindDoesNotLeakStatements", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER)");
 
@@ -524,7 +526,7 @@ Deno.test("invalidBindDoesNotLeakStatements", function() {
   db.close();
 });
 
-Deno.test("getColumnsWithoutNames", function() {
+Deno.test("getColumnsWithoutNames", function () {
   const db = new DB();
 
   db.query(
@@ -541,7 +543,7 @@ Deno.test("getColumnsWithoutNames", function() {
   ]);
 });
 
-Deno.test("getColumnsWithNames", function() {
+Deno.test("getColumnsWithNames", function () {
   const db = new DB();
 
   db.query(
@@ -558,7 +560,7 @@ Deno.test("getColumnsWithNames", function() {
   ]);
 });
 
-Deno.test("getColumnsFromFinalizedRows", function() {
+Deno.test("getColumnsFromFinalizedRows", function () {
   const db = new DB();
 
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
@@ -573,7 +575,7 @@ Deno.test("getColumnsFromFinalizedRows", function() {
   });
 });
 
-Deno.test("dateTimeIsCorrect", function() {
+Deno.test("dateTimeIsCorrect", function () {
   const db = new DB();
   // the date/ time is passed from JS and should be current (note that it is GMT)
   const [[now]] = [...db.query("SELECT current_timestamp")];
