@@ -2,7 +2,7 @@ import {
   assert,
   assertEquals,
   assertMatch,
-  assertThrows
+  assertThrows,
 } from "https://deno.land/std/testing/asserts.ts";
 import { open, save, DB, Empty, Status } from "./mod.ts";
 import SqliteError from "./src/error.ts";
@@ -12,11 +12,11 @@ Deno.test(function readmeExample() {
   // Open a database (no file permission version of open)
   const db = new DB();
   db.query(
-    "CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)"
+    "CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)",
   );
 
-  const name = ["Peter Parker", "Clark Kent", "Bruce Wane"]
-    [Math.floor(Math.random() * 3)];
+  const name =
+    ["Peter Parker", "Clark Kent", "Bruce Wane"][Math.floor(Math.random() * 3)];
 
   // Run a simple query
   db.query("INSERT INTO people (name) VALUES (?)", [name]);
@@ -35,28 +35,31 @@ Deno.test(async function readmeExampleOld() {
   const first = ["Bruce", "Clark", "Peter"];
   const last = ["Wane", "Kent", "Parker"];
   db.query(
-    "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, email TEXT, subscribed INTEGER)"
+    "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, email TEXT, subscribed INTEGER)",
   );
 
   for (let i = 0; i < 100; i++) {
-    const name = `${first[Math.floor(Math.random() * first.length)]} ${last
-      [Math.floor(Math.random() * last.length)]}`;
+    const name = `${first[Math.floor(Math.random() * first.length)]} ${
+      last[Math.floor(
+        Math.random() * last.length,
+      )]
+    }`;
     const email = `${name.replace(" ", "-")}@deno.land`;
     const subscribed = Math.random() > 0.5 ? true : false;
     db.query("INSERT INTO users (name, email, subscribed) VALUES (?, ?, ?)", [
       name,
       email,
-      subscribed
+      subscribed,
     ]);
   }
 
   for (
     const [
       name,
-      email
+      email,
     ] of db.query(
       "SELECT name, email FROM users WHERE subscribed = ? LIMIT 100",
-      [true]
+      [true],
     )
   ) {
     assertMatch(name, /(Bruce|Clark|Peter) (Wane|Kent|Parker)/);
@@ -64,7 +67,7 @@ Deno.test(async function readmeExampleOld() {
   }
 
   const res = db.query("SELECT email FROM users WHERE name LIKE ?", [
-    "Robert Parr"
+    "Robert Parr",
   ]);
   assertEquals(res, Empty);
   res.done();
@@ -74,7 +77,7 @@ Deno.test(async function readmeExampleOld() {
 
   const subscribers = db.query(
     "SELECT name, email FROM users WHERE subscribed = ?",
-    [true]
+    [true],
   );
   for (const [name, email] of subscribers) {
     if (Math.random() > 0.5) continue;
@@ -91,7 +94,7 @@ Deno.test(function bindValues() {
 
   // string
   db.query(
-    "CREATE TABLE strings (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)"
+    "CREATE TABLE strings (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)",
   );
   vals = ["Hello World!", "I love Deno.", "Täst strüng..."];
   for (const val of vals) {
@@ -103,7 +106,7 @@ Deno.test(function bindValues() {
 
   // integer
   db.query(
-    "CREATE TABLE ints (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)"
+    "CREATE TABLE ints (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)",
   );
   vals = [42, 1, 2, 3, 4, 3453246, 4536787093, 45536787093];
   for (const val of vals) db.query("INSERT INTO ints (val) VALUES (?)", [val]);
@@ -113,7 +116,7 @@ Deno.test(function bindValues() {
 
   // float
   db.query(
-    "CREATE TABLE floats (id INTEGER PRIMARY KEY AUTOINCREMENT, val REAL)"
+    "CREATE TABLE floats (id INTEGER PRIMARY KEY AUTOINCREMENT, val REAL)",
   );
   vals = [42.1, 1.235, 2.999, 1 / 3, 4.2345, 345.3246, 4536787.953e-8];
   for (const val of vals) {
@@ -125,13 +128,13 @@ Deno.test(function bindValues() {
 
   // boolean
   db.query(
-    "CREATE TABLE bools (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)"
+    "CREATE TABLE bools (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)",
   );
   vals = [true, false];
   for (const val of vals) {
     db.query(
       "INSERT INTO bools (val) VALUES (?)",
-      [val]
+      [val],
     );
   }
   rows = [...db.query("SELECT val FROM bools")].map(([v]) => v);
@@ -149,16 +152,16 @@ Deno.test(function bindValues() {
 
   // blob
   db.query(
-    "CREATE TABLE blobs (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB)"
+    "CREATE TABLE blobs (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB)",
   );
   vals = [
     new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 0]),
-    new Uint8Array([3, 57, 45])
+    new Uint8Array([3, 57, 45]),
   ];
   for (const val of vals) {
     db.query(
       "INSERT INTO blobs (val) VALUES (?)",
-      [val]
+      [val],
     );
   }
   rows = [...db.query("SELECT val FROM blobs")].map(([v]) => v);
@@ -167,13 +170,13 @@ Deno.test(function bindValues() {
 
   // null & undefined
   db.query(
-    "CREATE TABLE nulls (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)"
+    "CREATE TABLE nulls (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)",
   );
   vals = [null, undefined];
   for (const val of vals) {
     db.query(
       "INSERT INTO nulls (val) VALUES (?)",
-      [val]
+      [val],
     );
   }
   rows = [...db.query("SELECT val FROM nulls")].map(([v]) => v);
@@ -182,12 +185,12 @@ Deno.test(function bindValues() {
 
   // mixed
   db.query(
-    "CREATE TABLE mix (id INTEGER PRIMARY KEY AUTOINCREMENT, val1 INTEGER, val2 TEXT, val3 REAL, val4 TEXT)"
+    "CREATE TABLE mix (id INTEGER PRIMARY KEY AUTOINCREMENT, val1 INTEGER, val2 TEXT, val3 REAL, val4 TEXT)",
   );
   vals = [42, "Hello World!", 0.33333, null];
   db.query(
     "INSERT INTO mix (val1, val2, val3, val4) VALUES (?, ?, ?, ?)",
-    vals
+    vals,
   );
   rows = [...db.query("SELECT val1, val2, val3, val4 FROM mix")];
   assertEquals(rows.length, 1);
@@ -210,14 +213,14 @@ Deno.test(function bindValues() {
       "SELECT * FROM mix WHERE val1 = ? AND val2 = ? AND val3 = ? LIMIT ?",
       [
         1,
-        "second"
-      ]
+        "second",
+      ],
     );
   });
 
   // omitted is null
   db.query(
-    "CREATE TABLE omit_is_null (idx INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)"
+    "CREATE TABLE omit_is_null (idx INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)",
   );
   db.query("INSERT INTO omit_is_null (val) VALUES (?)");
   rows = [...db.query("SELECT val FROM omit_is_null")].map(([val]) => val);
@@ -231,26 +234,26 @@ Deno.test(function bindNamedParameters() {
   const db = new DB();
 
   db.query(
-    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)"
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)",
   );
 
   // default named syntax
   db.query("INSERT INTO test (val) VALUES (:val)", { val: "value" });
   db.query(
     "INSERT INTO test (val) VALUES (:otherVal)",
-    { otherVal: "value other" }
+    { otherVal: "value other" },
   );
 
   // @ named syntax
   db.query(
     "INSERT INTO test (val) VALUES (@someName)",
-    { ["@someName"]: "@value" }
+    { ["@someName"]: "@value" },
   );
 
   // $ names syntax
   db.query(
     "INSERT INTO test (val) VALUES ($var::Name)",
-    { ["$var::Name"]: "$value" }
+    { ["$var::Name"]: "$value" },
   );
 
   // explicit positional syntax
@@ -260,18 +263,17 @@ Deno.test(function bindNamedParameters() {
   assertThrows(() => {
     db.query(
       "INSERT INTO test (val) VALUES (:val)",
-      { Val: "miss-spelled :(" }
+      { Val: "miss-spelled :(" },
     );
   });
 
   // Make sure the data came through correctly
-  const vals = [...db.query("SELECT val FROM test ORDER BY id ASC")].map((
-    row
-  ) => row[0]
+  const vals = [...db.query("SELECT val FROM test ORDER BY id ASC")].map(
+    (row) => row[0],
   );
   assertEquals(
     vals,
-    ["value", "value other", "@value", "$value", "this-is-it"]
+    ["value", "value other", "@value", "$value", "this-is-it"],
   );
 
   db.close();
@@ -282,7 +284,7 @@ Deno.test(function blobsAreCopies() {
   const db = new DB();
 
   db.query(
-    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB)"
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val BLOB)",
   );
   const data = new Uint8Array([1, 2, 3, 4, 5]);
   db.query("INSERT INTO test (val) VALUES (?)", [data]);
@@ -312,7 +314,7 @@ Deno.test(function data() {
 
   // Write some data
   db.query(
-    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)"
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)",
   );
   db.query("INSERT INTO test (val) VALUES ('test')");
 
@@ -333,7 +335,7 @@ Deno.test(async function saveToFile() {
     "Hello Deno!",
     "JavaScript <3",
     "This costs 0€!",
-    "Wéll, hällö thėrè¿"
+    "Wéll, hällö thėrè¿",
   ];
 
   // Ensure test file does not exist
@@ -344,7 +346,7 @@ Deno.test(async function saveToFile() {
   // Write data to db
   const db = await open("test.db");
   db.query(
-    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)"
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)",
   );
   for (const val of data) db.query("INSERT INTO test (val) VALUES (?)", [val]);
   await save(db);
@@ -367,7 +369,7 @@ Deno.test(function invalidSQL() {
   const queries = [
     "INSERT INTO does_not_exist (balance) VALUES (5)",
     "this is not sql",
-    { sql: "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)" }
+    { sql: "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)" },
   ];
   for (const query of queries) assertThrows(() => db.query(query));
 
@@ -379,7 +381,7 @@ Deno.test(function foreignKeys() {
   const db = new DB();
   db.query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)");
   db.query(
-    "CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, user INTEGER, FOREIGN KEY(user) REFERENCES users(id))"
+    "CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, user INTEGER, FOREIGN KEY(user) REFERENCES users(id))",
   );
 
   db.query("INSERT INTO users (id) VALUES (1)");
@@ -414,7 +416,7 @@ Deno.test(function dbLimit() {
   }
   assertEquals(limitReached, true);
   assertThrows(() => new DB());
-  dbs.forEach(db => db.close());
+  dbs.forEach((db) => db.close());
   const db = new DB();
   db.close();
 });
@@ -435,7 +437,7 @@ Deno.test(function queryLimit() {
   assertThrows(() => {
     db.query("SELECT * FROM test");
   });
-  queries.forEach(query => query.done());
+  queries.forEach((query) => query.done());
   db.query("SELECT * FROM test").done();
 
   db.close();
@@ -477,7 +479,7 @@ Deno.test(function constraintErrorCode() {
   assertEquals(
     Status[e.codeName],
     Status.SqliteConstraint,
-    "Got wrong error code name"
+    "Got wrong error code name",
   );
 });
 
@@ -492,7 +494,7 @@ Deno.test(function syntaxErrorErrorCode() {
   assertEquals(
     Status[e.codeName],
     Status.SqliteError,
-    "Got wrong error code name"
+    "Got wrong error code name",
   );
 });
 
@@ -516,7 +518,7 @@ Deno.test(function getColumnsWithoutNames() {
   const db = new DB();
 
   db.query(
-    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)"
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)",
   );
   db.query("INSERT INTO test (name) VALUES (?)", ["name"]);
 
@@ -525,7 +527,7 @@ Deno.test(function getColumnsWithoutNames() {
 
   assertEquals(columns, [
     { name: "id", originName: "id", tableName: "test" },
-    { name: "name", originName: "name", tableName: "test" }
+    { name: "name", originName: "name", tableName: "test" },
   ]);
 });
 
@@ -533,7 +535,7 @@ Deno.test(function getColumnsWithNames() {
   const db = new DB();
 
   db.query(
-    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)"
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)",
   );
   db.query("INSERT INTO test (name) VALUES (?)", ["name"]);
 
@@ -542,7 +544,7 @@ Deno.test(function getColumnsWithNames() {
 
   assertEquals(columns, [
     { name: "test_id", originName: "id", tableName: "test" },
-    { name: "test_name", originName: "name", tableName: "test" }
+    { name: "test_name", originName: "name", tableName: "test" },
   ]);
 });
 
@@ -579,5 +581,5 @@ if (!write || !read) skip.push(...["saveToFile"]);
 
 Deno.runTests({
   skip: new RegExp(`^${skip.join("|")}$`),
-  exitOnFail: false
+  exitOnFail: false,
 });

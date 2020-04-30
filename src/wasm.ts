@@ -4,7 +4,7 @@ import SqliteError from "./error.ts";
 export function setStr(
   wasm: any,
   str: string,
-  closure: (ptr: number) => void
+  closure: (ptr: number) => void,
 ) {
   const bytes = new TextEncoder().encode(str);
   const ptr = wasm.malloc(bytes.length + 1);
@@ -22,7 +22,7 @@ export function setStr(
 export function setArr(
   wasm: any,
   arr: Uint8Array,
-  closure: (ptr: number) => void
+  closure: (ptr: number) => void,
 ) {
   const ptr = wasm.malloc(arr.length);
   if (ptr === 0) {

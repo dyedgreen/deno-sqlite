@@ -4,7 +4,7 @@ import { DB } from "./mod.ts";
 const db = new DB();
 
 db.query(
-  "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, balance INTEGER)"
+  "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, balance INTEGER)",
 );
 
 /** Performance of insert statements (1 insert). */
@@ -19,10 +19,10 @@ bench({
     b.start();
     db.query(
       "INSERT INTO users (name, balance) VALUES (:name, :balance)",
-      { name: names[n % names.length], balance: n }
+      { name: names[n % names.length], balance: n },
     );
     b.stop();
-  }
+  },
 });
 
 bench({
@@ -33,10 +33,10 @@ bench({
     b.start();
     db.query(
       "INSERT INTO users (name, balance) VALUES (?, ?)",
-      [names[n % names.length], n]
+      [names[n % names.length], n],
     );
     b.stop();
-  }
+  },
 });
 
 /** Performance of select statements (select + iterate 1000 rows). */
@@ -47,13 +47,13 @@ bench({
     b.start();
     for (
       const [name, balance] of db.query(
-        "SELECT name, balance FROM users LIMIT 1000"
+        "SELECT name, balance FROM users LIMIT 1000",
       )
     ) {
       continue;
     }
     b.stop();
-  }
+  },
 });
 
 /** Performance when sorting rows (select and sort 1000 rows). */
@@ -64,13 +64,13 @@ bench({
     b.start();
     for (
       const [name, balance] of db.query(
-        "SELECT name, balance FROM users ORDER BY balance DESC LIMIT 1000"
+        "SELECT name, balance FROM users ORDER BY balance DESC LIMIT 1000",
       )
     ) {
       continue;
     }
     b.stop();
-  }
+  },
 });
 
 /** Performance when sorting using random order. */
@@ -81,13 +81,13 @@ bench({
     b.start();
     for (
       const [name, balance] of db.query(
-        "SELECT name, balance FROM users ORDER BY RANDOM() LIMIT 1000"
+        "SELECT name, balance FROM users ORDER BY RANDOM() LIMIT 1000",
       )
     ) {
       continue;
     }
     b.stop();
-  }
+  },
 });
 
 runIfMain(import.meta);
