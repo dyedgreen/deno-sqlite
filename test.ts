@@ -46,9 +46,11 @@ Deno.test("readmeExampleOld", async function () {
 
   for (let i = 0; i < 100; i++) {
     const name = `${first[Math.floor(Math.random() * first.length)]} ${
-      last[Math.floor(
-        Math.random() * last.length,
-      )]
+      last[
+        Math.floor(
+          Math.random() * last.length,
+        )
+      ]
     }`;
     const email = `${name.replace(" ", "-")}@deno.land`;
     const subscribed = Math.random() > 0.5 ? true : false;
