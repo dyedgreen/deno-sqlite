@@ -9,11 +9,9 @@ import SqliteError from "./src/error.ts";
 
 // permissions for skipping tests which require them
 // if the permission can't be read, it is assumed granted
-const permWrite =
-  !Deno.permissions ||
+const permWrite = !Deno.permissions ||
   (await Deno.permissions.query({ name: "write" })).state === "granted";
-const permRead =
-  !Deno.permissions ||
+const permRead = !Deno.permissions ||
   (await Deno.permissions.query({ name: "read" })).state === "granted";
 
 /** Ensure README example works as advertised. */
