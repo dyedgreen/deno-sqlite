@@ -90,7 +90,7 @@ function generate(root, md, path = []) {
 if (Deno.args.length < 4) {
   console.log("use as:");
   console.log(
-    "deno --allow-read --allow-write docs/generate.js docs/api.md mod.ts src/**",
+    "deno run --allow-read --allow-write docs/generate.js docs/api.md mod.ts src/**",
   );
   Deno.exit(1);
 }

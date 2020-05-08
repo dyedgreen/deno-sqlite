@@ -8,10 +8,12 @@ import { open, save, DB, Empty, Status } from "./mod.ts";
 import SqliteError from "./src/error.ts";
 
 // permissions for skipping tests which require them
-const permWrite =
-  (await Deno.permissions.query({ name: "write" })).state === "granted";
-const permRead =
-  (await Deno.permissions.query({ name: "read" })).state === "granted";
+// if the permission can't be read, it is assumed granted
+const d: any = Deno as any;
+const permWrite = !d.permissions ||
+  (await d.permissions.query({ name: "write" })).state === "granted";
+const permRead = !d.permissions ||
+  (await d.permissions.query({ name: "read" })).state === "granted";
 
 /** Ensure README example works as advertised. */
 Deno.test("readmeExample", function () {
@@ -46,9 +48,11 @@ Deno.test("readmeExampleOld", async function () {
 
   for (let i = 0; i < 100; i++) {
     const name = `${first[Math.floor(Math.random() * first.length)]} ${
-      last[Math.floor(
-        Math.random() * last.length,
-      )]
+      last[
+        Math.floor(
+          Math.random() * last.length,
+        )
+      ]
     }`;
     const email = `${name.replace(" ", "-")}@deno.land`;
     const subscribed = Math.random() > 0.5 ? true : false;
