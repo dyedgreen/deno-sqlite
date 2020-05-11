@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <title>SQLite Playground</title>
+    <meta charset="utf-8">
+
+    <link rel="stylesheet" type="text/css" href="play.css">
+  </head>
+
+  <body>
+    <div class="app">
+      <div id="editor"></div>
+      <div id="console">
+        <div class="actions">
+          <h1><a href="https://github.com/dyedgreen/deno-sqlite">Deno SQLite</a> Playground</h1>
+          <a id="btn-run" class="button" href="javascript:void(0)">run</a>
+          <a id="btn-clear" class="button" href="javascript:void(0)">clear</a>
+          <!-- <a id="bt-share" class="button" href="javascript:void()">share</a> -->
+        </div>
+        <div id="output" class="content">
+          <!-- TODO -->
+<!--           <p>This is a simple string message.</p>
+          <p class="error">This is an error message.</p>
+          <p>
+            <table>
+              <tr>
+                <th>Column Name 1</th>
+                <th>Column Name 2</th>
+              </tr>
+              <tr>
+                <td>Column Data</td>
+                <td>Column Data</td>
+              </tr>
+            </table>
+          </p> -->
+        </div>
+      </div>
+    </div>
+
+    <script src="lib/codemirror.js"></script>
+    <link rel="stylesheet" href="lib/codemirror.css">
+    <script src="lib/javascript.js"></script>
+    <script type="module" src="play.js"></script>
+  </body>
+
+</html>
