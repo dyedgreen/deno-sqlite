@@ -8,6 +8,7 @@ debug.js
 hack.js
 test.db
 build/sqlite-src
+deno
 
 # NPM garbage
 node_modules

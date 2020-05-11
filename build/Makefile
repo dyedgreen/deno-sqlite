@@ -9,6 +9,7 @@ endif
 
 OUT_JS = "debug.js"
 OUT_WA = "sqlite.wasm"
+OUT_BN = "sqlite.js"
 
 SQLITE_DLD = "https://sqlite.org/2020/sqlite-src-3310100.zip"
 SQLITE_DIR = "sqlite-src-3310100"
@@ -61,11 +62,18 @@ emscripten:
 	$(EMCC) $(JSFLG) $(FLGS) $(INCS) $(CSRC) $(SQLFLG) -o $(OUT_JS)
 	$(DENO) --allow-read --allow-write hack/patch.js $(OUT_JS)
 
+# temporary bundler, this is in place until deno re-adds
+# support for WASM imports
+bundle:
+	$(DENO) --allow-read --allow-write hack/bundle.js $(OUT_WA) $(OUT_BN)
+	$(DENO) fmt $(OUT_BN)
+
 debug: FLGS += $(DFLG)
 debug: emscripten
 
 release: FLGS += $(RFLG)
 release: build
+release: bundle
 
 # Helpers for generating new amalgamation files
 # if needed (i.e. if build flags for SQLite change)
