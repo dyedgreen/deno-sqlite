@@ -1,5 +1,3 @@
-import sqlite from "./sqlite_browser.js";
-
 const editor = CodeMirror(
   document.querySelector("#editor"),
   { lineWrapping: true, mode: "javascript" },
@@ -18,7 +16,7 @@ btnRun.onclick = function () {
   (async function () {
     // Create new sqlite module
     const { DB, Empty, Status } = await sqlite();
-    // Redirect prints to console
+    // Redirect prints to html console
     const console = {
       log: print,
       warn: print,

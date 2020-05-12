@@ -2,7 +2,7 @@
 
 // This is a specialised implementation of a System module loader.
 
-export default async function make() {
+async function sqlite() {
   // @ts-nocheck
   /* eslint-disable */
   let System, __instantiateAsync, __instantiate;
