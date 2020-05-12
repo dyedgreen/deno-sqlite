@@ -52,6 +52,11 @@ function print(...args) {
           `<p class="error"><b>${arg.name}:</b> ${arg.message}</p>`;
       } else if (typeof arg._id == "number" && arg._db) {
         // it's a row
+        if (arg._done) {
+          output.innerHTML += "<p><b>Empty Row</b></p>";
+          continue;
+        }
+        // consume and display row
         const title = arg.columns();
         const data = [...arg];
         output.innerHTML += `<table>
@@ -71,7 +76,7 @@ function print(...args) {
 
 // Initial editor content
 editor.setValue(`const db = new DB();
-db.query("CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, email TEXT)",);
+db.query("CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, email TEXT)");
 
 const names = ["Peter Parker", "Clark Kent", "Bruce Wane"];
 
@@ -82,8 +87,10 @@ for (const name of names)
     [name, \`\${name.replace(/\\s+/g, ".").toLowerCase()}@deno.land\`]
   );
 
-// Display DB table
+// Query the results
 let data = db.query("SELECT * FROM people");
+
+// Note: The console supports directly displaying queried rows (consuming the row)
 console.log("Results:", data);
 
 // Close connection
