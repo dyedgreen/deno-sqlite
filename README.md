@@ -2,6 +2,7 @@
 
 [![test status](https://github.com/dyedgreen/deno-sqlite/workflows/tests/badge.svg?branch=master)](https://github.com/dyedgreen/deno-sqlite/actions)
 [![docs status](https://github.com/dyedgreen/deno-sqlite/workflows/docs/badge.svg?branch=master)](https://dyedgreen.github.io/deno-sqlite/)
+[![playground](https://img.shields.io/badge/playground-web-blue)](https://dyedgreen.github.io/deno-sqlite/playground/)
 
 This is an SQLite module for JavaScript. The wrapper is targeted at [Deno](https://deno.land)
 and uses a version of SQLite3 compiled to WebAssembly (WASM). This module focuses on performance
@@ -17,6 +18,8 @@ Documentation is available as a [website](https://dyedgreen.github.io/deno-sqlit
 [`docs`](./docs/README.md) folder.
 
 ## Example
+
+Also try the [web playground](https://dyedgreen.github.io/deno-sqlite/playground/)!
 
 ```javascript
 import { open, save } from "https://deno.land/x/sqlite/mod.ts";
