@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <title>SQLite Playground</title>
+    <meta charset="utf-8">
+
+    <link rel="stylesheet" type="text/css" href="play.css">
+  </head>
+
+  <body>
+    <div class="app">
+      <div id="editor"></div>
+      <div id="console">
+        <div class="actions">
+          <h1><a href="https://github.com/dyedgreen/deno-sqlite">Deno SQLite</a> Playground</h1>
+          <a id="btn-run" class="button" href="javascript:void(0)">run</a>
+          <a id="btn-clear" class="button" href="javascript:void(0)">clear</a>
+        </div>
+        <div id="output" class="content">
+          <p>Welcome to the Deno SQLite Playground!</p>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.53.0/lib/codemirror.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.53.0/lib/codemirror.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/codemirror@5.53.0/mode/javascript/javascript.min.js"></script>
+    <script src="sqlite_browser.js"></script>
+    <script src="play.js"></script>
+  </body>
+
+</html>
