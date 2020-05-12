@@ -39,6 +39,9 @@ html, body {
   top: 0; right: 0; bottom: auto; left: auto;
 
   background: #ddd;
+
+  overflow-y: auto;
+  white-space: nowrap;
 }
 #console .actions h1 {
   margin: 0 15px 0 0;
@@ -66,7 +69,7 @@ html, body {
 
 #console .content {
   margin-top: 65px;
-  margin-bottom: 50vh;
+  margin-bottom: 50%;
   font-size: 15px;
 }
 
@@ -85,4 +88,29 @@ html, body {
   padding: 0 0 0 5px;
   margin-bottom: 10px;
   border-left: 2px #555 solid;
+}
+#console .content table th {
+  padding: 0 6px;
+  font-weight: 900;
+  text-align: left;
+}
+#console .content table td {
+  padding: 0 6px;
+}
+
+@media (max-width: 900px) {
+  #editor {
+    width: 100vw;
+    height: 50vh;
+    top: 0; right: 0; bottom: auto; left: 0;
+  }
+  #console {
+    width: 100vw;
+    height: 50vh;
+    top: auto; right: 0; bottom: 0; left: 0;
+  }
+  #console .actions {
+    width: 100vw;
+    top: 50vh; right: 0; bottom: auto; left: 0;
+  }
 }

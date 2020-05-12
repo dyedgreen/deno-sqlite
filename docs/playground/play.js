@@ -4,6 +4,7 @@ const editor = CodeMirror(
   document.querySelector("#editor"),
   { lineWrapping: true, mode: "javascript" },
 );
+editor.setSize("100%", "100%");
 const output = document.querySelector("#output");
 const btnRun = document.querySelector("#btn-run");
 const btnClear = document.querySelector("#btn-clear");
@@ -17,9 +18,12 @@ btnRun.onclick = function () {
   (async function () {
     // Create new sqlite module
     const { DB, Empty, Status } = await sqlite();
-    console.log = print;
-    console.warn = print;
-    console.error = (...args) => print(...args.map((a) => new Error(a)));
+    // Redirect prints to console
+    const console = {
+      log: print,
+      warn: print,
+      error: (...args) => print(...args.map((a) => new Error(a))),
+    };
     try {
       eval(script);
     } catch (err) {
@@ -67,13 +71,16 @@ function print(...args) {
 
 // Initial editor content
 editor.setValue(`const db = new DB();
-db.query("CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)",);
+db.query("CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, email TEXT)",);
 
 const names = ["Peter Parker", "Clark Kent", "Bruce Wane"];
 
 // Run a simple query
 for (const name of names)
-  db.query("INSERT INTO people (name) VALUES (?)", [name]);
+  db.query(
+    "INSERT INTO people (name, email) VALUES (?, ?)",
+    [name, \`\${name.replace(/\\s+/g, ".").toLowerCase()}@deno.land\`]
+  );
 
 // Display DB table
 let data = db.query("SELECT * FROM people");
@@ -81,3 +88,17 @@ console.log("Results:", data);
 
 // Close connection
 db.close();`);
+
+// Load code from url
+window.onload = function () {
+  const hash = location.hash.replace(/^#/, "");
+  if (hash.length !== 0) {
+    editor.setValue(atob(hash));
+  }
+};
+
+// Store current editor content in hash if changed
+editor.on("change", function () {
+  const base = location.href.split("#")[0];
+  history.replaceState(null, "", `${base}#${btoa(editor.getValue())}`);
+});
