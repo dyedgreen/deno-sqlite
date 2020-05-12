@@ -294,8 +294,8 @@ async function sqlite() {
             u0 = ((u0 & 15) << 12) | (u1 << 6) | u2;
           } else {
             // cut warning
-            u0 =
-              ((u0 & 7) << 18) | (u1 << 12) | (u2 << 6) | (bytes[idx++] & 63);
+            u0 = ((u0 & 7) << 18) | (u1 << 12) | (u2 << 6) |
+              (bytes[idx++] & 63);
           }
           if (u0 < 0x10000) {
             str += String.fromCharCode(u0);
