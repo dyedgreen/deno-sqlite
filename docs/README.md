@@ -2,6 +2,7 @@
 
 [![test status](https://github.com/dyedgreen/deno-sqlite/workflows/tests/badge.svg?branch=master)](https://github.com/dyedgreen/deno-sqlite/actions)
 [![docs status](https://github.com/dyedgreen/deno-sqlite/workflows/docs/badge.svg?branch=master)](https://dyedgreen.github.io/deno-sqlite/)
+[![playground](https://img.shields.io/badge/playground-web-blue)](https://dyedgreen.github.io/deno-sqlite/playground/)
 
 This is the documentation for the Deno SQLite module. The module
 uses a version of SQLite compiled to WebAssembly to provide a
@@ -13,6 +14,7 @@ JavaScript binding to SQLite.
 - [Examples](examples.md)
 - [Contributing](contributing.md)
 - [Module Design and Internals](design.md)
+- [Playground](https://dyedgreen.github.io/deno-sqlite/playground/)
 
 ## Runnable Example
 
