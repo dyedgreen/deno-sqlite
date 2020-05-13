@@ -14,7 +14,7 @@ JavaScript binding to SQLite.
 - [Examples](examples.md)
 - [Contributing](contributing.md)
 - [Module Design and Internals](design.md)
-- [Playground](https://dyedgreen.github.io/deno-sqlite/playground/)
+- [Playground (Experimental)](https://dyedgreen.github.io/deno-sqlite/playground/)
 
 ## Runnable Example
 
