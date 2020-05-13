@@ -218,7 +218,11 @@ async function sqlite() {
             constructor(message, code) {
               super(message);
               this.name = "SqliteError";
-              this.code = code ?? constants_ts_1.Status.Unknown;
+              if (code === null || code === undefined) {
+                this.code = constants_ts_1.Status.Unknown;
+              } else {
+                this.code = code;
+              }
             }
             /**
                  * SqliteError.codeName
