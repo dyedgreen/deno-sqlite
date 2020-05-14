@@ -29,7 +29,7 @@ for (const [id, name, email] of db.query("SELECT id, name, email FROM people")) 
   // do something with the rows entries
 }
 
-const names = [...db.query("SELECT name FROM people")].map([name] => name);
+const names = [...db.query("SELECT name FROM people")].map(([name]) => name);
 // do something with names
 ```
 

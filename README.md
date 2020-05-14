@@ -8,9 +8,9 @@ This is an SQLite module for JavaScript. The wrapper is targeted at [Deno](https
 and uses a version of SQLite3 compiled to WebAssembly (WASM). This module focuses on performance
 and ease of use.
 
-While Deno remains unstable, this module does not make any stability guarantees. If you use this in a
-project, please report any issues you encounter, as well any other feedback by opening an issue. Pull
-requests are welcome!
+While this module guarantees API compatibility according to [semantic versioning](https://semver.org),
+it has not been extensively tested in production. Please open issues (and if possible pull requests)
+for any problems you encounter.
 
 ## Documentation
 
@@ -19,7 +19,7 @@ Documentation is available as a [website](https://dyedgreen.github.io/deno-sqlit
 
 ## Example
 
-Also try the [web playground](https://dyedgreen.github.io/deno-sqlite/playground/)!
+Also try the experimental [web playground](https://dyedgreen.github.io/deno-sqlite/playground/)!
 
 ```javascript
 import { open, save } from "https://deno.land/x/sqlite/mod.ts";
