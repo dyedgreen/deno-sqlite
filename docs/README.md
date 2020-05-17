@@ -25,10 +25,11 @@ import { open, save } from "https://deno.land/x/sqlite/mod.ts";
 const db = await open("test.db");
 db.query("CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)");
 
-const name = ["Peter Parker", "Clark Kent", "Bruce Wayne"][Math.floor(Math.random() * 3)];
+const names = ["Peter Parker", "Clark Kent", "Bruce Wayne"];
 
 // Run a simple query
-db.query("INSERT INTO people (name) VALUES (?)", [name]);
+for (const name of names)
+  db.query("INSERT INTO people (name) VALUES (?)", [name]);
 
 // Print out data in table
 for (const [name] of db.query("SELECT name FROM people"))
