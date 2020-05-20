@@ -10,7 +10,7 @@ and ease of use.
 
 While this module guarantees API compatibility according to [semantic versioning](https://semver.org),
 it has not been extensively tested in production. Please open issues (and if possible pull requests)
-for any problems you encounter.
+for any problems you encounter. Regarding API compatibility also [note this issue](https://github.com/dyedgreen/deno-sqlite/issues/49).
 
 ## Documentation
 
