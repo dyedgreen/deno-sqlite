@@ -71,6 +71,29 @@ export class Rows {
     return { value: row, done: false };
   }
 
+  getAll( limit = 10000 ) {
+	let rows = [];
+	for(let i = 0; i < limit; i++) {
+		const row = this._get();
+		if(row.length == 0) { break; }
+		const status = this._db._wasm.step(this._db._id, this._id);
+		switch (status) {
+			case constants.Status.SqliteRow:
+				// NO OP
+				break;
+			case constants.Status.SqliteDone:
+				this.done();
+				break;
+			default:
+				this.done();
+				throw this._db._error(status);
+				break;
+		}
+		rows.push(row);
+	}
+	return rows;
+  }
+
   /**
    * Rows.columns
    *
@@ -117,8 +140,8 @@ export class Rows {
 
   _get() {
     // Get results from row
+    if(!this._db) {return [];}
     const row = [];
-    // return row;
     for (
       let i = 0, c = this._db._wasm.column_count(this._db._id, this._id);
       i < c;
