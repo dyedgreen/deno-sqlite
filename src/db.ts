@@ -15,9 +15,9 @@ type QueryParam =
   | Uint8Array;
 
 export class DB {
-  _wasm: any;
-  _open: boolean;
-  _transactions: Set<Rows>;
+  private _wasm: any;
+  private _open: boolean;
+  private _transactions: Set<Rows>;
 
   /**
    * DB
@@ -230,7 +230,7 @@ export class DB {
     this._open = false;
   }
 
-  _error(code?: number): SqliteError {
+  private _error(code?: number): SqliteError {
     if (code === undefined) {
       code = this._wasm.get_status() as number;
     }

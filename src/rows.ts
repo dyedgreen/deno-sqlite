@@ -9,9 +9,9 @@ interface ColumnName {
 }
 
 export class Rows {
-  _db: any;
-  _stmt: number;
-  _done: boolean;
+  private _db: any;
+  private _stmt: number;
+  private _done: boolean;
 
   /**
    * Rows
@@ -130,7 +130,7 @@ export class Rows {
     return this;
   }
 
-  _get(): any[] {
+  private _get(): any[] {
     // Get results from row
     const row = [];
     // return row;
