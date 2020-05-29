@@ -8,46 +8,21 @@ rerun the generator, to avoid loosing the changes.
 
 ## How to import
 ```javascript
-import { open, save, DB, Empty, Status } from "https://deno.land/x/sqlite/mod.ts"
+import { DB, Empty, Status } from "https://deno.land/x/sqlite/mod.ts"
 ```
 The above statement lists all the available imports.
 
 
-## open
-```javascript
-async function open(path, ignoreNotFound = true)
-```
-Open a new SQLite3 database. The file at
-the path is read and preloaded into the database.
-
-?> Unlike the SQLite3 C library, this will not
-automatically write any changes to disk. Use
-`db.data()` or `save(db)` to persist any changes
-you make.
-
-
-## save
-```javascript
-async function save(db, path)
-```
-Save database to file. If the database was opened
-from a file using `open()`, the second parameter
-is optional.
-
-
 ## DB
 ```javascript
-new DB(data)
+new DB(path = ":memory:")
 ```
-Create a new database. If a `Uint8Array`
-is provided as the first argument the
-database is pre-loaded with the array as the
-database file. If no arguments are provided
-a new in-memory database is opened.
+Create a new database. The passed
+path will be opened with read/ write
+permissions and created if it does not
+already exist.
 
-The Uint8Array could be obtained from
-`db.data()`, or by reading a database
-file written by SQLite.
+The default opens an in-memory database.
 
 ### DB.query
 ```javascript
@@ -107,28 +82,16 @@ is also iterable, but has zero entries).
 iterated over or discarded by calling
 `.done()`.
 
-### DB.data
-```javascript
-data()
-```
-Return SQLite file as a `Uint8Array`. This
-makes a copy of the data. To save the data
-to a file prefer to use `save()` exported by
-`mod.ts`, which avoids making a copy.
-
-?> Making a copy of a database could be done like
-this: `const copy = new DB(original.data());`
-
 ### DB.close
 ```javascript
-close()
+close(force = false)
 ```
 Close database handle. This must be called if
-DB is no longer used.
+DB is no longer used, to avoid leaking file
+resources.
 
-!> Not closing the database may cause you to
-encounter the limit for open database
-connections.
+If force is specified, any on-going transactions
+will be closed.
 
 
 ## SqliteError
@@ -162,24 +125,22 @@ code. For these errors, the code will be
 
 | JS name          | code | JS name (cont.)  | code |
 |------------------|------|------------------|------|
-| SqliteOk         | 0    | SqliteTooBig     | 18   |
-| SqliteError      | 1    | SqliteConstraint | 19   |
-| SqliteInternal   | 2    | SqliteMismatch   | 20   |
-| SqlitePerm       | 3    | SqliteMisuse     | 21   |
-| SqliteAbort      | 4    | SqliteNoLFS      | 22   |
-| SqliteBusy       | 5    | SqliteAuth       | 23   |
-| SqliteLocked     | 6    | sqlietFormat     | 24   |
-| SqliteNoMem      | 7    | SqliteRange      | 25   |
-| SqliteReadOnly   | 8    | SqliteNotADB     | 26   |
-| SqliteInterrupt  | 9    | SqliteNotice     | 27   |
-| SqliteIOErr      | 10   | SqliteWarning    | 28   |
-| SqliteCorrupt    | 11   | SqliteRow        | 100  |
-| SqliteNotFound   | 12   | SqliteDone       | 101  |
-| SqliteFull       | 13   | StmtLimit        | 1000 |
-| SqliteCantOpen   | 14   | NoStmt           | 1001 |
-| SqliteProtocol   | 15   | DatabaseLimit    | 1002 |
-| SqliteEmpty      | 16   | NoDatabase       | 1003 |
-| SqliteSchema     | 17   | Unknown          | -1   |
+| SqliteOk         | 0    | SqliteEmpty      | 16   |
+| SqliteError      | 1    | SqliteSchema     | 17   |
+| SqliteInternal   | 2    | SqliteTooBig     | 18   |
+| SqlitePerm       | 3    | SqliteConstraint | 19   |
+| SqliteAbort      | 4    | SqliteMismatch   | 20   |
+| SqliteBusy       | 5    | SqliteMisuse     | 21   |
+| SqliteLocked     | 6    | SqliteNoLFS      | 22   |
+| SqliteNoMem      | 7    | SqliteAuth       | 23   |
+| SqliteReadOnly   | 8    | SqliteFormat     | 24   |
+| SqliteInterrupt  | 9    | SqliteRange      | 25   |
+| SqliteIOErr      | 10   | SqliteNotADB     | 26   |
+| SqliteCorrupt    | 11   | SqliteNotice     | 27   |
+| SqliteNotFound   | 12   | SqliteWarning    | 28   |
+| SqliteFull       | 13   | SqliteRow        | 100  |
+| SqliteCantOpen   | 14   | SqliteDone       | 101  |
+| SqliteProtocol   | 15   | Unknown          | -1   |
 
 These codes are accessible via
 the exported `Status` object.
@@ -197,7 +158,7 @@ E.g. if `code` is `19`,
 
 ## Rows
 ```javascript
-new Rows(db, id)
+new Rows(db, stmt)
 ```
 Rows represent a set of results from a query.
 They are iterable and yield arrays with
@@ -216,8 +177,7 @@ query and have not iterated over all
 the available results.
 
 !> If you leave rows with results before
-making new queries, you may run into the
-maximum limit for concurrent queries.
+making new queries, you will leak memory.
 Always use `.done()` instead of `break`.
 
     const rows = db.query("SELECT name FROM users;");
@@ -225,6 +185,12 @@ Always use `.done()` instead of `break`.
       if (name === "Clark Kent")
         rows.done();
     }
+
+### Rows.next
+```javascript
+next()
+```
+Implements the iterator protocol.
 
 ### Rows.columns
 ```javascript

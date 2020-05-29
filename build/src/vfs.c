@@ -3,68 +3,40 @@
 #include <string.h>
 #include <sqlite3.h>
 #include <pcg.h>
-#include "buffer.h"
-#include "registry.h"
 #include "debug.h"
+#include "imports.h"
 
 // SQLite VFS component.
 // Based on demoVFS from SQLlite.
 
-// File-names simply index into the open_files array
-// TODO: Can I disable journaling? (and will it be a problem?)
-//       (problem: journal wants file-length+8 available ...)
-//       (see: sqlite.c line 55809)
-#define MAXPATHNAME (1+8)
+// https://www.sqlite.org/src/doc/trunk/src/test_demovfs.c
 
-#define TEMP_PATH -1
-#define ID_FROM_PATH(path) buffer_reg_id_from_path(path)
+#define MAXPATHNAME 1024
 
-// Global variable that contains current time
-// this can be passed in by queries to enable time
-// apis to work correctly.
-// This should not be used once WASI makes it obsolete.
-double global_wasi_current_time = 0;
-
-// Determine buffer registry id from file path. We store files
-// like follows: id=0 -> DB, id=1 -> journal for DB1, ...
-int buffer_reg_id_from_path(const char* path) {
-  int entry_id = id_for_reg_entry_path(path);
-  int id = buffer_for_reg_entry_id(entry_id);
-  // Check if this is a journal file
-  if (path[1] != '\0')
-    id += 1;
-  return id;
-}
-
-/*
-** When using this VFS, the sqlite3_file* handles that SQLite uses are
-** actually pointers to instances of type WasiFile.
-*/
-typedef struct WasiFile WasiFile;
-struct WasiFile {
+// When using this VFS, the sqlite3_file* handles that SQLite uses are
+// actually pointers to instances of type DenoFile.
+typedef struct DenoFile DenoFile;
+struct DenoFile {
   sqlite3_file base;
-  int id;
-  buffer* buf;
+  // Deno file resource id
+  int rid;
 };
 
-// For permanent files, this is a no-op. For temp
-// files this deallocates the buffer.
-static int wasiClose(sqlite3_file *pFile) {
-  WasiFile* p = (WasiFile*)pFile;
-  if (p->id == TEMP_PATH)
-    destroy_buffer(p->buf);
-  debug_printf("closed buffer with file id: %i\n", (int)p->id);
+static int denoClose(sqlite3_file *pFile) {
+  DenoFile* p = (DenoFile*)pFile;
+  js_close(p->rid);
+  debug_printf("closing file (rid %i)\n", p->rid);
   return SQLITE_OK;
 }
 
 // Read data from a file.
-static int wasiRead(sqlite3_file *pFile, void *zBuf, int iAmt, sqlite_int64 iOfst) {
-  WasiFile *p = (WasiFile*)pFile;
+static int denoRead(sqlite3_file *pFile, void *zBuf, int iAmt, sqlite_int64 iOfst) {
+  DenoFile *p = (DenoFile*)pFile;
 
   // Read bytes from buffer
-  int read_bytes = read_buffer(p->buf, (char* )zBuf, (int)iOfst, iAmt);
-  debug_printf("attempt to read from file (id: %i, amount: %i, offset: %i, bytes: %i)\n",
-    p->id, iAmt, (int)iOfst, read_bytes);
+  int read_bytes = js_read(p->rid, (char*)zBuf, (int)iOfst, iAmt);
+  debug_printf("attempt to read from file (rid %i, amount %i, offset %i, read %i)\n",
+    p->rid, iAmt, (int)iOfst, read_bytes);
 
   // Zero memory if read was short
   if (read_bytes < iAmt)
@@ -74,209 +46,203 @@ static int wasiRead(sqlite3_file *pFile, void *zBuf, int iAmt, sqlite_int64 iOfs
 }
 
 // Write data to a file.
-static int wasiWrite(sqlite3_file *pFile, const void *zBuf, int iAmt, sqlite_int64 iOfst) {
-  WasiFile *p = (WasiFile*)pFile;
+static int denoWrite(sqlite3_file *pFile, const void *zBuf, int iAmt, sqlite_int64 iOfst) {
+  DenoFile *p = (DenoFile*)pFile;
 
   // Write bytes to buffer
-  int write_bytes = write_buffer(p->buf, (char* )zBuf, (int)iOfst, iAmt);
-  debug_printf("attempt to write to file (id: %i, amount: %i, offset: %i, bytes: %i)\n",
-    p->id, iAmt, (int)iOfst, write_bytes);
+  int write_bytes = js_write(p->rid, (char*)zBuf, (int)iOfst, iAmt);
+  debug_printf("attempt to write to file (rid %i, amount %i, offset %i, written %i)\n",
+    p->rid, iAmt, (int)iOfst, write_bytes);
 
   return write_bytes == iAmt ? SQLITE_OK : SQLITE_IOERR_WRITE;
 }
 
-// We do not implement this. TODO: Should we?
-static int wasiTruncate(sqlite3_file *pFile, sqlite_int64 size) {
+// Truncate file.
+static int denoTruncate(sqlite3_file *pFile, sqlite_int64 size) {
+  DenoFile *p = (DenoFile*)pFile;
+  js_truncate(p->rid, size);
+  debug_printf("truncating file (rid %i, size: %li)\n", p->rid, size);
   return SQLITE_OK;
 }
 
-// We are completely in-memory.
-static int wasiSync(sqlite3_file *pFile, int flags) {
+// Deno provides no explicit sync for us, so we
+// just have a no-op here.
+// TODO(dyedgreen): Investigate if there is a better way
+static int denoSync(sqlite3_file *pFile, int flags) {
+  debug_printf("no-op call to sync");
   return SQLITE_OK;
 }
 
 // Write the size of the file in bytes to *pSize.
-static int wasiFileSize(sqlite3_file *pFile, sqlite_int64 *pSize) {
-  WasiFile *p = (WasiFile*)pFile;
-  *pSize = (sqlite_int64)p->buf->size;
-  debug_printf("read file size: %i (id: %i)\n", p->buf->size, p->id);
+static int denoFileSize(sqlite3_file *pFile, sqlite_int64 *pSize) {
+  DenoFile *p = (DenoFile*)pFile;
+  *pSize = (sqlite_int64)js_size(p->rid);
+  debug_printf("read file size: %i (rid %i)\n", (int)*pSize, p->rid);
   return SQLITE_OK;
 }
 
-// We do not support nor need files locks.
-static int wasiLock(sqlite3_file *pFile, int eLock) {
+// Deno does not support file locks.
+static int denoLock(sqlite3_file *pFile, int eLock) {
+  debug_printf("no-op call to lock");
   return SQLITE_OK;
 }
-static int wasiUnlock(sqlite3_file *pFile, int eLock) {
+static int denoUnlock(sqlite3_file *pFile, int eLock) {
+  debug_printf("no-op call to unlock");
   return SQLITE_OK;
 }
-static int wasiCheckReservedLock(sqlite3_file *pFile, int *pResOut) {
+static int denoCheckReservedLock(sqlite3_file *pFile, int *pResOut) {
+  debug_printf("no-op call to check reserved lock");
   *pResOut = 0;
   return SQLITE_OK;
 }
 
 // No xFileControl() verbs are implemented by this VFS.
-static int wasiFileControl(sqlite3_file *pFile, int op, void *pArg) {
+static int denoFileControl(sqlite3_file *pFile, int op, void *pArg) {
   return SQLITE_NOTFOUND;
 }
 
-// We are in-memory.
-static int wasiSectorSize(sqlite3_file *pFile) {
+// TODO(dyedgreen): Should we try to get these?
+static int denoSectorSize(sqlite3_file *pFile) {
   return 0;
 }
-static int wasiDeviceCharacteristics(sqlite3_file *pFile) {
+static int denoDeviceCharacteristics(sqlite3_file *pFile) {
   return 0;
 }
 
 // Open a file handle.
-static int wasiOpen(
+static int denoOpen(
   sqlite3_vfs *pVfs,              /* VFS */
   const char *zName,              /* File to open, or 0 for a temp file */
-  sqlite3_file *pFile,            /* Pointer to WasiFile struct to populate */
+  sqlite3_file *pFile,            /* Pointer to DenoFile struct to populate */
   int flags,                      /* Input SQLITE_OPEN_XXX flags */
   int *pOutFlags                  /* Output SQLITE_OPEN_XXX flags (or NULL) */
 ) {
-  static const sqlite3_io_methods wasiio = {
+  static const sqlite3_io_methods denoio = {
     1,                            /* iVersion */
-    wasiClose,                    /* xClose */
-    wasiRead,                     /* xRead */
-    wasiWrite,                    /* xWrite */
-    wasiTruncate,                 /* xTruncate */
-    wasiSync,                     /* xSync */
-    wasiFileSize,                 /* xFileSize */
-    wasiLock,                     /* xLock */
-    wasiUnlock,                   /* xUnlock */
-    wasiCheckReservedLock,        /* xCheckReservedLock */
-    wasiFileControl,              /* xFileControl */
-    wasiSectorSize,               /* xSectorSize */
-    wasiDeviceCharacteristics     /* xDeviceCharacteristics */
+    denoClose,                    /* xClose */
+    denoRead,                     /* xRead */
+    denoWrite,                    /* xWrite */
+    denoTruncate,                 /* xTruncate */
+    denoSync,                     /* xSync */
+    denoFileSize,                 /* xFileSize */
+    denoLock,                     /* xLock */
+    denoUnlock,                   /* xUnlock */
+    denoCheckReservedLock,        /* xCheckReservedLock */
+    denoFileControl,              /* xFileControl */
+    denoSectorSize,               /* xSectorSize */
+    denoDeviceCharacteristics     /* xDeviceCharacteristics */
   };
 
-  WasiFile *p = (WasiFile*)pFile;
-  p->base.pMethods = &wasiio;
+  DenoFile *p = (DenoFile*)pFile;
+  p->base.pMethods = &denoio;
 
-  if (zName == NULL) {
-    p->id = TEMP_PATH;
-    p->buf = new_buffer();
-  } else {
-    p->id = ID_FROM_PATH(zName);
-    p->buf = get_reg_buffer(ID_FROM_PATH(zName));
+  // TODO(dyedgreen): The current approach is to raise
+  // the permission error on the vfs.js side of things,
+  // should the error be propagates through the wrapper
+  // and be raised on the wrapper side of things?
+  p->rid = js_open(zName, zName ? 0 : 1);
+
+  if (pOutFlags) {
+    *pOutFlags = flags;
   }
 
-  debug_printf("opening buffer with file id: %i\n", p->id);
+  debug_printf("opened file (rid %i)\n", p->rid);
   debug_printf("file path name: '%s'\n", zName);
-  debug_printf("buffer address: %p\n", p->buf);
-  return p->buf != NULL ? SQLITE_OK : SQLITE_CANTOPEN;
+  return SQLITE_OK;
 }
 
 // Delete the file at the path.
-static int wasiDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync) {
-  delete_reg_buffer(ID_FROM_PATH(zPath));
+static int denoDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync) {
+  js_delete(zPath);
   return SQLITE_OK;
 }
 
 // All valid id files are accessible.
-static int wasiAccess(sqlite3_vfs *pVfs, const char *zPath, int flags, int *pResOut) {
+static int denoAccess(sqlite3_vfs *pVfs, const char *zPath, int flags, int *pResOut) {
   switch (flags) {
     case SQLITE_ACCESS_EXISTS:
-      *pResOut = in_use_reg_buffer_id(ID_FROM_PATH(zPath));
+      *pResOut = js_exists(zPath);
       break;
     default:
-      *pResOut = valid_reg_buffer_id(ID_FROM_PATH(zPath));
+      *pResOut = js_access(zPath);
       break;
   }
-  debug_printf("determining file access (id: %i, access %i)\n", ID_FROM_PATH(zPath), *pResOut);
+  debug_printf("determining file access (path %s, access %i)\n", zPath, *pResOut);
   return SQLITE_OK;
 }
 
-// This just copies the data, as file names are all one character long.
-static int wasiFullPathname(sqlite3_vfs *pVfs, const char *zPath, int nPathOut, char *zPathOut) {
-  if (nPathOut >= 3) {
-    zPathOut[0] = zPath[0];
-    zPathOut[1] = zPath[1]; // To preserve journal file flag
-    zPathOut[2] = '\0';
-    debug_printf("converted '%s' to full path '%s' (id: %i)\n", zPath, zPathOut, ID_FROM_PATH(zPath));
-    return SQLITE_OK;
-  }
-  return SQLITE_CANTOPEN;
+// TODO(dyedgreen): Actually resolve the full path name
+static int denoFullPathname(sqlite3_vfs *pVfs, const char *zPath, int nPathOut, char *zPathOut) {
+  sqlite3_snprintf(nPathOut, zPathOut, "%s", zPath);
+  debug_printf("requesting full path name for path: %s\n", zPath);
+  return SQLITE_OK;
 }
 
-/*
-** The following four VFS methods:
-**
-**   xDlOpen
-**   xDlError
-**   xDlSym
-**   xDlClose
-**
-** are supposed to implement the functionality needed by SQLite to load
-** extensions compiled as shared objects. This simple VFS does not support
-** this functionality, so the following functions are no-ops.
-*/
-static void *wasiDlOpen(sqlite3_vfs *pVfs, const char *zPath) {
+// We don't support shared objects
+static void *denoDlOpen(sqlite3_vfs *pVfs, const char *zPath) {
   return 0;
 }
-static void wasiDlError(sqlite3_vfs *pVfs, int nByte, char *zErrMsg) {
+static void denoDlError(sqlite3_vfs *pVfs, int nByte, char *zErrMsg) {
   sqlite3_snprintf(nByte, zErrMsg, "Loadable extensions are not supported");
   zErrMsg[nByte-1] = '\0';
 }
-static void (*wasiDlSym(sqlite3_vfs *pVfs, void *pH, const char *z))(void) {
+static void (*denoDlSym(sqlite3_vfs *pVfs, void *pH, const char *z))(void) {
   return 0;
 }
-static void wasiDlClose(sqlite3_vfs *pVfs, void *pHandle) {
+static void denoDlClose(sqlite3_vfs *pVfs, void *pHandle) {
   return;
 }
 
 // Generate pseudo-random data
-static int wasiRandomness(sqlite3_vfs *pVfs, int nByte, char *zByte) {
+static int denoRandomness(sqlite3_vfs *pVfs, int nByte, char *zByte) {
   pcg_bytes(zByte, nByte);
   return SQLITE_OK;
 }
 
-// TODO: Can anything be done here? Possibly if we get proper WASI support?
-static int wasiSleep(sqlite3_vfs *pVfs, int nMicro) {
+// TODO(dyedgreen): Can anything be done here?
+static int denoSleep(sqlite3_vfs *pVfs, int nMicro) {
   return 0;
 }
 
-// TODO: This should be done properly once WASI is more mature.
-static int wasiCurrentTime(sqlite3_vfs *pVfs, double *pTime) {
-  *pTime = global_wasi_current_time;
+// Retrieve the current time
+static int denoCurrentTime(sqlite3_vfs *pVfs, double *pTime) {
+  *pTime = js_time() / 1000 / 86400.0 + 2440587.5;
   return SQLITE_OK;
 }
 
 // This function returns a pointer to the VFS implemented in this file.
-sqlite3_vfs *sqlite3_wasivfs(void) {
-  static sqlite3_vfs wasivfs = {
+sqlite3_vfs *sqlite3_denovfs(void) {
+  static sqlite3_vfs denovfs = {
     3,                            /* iVersion */
-    sizeof(WasiFile),             /* szOsFile */
+    sizeof(DenoFile),             /* szOsFile */
     MAXPATHNAME,                  /* mxPathname */
     0,                            /* pNext */
-    "wasi",                       /* zName */
+    "deno",                       /* zName */
     0,                            /* pAppData */
-    wasiOpen,                     /* xOpen */
-    wasiDelete,                   /* xDelete */
-    wasiAccess,                   /* xAccess */
-    wasiFullPathname,             /* xFullPathname */
-    wasiDlOpen,                   /* xDlOpen */
-    wasiDlError,                  /* xDlError */
-    wasiDlSym,                    /* xDlSym */
-    wasiDlClose,                  /* xDlClose */
-    wasiRandomness,               /* xRandomness */
-    wasiSleep,                    /* xSleep */
-    wasiCurrentTime,              /* xCurrentTime */
+    denoOpen,                     /* xOpen */
+    denoDelete,                   /* xDelete */
+    denoAccess,                   /* xAccess */
+    denoFullPathname,             /* xFullPathname */
+    denoDlOpen,                   /* xDlOpen */
+    denoDlError,                  /* xDlError */
+    denoDlSym,                    /* xDlSym */
+    denoDlClose,                  /* xDlClose */
+    denoRandomness,               /* xRandomness */
+    denoSleep,                    /* xSleep */
+    denoCurrentTime,              /* xCurrentTime */
     0,                            /* xGetLastError */
-    0                   ,         /* xCurrentTimeInt64 */
+    0,                            /* xCurrentTimeInt64 */
     0,                            /* xSetSystemCall */
     0,                            /* xGetSystemCall */
     0,                            /* xNextSystemCall */
   };
-  return &wasivfs;
+  return &denovfs;
 }
 
 int sqlite3_os_init(void) {
   debug_printf("running sqlite3_os_init\n");
   // Register VFS
-  return sqlite3_vfs_register(sqlite3_wasivfs(), 1);
+  return sqlite3_vfs_register(sqlite3_denovfs(), 1);
 }
 
 int sqlite3_os_end(void) {

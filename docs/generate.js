@@ -19,7 +19,10 @@ function collect(src) {
       .map((line) => line.replace(/^ *\*( |$)/, ""))
       .join("\n");
     if (item.declaration) {
-      item.declaration = item.declaration.replace(/\??: [a-zA-Z<>]+/g, "");
+      item.declaration = item.declaration.replace(
+        /\??: [a-zA-Z<>\[\]]+( *\| *[a-zA-Z<>\[\]]+)*/g,
+        "",
+      );
     }
     return item;
   });
@@ -109,9 +112,17 @@ for (const file of Deno.args.slice(1)) {
 const root = parse(comments);
 
 // Collect exports from mod
-const modExports = /export {([^}]+)}/.exec(
-  new TextDecoder().decode(await Deno.readFile(Deno.args[1])),
-)[1];
+const modExports = [];
+for (
+  const line of new TextDecoder().decode(await Deno.readFile(Deno.args[1]))
+    .split("\n")
+) {
+  const [match, names] = /export {([^}]+)}/.exec(line) ?? [null, undefined];
+  if (!match) {
+    continue;
+  }
+  modExports.push(names.trim());
+}
 
 // Preamble
 const title = `
@@ -125,7 +136,7 @@ rerun the generator, to avoid loosing the changes.
 
 ## How to import
 \`\`\`javascript
-import {${modExports}} from "https://deno.land/x/sqlite/mod.ts"
+import { ${modExports.join(", ")} } from "https://deno.land/x/sqlite/mod.ts"
 \`\`\`
 The above statement lists all the available imports.
 `.replace(/(^\n)|(\n$)/g, "");
@@ -136,6 +147,8 @@ await Deno.writeFile(out, new TextEncoder().encode(markdown));
 // Message
 console.log("Generated documentation for:");
 for (const [file, num] of Object.entries(stats)) {
-  console.log(`${file} (${num})`);
+  if (num > 0) {
+    console.log(`${file} (${num})`);
+  }
 }
 console.log("Parsed exports from: ".concat(Deno.args[1]));

@@ -3,17 +3,32 @@ import {
   assertEquals,
   assertMatch,
   assertThrows,
-} from "https://deno.land/std/testing/asserts.ts";
-import { open, save, DB, Empty, Status } from "./mod.ts";
+} from "https://deno.land/std@0.53.0/testing/asserts.ts";
+import { DB, Empty, Status } from "./mod.ts";
 import SqliteError from "./src/error.ts";
+
+// file used for fs io tests
+const testDbFile = "test.db";
 
 // permissions for skipping tests which require them
 // if the permission can't be read, it is assumed granted
-const d: any = Deno as any;
-const permWrite = !d.permissions ||
-  (await d.permissions.query({ name: "write" })).state === "granted";
-const permRead = !d.permissions ||
-  (await d.permissions.query({ name: "read" })).state === "granted";
+// TODO(dyedgreen): Update these once permissions can be introspected
+let permWrite = true;
+try {
+  await Deno.remove(testDbFile);
+} catch (e) {
+  if (e instanceof Deno.errors.PermissionDenied) {
+    permWrite = false;
+  }
+}
+let permRead = true;
+try {
+  await Deno.stat(testDbFile);
+} catch (e) {
+  if (e instanceof Deno.errors.PermissionDenied) {
+    permRead = false;
+  }
+}
 
 /** Ensure README example works as advertised. */
 Deno.test("readmeExample", function () {
@@ -32,8 +47,6 @@ Deno.test("readmeExample", function () {
   // Print out data in table
   for (const [name] of db.query("SELECT name FROM people")) continue; // no console.log ;)
 
-  // Save and close connection
-  // await save(db);
   db.close();
 });
 
@@ -318,26 +331,6 @@ Deno.test("blobsAreCopies", function () {
   db.close();
 });
 
-/** Ensure data returned works. */
-Deno.test("data", function () {
-  const db = new DB();
-
-  // Write some data
-  db.query(
-    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)",
-  );
-  db.query("INSERT INTO test (val) VALUES ('test')");
-
-  // Construct second db that is a copy of the first
-  const db2 = new DB(db.data());
-  const [[val]] = [...db.query("SELECT val FROM test")];
-  const [[val2]] = [...db2.query("SELECT val FROM test")];
-  assertEquals(val, val2);
-
-  db.close();
-  db2.close();
-});
-
 /** Ensure saving to file works. */
 Deno.test({
   name: "saveToFile",
@@ -353,29 +346,59 @@ Deno.test({
 
     // Ensure test file does not exist
     try {
-      await Deno.remove("test.db");
+      await Deno.remove(testDbFile);
     } catch {}
 
     // Write data to db
-    const db = await open("test.db");
+    const db = new DB(testDbFile);
     db.query(
       "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)",
     );
     for (const val of data) {
       db.query("INSERT INTO test (val) VALUES (?)", [val]);
     }
-    await save(db);
 
     // Read db and check the data is restored
-    const db2 = await open("test.db");
+    const db2 = await new DB(testDbFile);
     for (const [id, val] of db2.query("SELECT * FROM test")) {
       assertEquals(data[id - 1], val);
     }
 
     // Clean up
-    await Deno.remove("test.db");
+    await Deno.remove(testDbFile);
     db.close();
     db2.close();
+  },
+});
+
+/** Ensure temporary databases work. */
+Deno.test({
+  name: "tempDB",
+  ignore: !permRead || !permWrite,
+  fn: function () {
+    const data = [
+      "Hello World!",
+      "Hello Deno!",
+      "JavaScript <3",
+      "This costs 0€!",
+      "Wéll, hällö thėrè¿",
+    ];
+
+    const db = new DB("");
+
+    db.query(
+      "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)",
+    );
+    for (const val of data) {
+      db.query("INSERT INTO test (val) VALUES (?)", [val]);
+    }
+
+    // Read db and check the data is restored
+    for (const [id, val] of db.query("SELECT * FROM test")) {
+      assertEquals(data[id - 1], val);
+    }
+
+    db.close();
   },
 });
 
@@ -385,7 +408,7 @@ Deno.test("invalidSQL", function () {
   const queries = [
     "INSERT INTO does_not_exist (balance) VALUES (5)",
     "this is not sql",
-    { sql: "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)" },
+    ";;;",
   ];
   for (const query of queries) assertThrows(() => db.query(query));
 
@@ -419,53 +442,12 @@ Deno.test("foreignKeys", function () {
   db.close();
 });
 
-/** Test db limit. */
-Deno.test("dbLimit", function () {
-  const dbs = [];
-  let limitReached = false;
-  try {
-    // try to open too many DBs
-    // (we currently do not guarantee what the limit is)
-    for (let i = 0; i < 10_000; i++) dbs.push(new DB());
-  } catch {
-    limitReached = true;
-  }
-  assertEquals(limitReached, true);
-  assertThrows(() => new DB());
-  dbs.forEach((db) => db.close());
-  const db = new DB();
-  db.close();
-});
-
-/** Test query limit. */
-Deno.test("queryLimit", function () {
-  const db = new DB();
-  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
-  db.query("INSERT INTO test VALUES (1)");
-
-  const queries = [];
-  try {
-    for (let i = 0; i < 10_000; i++) {
-      queries.push(db.query("SELECT * FROM test"));
-    }
-  } catch {}
-
-  assertThrows(() => {
-    db.query("SELECT * FROM test");
-  });
-  queries.forEach((query) => query.done());
-  db.query("SELECT * FROM test").done();
-
-  db.close();
-});
-
 /** Test close behaves correctly. */
 Deno.test("closeDB", function () {
   const db = new DB();
   db.close();
 
   assertThrows(() => db.query("CREATE TABLE test (name TEXT PRIMARY KEY)"));
-  assertThrows(() => db.data());
 });
 
 /** Test having open queries blocks closing. */
@@ -480,6 +462,17 @@ Deno.test("openQueriesBlockClose", function () {
 
   rows.done();
   db.close();
+});
+
+/** Test close with forced option. */
+Deno.test("openQueriesCleanedUpByForcedClose", function () {
+  const db = new DB();
+  db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
+  db.query("INSERT INTO test (name) VALUES (?)", ["Deno"]);
+  const rows = db.query("SELECT name FROM test");
+
+  assertThrows(() => db.close());
+  db.close(true);
 });
 
 /** Test SQLite constraint error code. */

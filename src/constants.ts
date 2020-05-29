@@ -1,4 +1,4 @@
-enum Status {
+export enum Status {
   Unknown = -1, // Unknown status
 
   SqliteOk = 0, // Successful result
@@ -25,21 +25,16 @@ enum Status {
   SqliteMisuse = 21, // Library used incorrectly
   SqliteNoLFS = 22, // Uses OS features not supported on host
   SqliteAuth = 23, // Authorization denied
-  SqlietFormat = 24, // Not used
+  SqliteFormat = 24, // Not used
   SqliteRange = 25, // 2nd parameter to sqlite3_bind out of range
   SqliteNotADB = 26, // File opened that is not a database file
   SqliteNotice = 27, // Notifications from sqlite3_log()
   SqliteWarning = 28, // Warnings from sqlite3_log()
   SqliteRow = 100, // sqlite3_step() has another row ready
   SqliteDone = 101, // sqlite3_step() has finished executing
-
-  StmtLimit = 1000, // Statement limit was reached: the statement registry is full, no more statements can be opened
-  NoStmt = 1001, // Registry entry at this id is empty
-  DatabaseLimit = 1002, // Database limit was reached: the database registry is full, no more databases can be opened
-  NoDatabase = 1003, // Registry entry at this id is empty
 }
 
-enum Types {
+export enum Types {
   Integer = 1,
   Float = 2,
   Text = 3,
@@ -47,8 +42,7 @@ enum Types {
   Null = 5,
 }
 
-enum Values {
+export enum Values {
   Error = -1,
+  Null = 0,
 }
-
-export { Status, Types, Values };

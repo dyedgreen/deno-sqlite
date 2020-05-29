@@ -14,7 +14,9 @@ function encode(bytes) {
 await Deno.writeFile(
   dest,
   new TextEncoder().encode(
-    `const wasm =
+    `import env from "./vfs.js";
+
+const wasm =
   "${encode(wasm)}";
 
 function decode(base64) {
@@ -26,8 +28,15 @@ function decode(base64) {
   return bytes;
 }
 
-const { instance } = await WebAssembly.instantiate(decode(wasm));
-export default instance.exports;
-`,
+const module = new WebAssembly.Module(decode(wasm));
+
+// Create wasm instance and seed random number generator
+export default function instantiate() {
+  const placeholder = { exports: null };
+  const instance = new WebAssembly.Instance(module, env(placeholder));
+  placeholder.exports = instance.exports;
+  instance.exports.seed_rng(Date.now());
+  return instance;
+}`,
   ),
 );
