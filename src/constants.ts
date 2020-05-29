@@ -25,7 +25,7 @@ export enum Status {
   SqliteMisuse = 21, // Library used incorrectly
   SqliteNoLFS = 22, // Uses OS features not supported on host
   SqliteAuth = 23, // Authorization denied
-  SqlietFormat = 24, // Not used
+  SqliteFormat = 24, // Not used
   SqliteRange = 25, // 2nd parameter to sqlite3_bind out of range
   SqliteNotADB = 26, // File opened that is not a database file
   SqliteNotice = 27, // Notifications from sqlite3_log()

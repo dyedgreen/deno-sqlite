@@ -5,15 +5,15 @@ Examples of how to use the SQLite module. Contributions are welcome!
 
 ## Opening and Saving Database Files
 
-Database Files can be opened and saved like this:
+Database Files can be opened by constructing a new `DB` object. Any transactions run against the
+database are automatically saved to disk.
 ```javascript
-import { open, save } from "https://deno.land/x/sqlite/mod.ts";
+import { DB } from "https://deno.land/x/sqlite/mod.ts";
 
-const db = await open("test.db");
+const db = new DB("test.db");
 
 // do something with db
 
-await save(db);
 db.close();
 ```
 
@@ -87,13 +87,3 @@ try {
   console.log(error.codeName);
 }
 ```
-
-
-## Copying a Database
-
-You can copy a whole database in memory.
-```javascript
-const copy = new DB(original.data());
-```
-
-?> This is an in-memory copy.
