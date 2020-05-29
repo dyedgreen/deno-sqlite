@@ -25,6 +25,7 @@ struct DenoFile {
 static int denoClose(sqlite3_file *pFile) {
   DenoFile* p = (DenoFile*)pFile;
   js_close(p->rid);
+  debug_printf("closing file (rid %i)\n", p->rid);
   return SQLITE_OK;
 }
 
@@ -60,6 +61,7 @@ static int denoWrite(sqlite3_file *pFile, const void *zBuf, int iAmt, sqlite_int
 static int denoTruncate(sqlite3_file *pFile, sqlite_int64 size) {
   DenoFile *p = (DenoFile*)pFile;
   js_truncate(p->rid, size);
+  debug_printf("truncating file (rid %i, size: %li)\n", p->rid, size);
   return SQLITE_OK;
 }
 
@@ -67,6 +69,7 @@ static int denoTruncate(sqlite3_file *pFile, sqlite_int64 size) {
 // just have a no-op here.
 // TODO(dyedgreen): Investigate if there is a better way
 static int denoSync(sqlite3_file *pFile, int flags) {
+  debug_printf("no-op call to sync");
   return SQLITE_OK;
 }
 
@@ -80,12 +83,15 @@ static int denoFileSize(sqlite3_file *pFile, sqlite_int64 *pSize) {
 
 // Deno does not support file locks.
 static int denoLock(sqlite3_file *pFile, int eLock) {
+  debug_printf("no-op call to lock");
   return SQLITE_OK;
 }
 static int denoUnlock(sqlite3_file *pFile, int eLock) {
+  debug_printf("no-op call to unlock");
   return SQLITE_OK;
 }
 static int denoCheckReservedLock(sqlite3_file *pFile, int *pResOut) {
+  debug_printf("no-op call to check reserved lock");
   *pResOut = 0;
   return SQLITE_OK;
 }
@@ -95,7 +101,7 @@ static int denoFileControl(sqlite3_file *pFile, int op, void *pArg) {
   return SQLITE_NOTFOUND;
 }
 
-// Deno does not tell us (and probably never will).
+// TODO(dyedgreen): Should we try to get these?
 static int denoSectorSize(sqlite3_file *pFile) {
   return 0;
 }

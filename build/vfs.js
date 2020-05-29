@@ -12,9 +12,8 @@ export default function env(inst) {
   const env = {
     // Print a string pointer to console
     js_print: (str_ptr) => {
-      const len = inst.exports.str_len(str_ptr);
       const text = getStr(inst.exports, str_ptr);
-      console.log(text[len-1] === "\n" ? text.slice(0, len-1) : text);
+      console.log(text[text.length-1] === "\n" ? text.slice(0, -1) : text);
     },
     // Open the file at path, mode = 0 is open RW, mode = 1 is open TEMP
     js_open: (path_ptr, mode) => {
@@ -27,7 +26,7 @@ export default function env(inst) {
           path = Deno.makeTempFileSync({ prefix: "deno_sqlite" });
           break;
       }
-      let rid = Deno.openSync(path).rid;
+      let rid = Deno.openSync(path, { read: true, write: true, create: true }).rid;
       files.set(rid, path);
       return rid;
     },

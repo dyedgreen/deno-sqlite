@@ -34,6 +34,7 @@ const module = new WebAssembly.Module(decode(wasm));
 export default function instantiate() {
   const placeholder = { exports: null };
   const instance = new WebAssembly.Instance(module, env(placeholder));
+  placeholder.exports = instance.exports;
   instance.exports.seed_rng(Date.now());
   return instance;
 }`,
