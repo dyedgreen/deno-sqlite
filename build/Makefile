@@ -1,5 +1,4 @@
 DENO ?= deno
-EMCC ?= emcc
 WASI ?=
 CC    = $(WASI)/bin/clang
 
@@ -7,7 +6,6 @@ ifeq ($(WASI),)
 $(warning To build release target you need to specify a WASI root)
 endif
 
-OUT_JS = "debug.js"
 OUT_WA = "sqlite.wasm"
 OUT_BN = "sqlite.js"
 
@@ -21,9 +19,8 @@ CSRC += $(shell find ./hask -name "*.c")
 FLGS  = -Wall
 RFLG  = -Os
 DFLG  = -DDEBUG_BUILD
-JSFLG = -s MODULARIZE=1 -s EXPORT_ES6=1 -s ENVIRONMENT=shell -s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall']" -s FILESYSTEM=0
 WAFLG = --target=wasm32-unknown-wasi -Wl,--no-entry -nostartfiles --sysroot $(WASI)/share/wasi-sysroot\
-        -DWASI_BUILD -Wl,--export,malloc -Wl,--export,free
+        -DWASI_BUILD -Wl,--export,malloc -Wl,--export,free -Wl,--allow-undefined-file=vfs.syms
 INCS  = -Ilib
 
 # Configure sqlite for out use-case
@@ -56,20 +53,18 @@ SQLFLG = -DSQLITE_DQS=0 -DSQLITE_THREADSAFE=0 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS\
 all: release
 
 build:
+	$(DENO) run --allow-read --allow-write hack/gen_syms.js vfs.syms
 	$(CC) $(WAFLG) $(FLGS) $(INCS) $(CSRC) $(SQLFLG) -o $(OUT_WA)
-
-emscripten:
-	$(EMCC) $(JSFLG) $(FLGS) $(INCS) $(CSRC) $(SQLFLG) -o $(OUT_JS)
-	$(DENO) --allow-read --allow-write hack/patch.js $(OUT_JS)
 
 # temporary bundler, this is in place until deno re-adds
 # support for WASM imports
 bundle:
-	$(DENO) --allow-read --allow-write hack/bundle.js $(OUT_WA) $(OUT_BN)
+	$(DENO) run --allow-read --allow-write hack/bundle.js $(OUT_WA) $(OUT_BN)
 	$(DENO) fmt $(OUT_BN)
 
 debug: FLGS += $(DFLG)
-debug: emscripten
+debug: build
+debug: bundle
 
 release: FLGS += $(RFLG)
 release: build

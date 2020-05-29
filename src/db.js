@@ -1,11 +1,9 @@
 import wasm from "../build/sqlite.js";
+import env from "../build/vfs.js";
 import { getStr, setStr, setArr } from "./wasm.ts";
 import * as constants from "./constants.ts";
 import { Rows, Empty } from "./rows.js";
 import SqliteError from "./error.ts";
-
-// Seed random number generator
-wasm.seed_rng(Date.now());
 
 export class DB {
   /**
@@ -22,7 +20,12 @@ export class DB {
    * file written by SQLite.
    */
   constructor(data) {
-    this._wasm = wasm;
+    // Create wasm instance and seed random number generator
+    const modPlaceholder = { exports: null };
+    const mod = new WebAssembly.Instance(wasm, env(modPlaceholder));
+    modPlaceholder.exports = mod.exports;
+    this._wasm = mod.exports;
+    this._wasm.seed_rng(Date.now());
 
     // Obtain a database id
     this._id = this._wasm.reserve();
