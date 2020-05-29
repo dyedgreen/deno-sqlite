@@ -371,6 +371,37 @@ Deno.test({
   },
 });
 
+/** Ensure temporary databases work. */
+Deno.test({
+  name: "tempDB",
+  ignore: !permRead || !permWrite,
+  fn: function() {
+    const data = [
+      "Hello World!",
+      "Hello Deno!",
+      "JavaScript <3",
+      "This costs 0€!",
+      "Wéll, hällö thėrè¿",
+    ];
+
+    const db = new DB("");
+
+    db.query(
+      "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)",
+    );
+    for (const val of data) {
+      db.query("INSERT INTO test (val) VALUES (?)", [val]);
+    }
+
+    // Read db and check the data is restored
+    for (const [id, val] of db.query("SELECT * FROM test")) {
+      assertEquals(data[id - 1], val);
+    }
+
+    db.close();
+  },
+});
+
 /** Test error is thrown on invalid SQL. */
 Deno.test("invalidSQL", function () {
   const db = new DB();
@@ -431,6 +462,17 @@ Deno.test("openQueriesBlockClose", function () {
 
   rows.done();
   db.close();
+});
+
+/** Test close with forced option. */
+Deno.test("openQueriesCleanedUpByForcedClose", function () {
+  const db = new DB();
+  db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
+  db.query("INSERT INTO test (name) VALUES (?)", ["Deno"]);
+  const rows = db.query("SELECT name FROM test");
+
+  assertThrows(() => db.close());
+  db.close(true);
 });
 
 /** Test SQLite constraint error code. */
