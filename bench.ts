@@ -1,7 +1,10 @@
-import { bench, runBenchmarks } from "https://deno.land/std@0.53.0/testing/bench.ts";
+import {
+  bench,
+  runBenchmarks,
+} from "https://deno.land/std@0.53.0/testing/bench.ts";
 import { DB } from "./mod.ts";
 
-const dbFile = Deno.args[0] || ":memory:";
+const dbFile = Deno.args[0] || ":memory:";
 const db = new DB(dbFile);
 
 db.query(

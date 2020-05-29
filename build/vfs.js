@@ -13,7 +13,7 @@ export default function env(inst) {
     // Print a string pointer to console
     js_print: (str_ptr) => {
       const text = getStr(inst.exports, str_ptr);
-      console.log(text[text.length-1] === "\n" ? text.slice(0, -1) : text);
+      console.log(text[text.length - 1] === "\n" ? text.slice(0, -1) : text);
     },
     // Open the file at path, mode = 0 is open RW, mode = 1 is open TEMP
     js_open: (path_ptr, mode) => {
@@ -26,7 +26,8 @@ export default function env(inst) {
           path = Deno.makeTempFileSync({ prefix: "deno_sqlite" });
           break;
       }
-      let rid = Deno.openSync(path, { read: true, write: true, create: true }).rid;
+      let rid =
+        Deno.openSync(path, { read: true, write: true, create: true }).rid;
       files.set(rid, path);
       return rid;
     },
@@ -42,13 +43,21 @@ export default function env(inst) {
     },
     // Read from a file to a buffer in the module
     js_read: (rid, buffer_ptr, offset, amount) => {
-      const buffer = new Uint8Array(inst.exports.memory.buffer, buffer_ptr, amount);
+      const buffer = new Uint8Array(
+        inst.exports.memory.buffer,
+        buffer_ptr,
+        amount,
+      );
       Deno.seekSync(rid, offset, Deno.SeekMode.Start);
       return Deno.readSync(rid, buffer);
     },
     // Write to a file from a buffer in the module
     js_write: (rid, buffer_ptr, offset, amount) => {
-      const buffer = new Uint8Array(inst.exports.memory.buffer, buffer_ptr, amount);
+      const buffer = new Uint8Array(
+        inst.exports.memory.buffer,
+        buffer_ptr,
+        amount,
+      );
       Deno.seekSync(rid, offset, Deno.SeekMode.Start);
       return Deno.writeSync(rid, buffer);
     },
@@ -62,7 +71,7 @@ export default function env(inst) {
     },
     // Return current time in ms since UNIX epoch
     js_time: () => {
-      return Date.now()
+      return Date.now();
     },
     // Determine if a path exists
     js_exists: (path_ptr) => {
@@ -70,8 +79,9 @@ export default function env(inst) {
       try {
         Deno.statSync(path);
       } catch (e) {
-        if (e instanceof Deno.errors.NotFound)
+        if (e instanceof Deno.errors.NotFound) {
           return 0;
+        }
       }
       return 1;
     },
@@ -82,8 +92,9 @@ export default function env(inst) {
       try {
         Deno.statSync(path);
       } catch (e) {
-        if (e instanceof Deno.errors.PermissionDenied)
+        if (e instanceof Deno.errors.PermissionDenied) {
           return 0;
+        }
       }
       return 1;
     },

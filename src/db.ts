@@ -5,7 +5,14 @@ import SqliteError from "./error.ts";
 import { Rows, Empty } from "./rows.ts";
 
 // Possible parameters to be bound to a query
-type QueryParam = boolean | number | string | null | undefined | Date | Uint8Array;
+type QueryParam =
+  | boolean
+  | number
+  | string
+  | null
+  | undefined
+  | Date
+  | Uint8Array;
 
 export class DB {
   _wasm: any;
@@ -22,21 +29,21 @@ export class DB {
    *
    * The default opens an in-memory database.
    */
-   constructor(path: string = ":memory:") {
-      this._wasm = instantiate().exports;
-      this._open = false;
-      this._transactions = new Set();
+  constructor(path: string = ":memory:") {
+    this._wasm = instantiate().exports;
+    this._open = false;
+    this._transactions = new Set();
 
-      // Try to open the database
-      let status;
-      setStr(this._wasm, path, ptr => {
-        status = this._wasm.open(ptr);
-      });
-      if (status !== Status.SqliteOk) {
-        throw this._error();
-      }
-      this._open = true;
-   }
+    // Try to open the database
+    let status;
+    setStr(this._wasm, path, (ptr) => {
+      status = this._wasm.open(ptr);
+    });
+    if (status !== Status.SqliteOk) {
+      throw this._error();
+    }
+    this._open = true;
+  }
 
   /**
    * DB.query
@@ -102,7 +109,7 @@ export class DB {
 
     // Prepare sqlite query statement
     let stmt: number = Values.Null;
-    setStr(this._wasm, sql, ptr => {
+    setStr(this._wasm, sql, (ptr) => {
       stmt = this._wasm.prepare(ptr);
     });
     if (stmt === Values.Null) {

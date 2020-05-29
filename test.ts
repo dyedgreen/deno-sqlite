@@ -17,15 +17,17 @@ let permWrite = true;
 try {
   await Deno.remove(testDbFile);
 } catch (e) {
-  if (e instanceof Deno.errors.PermissionDenied)
+  if (e instanceof Deno.errors.PermissionDenied) {
     permWrite = false;
+  }
 }
 let permRead = true;
 try {
   await Deno.stat(testDbFile);
 } catch (e) {
-  if (e instanceof Deno.errors.PermissionDenied)
+  if (e instanceof Deno.errors.PermissionDenied) {
     permRead = false;
+  }
 }
 
 /** Ensure README example works as advertised. */
