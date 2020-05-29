@@ -15,7 +15,7 @@ export default class SqliteError extends Error {
   constructor(message: string, code?: number) {
     super(message);
     this.name = "SqliteError";
-    this.code = code ?? Status.Unknown;
+    this.code = typeof code === "number" ? code : Status.Unknown;
   }
 
   /**

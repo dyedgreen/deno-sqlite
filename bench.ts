@@ -1,7 +1,8 @@
-import { bench, runIfMain } from "https://deno.land/std/testing/bench.ts";
+import { bench, runBenchmarks } from "https://deno.land/std@0.53.0/testing/bench.ts";
 import { DB } from "./mod.ts";
 
-const db = new DB();
+const dbFile = Deno.args[0] || ":memory:";
+const db = new DB(dbFile);
 
 db.query(
   "CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, balance INTEGER)",
@@ -90,4 +91,4 @@ bench({
   },
 });
 
-runIfMain(import.meta);
+runBenchmarks();
