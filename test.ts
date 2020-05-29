@@ -375,7 +375,7 @@ Deno.test({
 Deno.test({
   name: "tempDB",
   ignore: !permRead || !permWrite,
-  fn: function() {
+  fn: function () {
     const data = [
       "Hello World!",
       "Hello Deno!",
