@@ -1,5 +1,5 @@
 DENO ?= deno
-WASI ?= /Users/rahmanfadhil/Downloads/wasi-sdk-10.0
+WASI ?=
 CC    = $(WASI)/bin/clang
 
 ifeq ($(WASI),)
