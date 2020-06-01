@@ -231,7 +231,10 @@ export class DB {
   }
 
   /**
-   * Get last inserted row id
+   * DB.lastInsertRowId
+   *
+   * Get last inserted row id. This corresponds to
+   * the SQLite function `sqlite3_last_insert_rowid`.
    */
   get lastInsertRowId(): number {
     return this._wasm.last_insert_rowid();

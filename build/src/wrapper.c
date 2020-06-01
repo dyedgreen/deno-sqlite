@@ -190,5 +190,5 @@ const char* EXPORT(column_table_name) (sqlite3_stmt* stmt, int col) {
 }
 
 double EXPORT(last_insert_rowid) () {
-  return sqlite3_last_insert_rowid(database);
+  return (double)sqlite3_last_insert_rowid(database);
 }

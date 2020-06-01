@@ -594,4 +594,8 @@ Deno.test("lastInsertedId", function () {
   assertEquals(db.lastInsertRowId, 1);
 
   db.close();
+
+  // When the database is closed, the value
+  // will be resetted to 0 again
+  assertEquals(db.lastInsertRowId, 0);
 });
