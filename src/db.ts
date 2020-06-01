@@ -233,7 +233,7 @@ export class DB {
   /**
    * Get last inserted row id
    */
-  get lastInsertedId(): number {
+  get lastInsertRowId(): number {
     return this._wasm.last_insert_rowid();
   }
 

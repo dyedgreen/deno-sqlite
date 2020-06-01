@@ -583,15 +583,15 @@ Deno.test("dateTimeIsCorrect", function () {
 Deno.test("lastInsertedId", function () {
   const db = new DB();
 
-  // By default, lastInsertedId must be 0
-  assertEquals(db.lastInsertedId, 0);
+  // By default, lastInsertRowId must be 0
+  assertEquals(db.lastInsertRowId, 0);
 
   // Create table and insert value
   db.query(`CREATE TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(255))`);
   db.query("INSERT INTO users (name) VALUES ('John Doe')");
 
   // Now, the last inserted row id must be 1
-  assertEquals(db.lastInsertedId, 1);
+  assertEquals(db.lastInsertRowId, 1);
 
   db.close();
 });
