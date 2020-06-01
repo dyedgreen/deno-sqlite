@@ -230,6 +230,13 @@ export class DB {
     this._open = false;
   }
 
+  /**
+   * Get last inserted row id
+   */
+  get lastInsertedId(): number {
+    return this._wasm.last_insert_rowid();
+  }
+
   private _error(code?: number): SqliteError {
     if (code === undefined) {
       code = this._wasm.get_status() as number;
