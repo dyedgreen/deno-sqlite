@@ -93,6 +93,16 @@ resources.
 If force is specified, any on-going transactions
 will be closed.
 
+### DB.lastInsertRowId
+```javascript
+get lastInsertRowId()
+```
+Get last inserted row id. This corresponds to
+the SQLite function `sqlite3_last_insert_rowid`.
+
+By default, it will return 0 if there is no row
+inserted yet.
+
 
 ## SqliteError
 ```javascript
