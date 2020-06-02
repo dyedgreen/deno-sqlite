@@ -235,6 +235,9 @@ export class DB {
    *
    * Get last inserted row id. This corresponds to
    * the SQLite function `sqlite3_last_insert_rowid`.
+   * 
+   * By default, it will return 0 if there is no row
+   * inserted yet.
    */
   get lastInsertRowId(): number {
     return this._wasm.last_insert_rowid();

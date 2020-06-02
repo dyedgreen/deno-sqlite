@@ -588,10 +588,23 @@ Deno.test("lastInsertedId", function () {
 
   // Create table and insert value
   db.query(`CREATE TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(255))`);
-  db.query("INSERT INTO users (name) VALUES ('John Doe')");
 
-  // Now, the last inserted row id must be 1
-  assertEquals(db.lastInsertRowId, 1);
+  const insertRowIds = [];
+
+  // Insert data to table and collect their ids
+  for (let i = 0; i < 10; i++) {
+    db.query("INSERT INTO users (name) VALUES ('John Doe')");
+    insertRowIds.push(db.lastInsertRowId);
+  }
+
+  // Now, the last inserted row id must be 10
+  assertEquals(db.lastInsertRowId, 10);
+
+  // All collected row ids must be the same as in the database
+  assertEquals(
+    insertRowIds,
+    [...db.query("SELECT id FROM users")].map(([i]) => i),
+  );
 
   db.close();
 
