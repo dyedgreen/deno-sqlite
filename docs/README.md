@@ -1,9 +1,11 @@
 # SQLite for Deno Documentation
 
 [![test status](https://github.com/dyedgreen/deno-sqlite/workflows/tests/badge.svg?branch=master)](https://github.com/dyedgreen/deno-sqlite/actions)
-[![docs status](https://github.com/dyedgreen/deno-sqlite/workflows/docs/badge.svg?branch=master)](https://dyedgreen.github.io/deno-sqlite/)
-[![deno doc](https://doc.deno.land/badge.svg)](https://deno.land/x/sqlite)
-[![playground](https://img.shields.io/badge/playground-web-blue)](https://dyedgreen.github.io/deno-sqlite/playground/)
+[![docs status](https://github.com/dyedgreen/deno-sqlite/workflows/docs/badge.svg?branch=master)][docs-web]
+[![deno doc](https://doc.deno.land/badge.svg)][docs-deno]
+
+[docs-deno]: https://deno.land/x/sqlite
+[docs-web]: https://dyedgreen.github.io/deno-sqlite/
 
 This is the documentation for the Deno SQLite module. The module
 uses a version of SQLite compiled to WebAssembly to provide a
