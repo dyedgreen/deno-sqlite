@@ -579,3 +579,36 @@ Deno.test("dateTimeIsCorrect", function () {
   assertEquals(new Date(now + "Z"), new Date());
   db.close();
 });
+
+Deno.test("lastInsertedId", function () {
+  const db = new DB();
+
+  // By default, lastInsertRowId must be 0
+  assertEquals(db.lastInsertRowId, 0);
+
+  // Create table and insert value
+  db.query(`CREATE TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(255))`);
+
+  const insertRowIds = [];
+
+  // Insert data to table and collect their ids
+  for (let i = 0; i < 10; i++) {
+    db.query("INSERT INTO users (name) VALUES ('John Doe')");
+    insertRowIds.push(db.lastInsertRowId);
+  }
+
+  // Now, the last inserted row id must be 10
+  assertEquals(db.lastInsertRowId, 10);
+
+  // All collected row ids must be the same as in the database
+  assertEquals(
+    insertRowIds,
+    [...db.query("SELECT id FROM users")].map(([i]) => i),
+  );
+
+  db.close();
+
+  // When the database is closed, the value
+  // will be resetted to 0 again
+  assertEquals(db.lastInsertRowId, 0);
+});
