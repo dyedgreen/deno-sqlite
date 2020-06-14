@@ -89,7 +89,7 @@ export class DB {
    * If no value is provided to a given parameter,
    * SQLite will default to NULL.
    *
-   * If a big integer is bound, it is converted to a
+   * If a `bigint` is bound, it is converted to a
    * signed 64 big integer, which may not be lossless.
    * If an integer value is read from the database, which
    * is too big to safely be contained in a `number`, it
@@ -164,7 +164,7 @@ export class DB {
           }
           break;
         case "bigint":
-          // bigint is bound to specific big int, which converts to i64 on C side
+          // bigint is bound as a string and converted to i64 on C side
           setStr(this._wasm, value.toString(), (ptr) => {
             status = this._wasm.bind_big_int(stmt, i + 1, ptr);
           });
