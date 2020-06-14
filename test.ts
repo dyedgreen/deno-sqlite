@@ -195,11 +195,11 @@ Deno.test("bindValues", function () {
   db.query(
     "CREATE TABLE bigints (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)",
   );
-  const int_vals: (bigint|number)[] = [9007199254741991n, 100n];
+  const int_vals: (bigint | number)[] = [9007199254741991n, 100n];
   for (const val of int_vals) {
     db.query(
       "INSERT INTO bigints (val) VALUES (?)",
-      [val]
+      [val],
     );
   }
   rows = [...db.query("SELECT val FROM bigints")].map(([v]) => v);
