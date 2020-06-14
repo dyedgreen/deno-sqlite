@@ -40,6 +40,7 @@ export enum Types {
   Text = 3,
   Blob = 4,
   Null = 5,
+  BigInteger = 6,
 }
 
 export enum Values {

@@ -154,7 +154,7 @@ export class Rows {
             ),
           );
           break;
-        case Types.Blob:
+        case Types.Blob: {
           const ptr = this._db._wasm.column_blob(this._stmt, i);
           if (ptr === 0) {
             // Zero pointer results in null
@@ -167,6 +167,12 @@ export class Rows {
             );
           }
           break;
+        }
+        case Types.BigInteger: {
+          const ptr = this._db._wasm.column_text(this._stmt, i);
+          row.push(BigInt(getStr(this._db._wasm, ptr)));
+          break;
+        }
         default:
           // TODO: Differentiate between NULL and not-recognized?
           row.push(null);

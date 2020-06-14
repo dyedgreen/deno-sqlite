@@ -8,6 +8,7 @@ import { Rows, Empty } from "./rows.ts";
 type QueryParam =
   | boolean
   | number
+  | bigint
   | string
   | null
   | undefined
@@ -154,6 +155,12 @@ export class DB {
           } else {
             status = this._wasm.bind_double(stmt, i + 1, value);
           }
+          break;
+        case "bigint":
+          // bigint is bound to specific big int, which converts to i64 on C side
+          setStr(this._wasm, value.toString(), (ptr) => {
+            status = this._wasm.bind_big_int(stmt, i + 1, ptr);
+          });
           break;
         case "string":
           setStr(this._wasm, value, (ptr) => {
