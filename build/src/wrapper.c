@@ -6,6 +6,10 @@
 #define EXPORT(name) __attribute__((used)) __attribute__((export_name (#name))) name
 #define ERROR_VAL -1
 
+#define BIG_INT_TYPE 6
+#define JS_MAX_SAFE_INTEGER 9007199254740991
+#define JS_MIN_SAFE_INTEGER (-JS_MAX_SAFE_INTEGER)
+
 // Status returned by last instruction
 int last_status = SQLITE_OK;
 // Database handle for this instance
@@ -121,6 +125,21 @@ int EXPORT(bind_blob) (sqlite3_stmt* stmt, int idx, void* value, int size) {
   return last_status;
 }
 
+int EXPORT(bind_big_int) (sqlite3_stmt* stmt, int idx, const char* value) {
+  // Bind a big integer, passed as a string
+  sqlite3_int64 int_val = 0;
+  sqlite3_int64 pow = 1;
+  for (int i = 0; value[i] != '\0'; i ++)
+    pow *= 10;
+  for (int i = 0; value[i] != '\0'; i ++) {
+    pow /= 10;
+    int_val += pow * (value[i] - '0');
+  }
+  debug_printf("binding big_int '%s' -> %lld", value, int_val);
+  last_status = sqlite3_bind_int64(stmt, idx, int_val);
+  return last_status;
+}
+
 int EXPORT(bind_null) (sqlite3_stmt* stmt, int idx) {
   last_status = sqlite3_bind_null(stmt, idx);
   debug_printf("binding null (status %i)\n", last_status);
@@ -153,7 +172,16 @@ int EXPORT(column_count) (sqlite3_stmt* stmt) {
 
 // Determine type of column. Returns SQLITE column types.
 int EXPORT(column_type) (sqlite3_stmt* stmt, int col) {
-  return sqlite3_column_type(stmt, col);
+  int type = sqlite3_column_type(stmt, col);
+  if (type == SQLITE_INTEGER) {
+    // handle integers that exceed JS_MAX_SAFE_INTEGER
+    sqlite3_int64 col_val = sqlite3_column_int64(stmt, col);
+    if (col_val > JS_MAX_SAFE_INTEGER || col_val < JS_MIN_SAFE_INTEGER) {
+      debug_printf("detected big integer: %lld\n", col_val);
+      return BIG_INT_TYPE;
+    }
+  }
+  return type;
 }
 
 // Wrap result returning functions.

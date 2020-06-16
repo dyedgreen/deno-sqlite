@@ -8,6 +8,7 @@ import { Rows, Empty } from "./rows.ts";
 type QueryParam =
   | boolean
   | number
+  | bigint
   | string
   | null
   | undefined
@@ -74,18 +75,25 @@ export class DB {
    * Values may only be of the following
    * types and are converted as follows:
    *
-   * | JS in      | SQL type        | JS out     |
-   * |------------|-----------------|------------|
-   * | number     | INTEGER or REAL | number     |
-   * | boolean    | INTEGER         | number     |
-   * | string     | TEXT            | string     |
-   * | Date       | TEXT            | string     |
-   * | Uint8Array | BLOB            | Uint8Array |
-   * | null       | NULL            | null       |
-   * | undefined  | NULL            | null       |
+   * | JS in      | SQL type        | JS out           |
+   * |------------|-----------------|------------------|
+   * | number     | INTEGER or REAL | number or bigint |
+   * | bigint     | INTEGER         | number or bigint |
+   * | boolean    | INTEGER         | number           |
+   * | string     | TEXT            | string           |
+   * | Date       | TEXT            | string           |
+   * | Uint8Array | BLOB            | Uint8Array       |
+   * | null       | NULL            | null             |
+   * | undefined  | NULL            | null             |
    *
    * If no value is provided to a given parameter,
    * SQLite will default to NULL.
+   *
+   * If a `bigint` is bound, it is converted to a
+   * signed 64 big integer, which may not be lossless.
+   * If an integer value is read from the database, which
+   * is too big to safely be contained in a `number`, it
+   * is automatically returned as a `bigint`.
    *
    * If a `Date` is bound, it will be converted to
    * an ISO 8601 string: `YYYY-MM-DDTHH:MM:SS.SSSZ`.
@@ -154,6 +162,12 @@ export class DB {
           } else {
             status = this._wasm.bind_double(stmt, i + 1, value);
           }
+          break;
+        case "bigint":
+          // bigint is bound as a string and converted to i64 on C side
+          setStr(this._wasm, value.toString(), (ptr) => {
+            status = this._wasm.bind_big_int(stmt, i + 1, ptr);
+          });
           break;
         case "string":
           setStr(this._wasm, value, (ptr) => {

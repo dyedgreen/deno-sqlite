@@ -6,6 +6,7 @@ debug.js
 
 # Misc
 hack.js
+hack.ts
 test.db
 build/sqlite-src
 deno

@@ -191,6 +191,21 @@ Deno.test("bindValues", function () {
   assertEquals(rows.length, vals.length);
   assertEquals(rows, vals);
 
+  // big int
+  db.query(
+    "CREATE TABLE bigints (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)",
+  );
+  const int_vals: (bigint | number)[] = [9007199254741991n, 100n];
+  for (const val of int_vals) {
+    db.query(
+      "INSERT INTO bigints (val) VALUES (?)",
+      [val],
+    );
+  }
+  rows = [...db.query("SELECT val FROM bigints")].map(([v]) => v);
+  int_vals[1] = 100;
+  assertEquals(rows, int_vals);
+
   // null & undefined
   db.query(
     "CREATE TABLE nulls (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)",
