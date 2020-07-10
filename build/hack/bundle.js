@@ -20,7 +20,7 @@ const wasm =
   "${encode(wasm)}";
 
 function decode(base64) {
-  const bytesStr = window.atob(base64);
+  const bytesStr = atob(base64);
   const bytes = new Uint8Array(bytesStr.length);
   for (let i = 0, c = bytesStr.length; i < c; i++) {
     bytes[i] = bytesStr.charCodeAt(i);
