@@ -95,10 +95,4 @@ dlwasi:
 setup: dlsqlite
 setup: dlwasi
 
-ci: setup
-ci: amalgamation
-ci: release
-ci:
-	git diff --exit-code
-
-.PHONY: build amalgamation dlsqlite dlwasi ci
+.PHONY: build amalgamation dlsqlite dlwasi
