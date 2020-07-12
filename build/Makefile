@@ -1,16 +1,19 @@
 DENO ?= deno
-WASI ?=
+WASI ?= ./wasi-sdk
 CC    = $(WASI)/bin/clang
-
-ifeq ($(WASI),)
-$(warning To build release target you need to specify a WASI root)
-endif
 
 OUT_WA = "sqlite.wasm"
 OUT_BN = "sqlite.js"
 
 SQLITE_DLD = "https://sqlite.org/2020/sqlite-src-3310100.zip"
 SQLITE_DIR = "sqlite-src-3310100"
+
+WASI_DLD = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-11/wasi-sdk-11.0-linux.tar.gz"
+WASI_TAR = wasi_dl_linux.tar.gz
+ifeq ($(shell uname), Darwin)
+	WASI_DLD = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-11/wasi-sdk-11.0-macos.tar.gz"
+	WASI_TAR = wasi_dl_darwin.tar.gz
+endif
 
 CSRC  = ""
 CSRC += $(shell find ./src  -name "*.c")
@@ -66,21 +69,30 @@ release: FLGS += $(RFLG)
 release: build
 release: bundle
 
-# Helpers for generating new amalgamation files
-# if needed (i.e. if build flags for SQLite change)
-download:
-	curl "$(SQLITE_DLD)" -o "sqlite_dl.zip"
-	shasum -c ".checksums"
-	rm -rf "sqlite-src"
-	unzip "sqlite_dl.zip"
-	mv $(SQLITE_DIR) "sqlite-src"
-	cp "Makefile.sqlite" "sqlite-src/Makefile"
-	rm "sqlite_dl.zip"
-
 amalgamation:
 	make -C sqlite-src clean
 	make -C sqlite-src sqlite3.c SQLFLG="$(SQLFLG)"
 	mv sqlite-src/sqlite3.c lib/sqlite3.c
 	mv sqlite-src/sqlite3.h lib/sqlite3.h
 
-.PHONY: build amalgamation download
+dlsqlite:
+	curl "$(SQLITE_DLD)" -o "sqlite_dl.zip"
+	sed -n '/sqlite_dl.zip/p' ".checksums" | shasum -c -
+	rm -rf "sqlite-src"
+	unzip "sqlite_dl.zip"
+	mv $(SQLITE_DIR) "sqlite-src"
+	cp "Makefile.sqlite" "sqlite-src/Makefile"
+	rm "sqlite_dl.zip"
+
+dlwasi:
+	curl -L "$(WASI_DLD)" -o "$(WASI_TAR)"
+	sed -n '/${WASI_TAR}/p' ".checksums" | shasum -c -
+	rm -rf "wasi-sdk"
+	tar -xzvf "$(WASI_TAR)"
+	mv "wasi-sdk-11.0" "wasi-sdk"
+	rm "${WASI_TAR}"
+
+setup: dlsqlite
+setup: dlwasi
+
+.PHONY: build amalgamation dlsqlite dlwasi

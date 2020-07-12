@@ -9,6 +9,7 @@ hack.js
 hack.ts
 test.db
 build/sqlite-src
+build/wasi-sdk
 deno
 
 # NPM garbage

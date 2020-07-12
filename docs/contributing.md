@@ -10,18 +10,21 @@ on how to contribute.
 To work on the JavaScript/ TypeScript wrapper module, all you need is a [deno](https://deno.land)
 runtime.
 
-To change the compiled SQLite WASM binary, you will require both the [WASI SDK][wasi-sdk] and the
-[emscripten][emscripten] compiler. The former is used for release builds to produce stand-alone
-WASM binaries. The latter is used for debug builds. For help with setting up the these packages
-refer to their respective documentation or see [this blog-post][compile-wasm-blog].
+To change the compiled SQLite WASM binary, you will require to download the [WASI SDK][wasi-sdk]. This
+process should function fully automatically for most users.
 
-To use the provided Makefile, you will need to supply `EMCC`, the path to the emscripten compiler
-and `WASI`, the path to the root folder of your WASI SDK.
+**To install build dependencies** go to the `build` folder (`cd build`), then run `make setup`.
+
+**To compile the binary** run `make release` (or `make debug` for a debug build). If you changed any
+build flags of SQLite, also run `make amalgamation`, before building.
+
+If you are interested in more details regarding the compilation setup, also see
+[this blog post][compile-wasm-blog].
 
 
 ## Code Style and Review
 
-This project aims to follow the [code style guide of the deno project][deno-style].
+This project uses the `deno fmt` code style.
 
 
 ## Documentation
@@ -64,6 +67,4 @@ license (see `LICENSE`).
 
 
 [wasi-sdk]: https://github.com/CraneStation/wasi-sdk/releases
-[emscripten]: https://emscripten.org
 [compile-wasm-blog]: https://tilman.xyz/blog/2019/12/building-webassembly-for-deno/
-[deno-style]: https://deno.land/std/style_guide.md
