@@ -99,6 +99,6 @@ ci: setup
 ci: amalgamation
 ci: release
 ci:
-	git diff --quiet --exit-code
+	git diff --exit-code
 
 .PHONY: build amalgamation dlsqlite dlwasi ci
