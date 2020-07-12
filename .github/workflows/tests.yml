@@ -11,6 +11,8 @@ jobs:
     - uses: actions/checkout@v1
     - name: Run the formatter
       run: /home/runner/.deno/bin/deno fmt --check
+    - name: Check WASM is up to date
+      run: cd build && make ci DENO=/home/runner/.deno/bin/deno && cd ..
     - name: Run tests
       run: /home/runner/.deno/bin/deno test --allow-read --allow-write test.ts
     - name: Run benchmarks
