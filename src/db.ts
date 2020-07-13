@@ -108,7 +108,7 @@ export class DB {
    *
    * !> Any returned Rows object needs to be fully
    * iterated over or discarded by calling
-   * `.done()`.
+   * `.return()` or closing the iterator.
    */
   query(sql: string, values?: object | QueryParam[]): Rows {
     if (!this._open) {
@@ -235,7 +235,7 @@ export class DB {
     }
     if (force) {
       for (const transaction of this._transactions) {
-        transaction.done();
+        transaction.return();
       }
     }
     if (this._wasm.close() !== Status.SqliteOk) {

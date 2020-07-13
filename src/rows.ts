@@ -35,30 +35,21 @@ export class Rows {
   }
 
   /**
-   * Rows.done
+   * Rows.return
    *
-   * Call this if you are done with the
-   * query and have not iterated over all
-   * the available results.
-   *
-   * !> If you leave rows with results before
-   * making new queries, you will leak memory.
-   * Always use `.done()` instead of `break`.
-   *
-   *     const rows = db.query("SELECT name FROM users;");
-   *     for (const [name] of rows) {
-   *       if (name === "Clark Kent")
-   *         rows.done();
-   *     }
+   * Implements the closing iterator
+   * protocol. See also:
+   * https://exploringjs.com/es6/ch_iteration.html#sec_closing-iterators
    */
-  done() {
+  return(): IteratorResult<any> {
     if (this._done) {
-      return;
+      return { done: true, value: undefined };
     }
     // Release transaction slot
     this._db._wasm.finalize(this._stmt);
     this._db._transactions.delete(this);
     this._done = true;
+    return { done: true, value: undefined };
   }
 
   /**
@@ -76,10 +67,10 @@ export class Rows {
         // NO OP
         break;
       case Status.SqliteDone:
-        this.done();
+        this.return();
         break;
       default:
-        this.done();
+        this.return();
         throw this._db._error(status);
         break;
     }
