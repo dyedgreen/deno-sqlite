@@ -1,5 +1,8 @@
 import { Status } from "./constants.ts";
 
+export const ERROR_TRANSACTION_FINALIZED =
+  "Unable to retrieve column names as transaction is finalized.";
+
 export default class SqliteError extends Error {
   /**
    * SqliteError

@@ -1,6 +1,6 @@
 import { getStr } from "./wasm.ts";
 import { Status, Values, Types } from "./constants.ts";
-import SqliteError from "./error.ts";
+import SqliteError, { ERROR_TRANSACTION_FINALIZED } from "./error.ts";
 
 interface ColumnName {
   name: string;
@@ -102,7 +102,7 @@ export class Rows {
   columns(): ColumnName[] {
     if (this._done) {
       throw new SqliteError(
-        "Unable to retrieve column names as transaction is finalized.",
+        ERROR_TRANSACTION_FINALIZED,
       );
     }
 
@@ -124,6 +124,41 @@ export class Rows {
       columns.push({ name, originName, tableName });
     }
     return columns;
+  }
+
+  /**
+   * Rows.toObjects
+   * 
+   * Call this if you need to ouput the rows as objects.
+   * 
+   * Will return an empty array if there are no entries in the table.
+   * 
+   *     const rows = db.query("SELECT name FROM users;").toObjects();
+   */
+  toObjects<T extends any = Record<string, any>>(): T[] {
+    try {
+      const cols = this.columns();
+      const rows: T[] = [];
+
+      for (let row of this) {
+        const res: any = {};
+        for (let i = 0; i < row.length; i++) {
+          res[cols[i].name] = row[i];
+        }
+        rows.push(res);
+      }
+
+      return rows;
+    } catch (e) {
+      if (
+        e instanceof SqliteError &&
+        e.code === -1 &&
+        e.message === ERROR_TRANSACTION_FINALIZED
+      ) {
+        return [];
+      }
+      throw e;
+    }
   }
 
   [Symbol.iterator]() {

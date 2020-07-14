@@ -627,3 +627,49 @@ Deno.test("lastInsertedId", function () {
   // will be resetted to 0 again
   assertEquals(db.lastInsertRowId, 0);
 });
+
+Deno.test("outputToObjectArray", function () {
+  const db = new DB();
+
+  const expectedName = "John Doe";
+
+  // Create table and insert value
+  db.query(`CREATE TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(255))`);
+
+  // Insert data to table
+  for (let i = 0; i < 2; i++) {
+    db.query("INSERT INTO users (name) VALUES ('John Doe')");
+  }
+
+  const res = db.query("SELECT * FROM users").toObjects();
+
+  assert(
+    typeof res === "object" && res.length === 2,
+    "Result is not an array or does not have the correct length",
+  );
+
+  for (let row of res) {
+    assert(typeof row === "object", "Row is not an object");
+    assert(
+      row.hasOwnProperty("id") && row.hasOwnProperty("name"),
+      "Row does not have the correct properties",
+    );
+    assert(row.name === expectedName, "Name is incorrect");
+    assert(typeof row.id === "number", "ID is incorrect");
+  }
+});
+
+Deno.test("outputToObjectArrayEmpty", function () {
+  const db = new DB();
+
+  // Create table and insert value
+  db.query(`CREATE TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(255))`);
+
+  // All collected row ids must be the same as in the database
+  const res = db.query("SELECT * FROM users").toObjects();
+
+  assert(
+    typeof res === "object" && res.length === 0,
+    "Result is not an array or does not have the correct length",
+  );
+});
