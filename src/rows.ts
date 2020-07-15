@@ -53,6 +53,15 @@ export class Rows {
   }
 
   /**
+   * Rows.done
+   *
+   * Deprecated, prefer `Rows.return`.
+   */
+  done() {
+    this.return();
+  }
+
+  /**
    * Rows.next
    *
    * Implements the iterator protocol.
