@@ -587,23 +587,25 @@ Deno.test("getColumnsFromFinalizedRows", function () {
   });
 });
 
-Deno.test("closingIteratorFinalizesRows", function() {
+Deno.test("closingIteratorFinalizesRows", function () {
   const db = new DB();
 
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
-  for (let i = 0; i < 10; i ++)
+  for (let i = 0; i < 10; i++) {
     db.query("INSERT INTO test (id) VALUES (?)", [i]);
+  }
 
   const rows1 = db.query("SELECT * FROM test");
-  for (const _ of rows1)
+  for (const _ of rows1) {
     break;
+  }
   assertEquals(rows1.next().done, true);
 
   const rows2 = db.query("SELECT * FROM test");
   try {
-  for (const _ of rows2) {
-    throw "this is an error ...";
-  }
+    for (const _ of rows2) {
+      throw "this is an error ...";
+    }
   } catch {}
   assertEquals(rows2.next().done, true);
 
