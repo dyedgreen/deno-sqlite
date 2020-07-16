@@ -93,7 +93,7 @@ Deno.test("readmeExampleOld", async function () {
     "Robert Parr",
   ]);
   assertEquals(res, Empty);
-  res.done();
+  res.return();
 
   // Omit write tests, as we don't want to require ---allow-write
   // and have a write test, which checks for the flag and skips itself.
@@ -104,7 +104,7 @@ Deno.test("readmeExampleOld", async function () {
   );
   for (const [name, email] of subscribers) {
     if (Math.random() > 0.5) continue;
-    subscribers.done();
+    subscribers.return();
   }
 
   db.close();
@@ -475,7 +475,7 @@ Deno.test("openQueriesBlockClose", function () {
   // We have an open query
   assertThrows(() => db.close());
 
-  rows.done();
+  rows.return();
   db.close();
 });
 
@@ -579,12 +579,37 @@ Deno.test("getColumnsFromFinalizedRows", function () {
 
   const rows = db.query("SELECT id from test");
 
-  rows.done();
+  rows.return();
 
   // after iteration is done
   assertThrows(() => {
     rows.columns();
   });
+});
+
+Deno.test("closingIteratorFinalizesRows", function () {
+  const db = new DB();
+
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
+  for (let i = 0; i < 10; i++) {
+    db.query("INSERT INTO test (id) VALUES (?)", [i]);
+  }
+
+  const rows1 = db.query("SELECT * FROM test");
+  for (const _ of rows1) {
+    break;
+  }
+  assertEquals(rows1.next().done, true);
+
+  const rows2 = db.query("SELECT * FROM test");
+  try {
+    for (const _ of rows2) {
+      throw "this is an error ...";
+    }
+  } catch {}
+  assertEquals(rows2.next().done, true);
+
+  db.close();
 });
 
 Deno.test("dateTimeIsCorrect", function () {
