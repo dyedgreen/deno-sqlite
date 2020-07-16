@@ -87,7 +87,7 @@ is also iterable, but has zero entries).
 
 !> Any returned Rows object needs to be fully
 iterated over or discarded by calling
-`.done()`.
+`.return()` or closing the iterator.
 
 ### DB.close
 ```javascript
@@ -185,23 +185,19 @@ This class is not exported from the module
 and the only correct way to obtain a `Rows`
 object is by making a database query.
 
+### Rows.return
+```javascript
+return()
+```
+Implements the closing iterator
+protocol. See also:
+https://exploringjs.com/es6/ch_iteration.html#sec_closing-iterators
+
 ### Rows.done
 ```javascript
 done()
 ```
-Call this if you are done with the
-query and have not iterated over all
-the available results.
-
-!> If you leave rows with results before
-making new queries, you will leak memory.
-Always use `.done()` instead of `break`.
-
-    const rows = db.query("SELECT name FROM users;");
-    for (const [name] of rows) {
-      if (name === "Clark Kent")
-        rows.done();
-    }
+Deprecated, prefer `Rows.return`.
 
 ### Rows.next
 ```javascript
