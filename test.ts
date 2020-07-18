@@ -470,7 +470,7 @@ Deno.test({
     db.query("begin;");
     for (let i = 0; i < xs.length; i++) {
       const n = i + 1;
-      const commit = n % (MAX/10) === 0;
+      const commit = n % (MAX / 10) === 0;
       const x = xs[i];
       db.query(
         "INSERT OR IGNORE INTO nos(c1, c2, c3, c4, c5, c6, c7, c8) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
