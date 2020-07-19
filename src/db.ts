@@ -257,6 +257,30 @@ export class DB {
     return this._wasm.last_insert_rowid();
   }
 
+  /**
+   * DB.changes
+   *
+   * Return the number of rows modified, inserted or
+   * deleted by the most recently completed query.
+   * This corresponds to the SQLite function
+   * `sqlite3_changes`.
+   */
+  get changes(): number {
+    return this._wasm.changes();
+  }
+
+  /**
+   * DB.totalChanges
+   *
+   * Return the number of rows modified, inserted or
+   * deleted since the database was opened.
+   * This corresponds to the SQLite function
+   * `sqlite3_total_changes`.
+   */
+  get totalChanges(): number {
+    return this._wasm.total_changes();
+  }
+
   private _error(code?: number): SqliteError {
     if (code === undefined) {
       code = this._wasm.get_status() as number;
