@@ -726,7 +726,9 @@ Deno.test("lastInsertedId", function () {
 Deno.test("changes", function () {
   const db = new DB();
 
-  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)");
+  db.query(
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)",
+  );
 
   for (const name of ["a", "b", "c"]) {
     db.query("INSERT INTO test (name) VALUES (?)", [name]);
@@ -736,5 +738,5 @@ Deno.test("changes", function () {
   db.query("UPDATE test SET name = ?", ["new name"]);
   assertEquals(3, db.changes);
 
-  assertEquals(6, db.totalChanges)
+  assertEquals(6, db.totalChanges);
 });
