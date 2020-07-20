@@ -697,7 +697,7 @@ Deno.test("lastInsertedId", function () {
   assertEquals(db.lastInsertRowId, 0);
 
   // Create table and insert value
-  db.query(`CREATE TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(255))`);
+  db.query("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)");
 
   const insertRowIds = [];
 
@@ -721,4 +721,22 @@ Deno.test("lastInsertedId", function () {
   // When the database is closed, the value
   // will be resetted to 0 again
   assertEquals(db.lastInsertRowId, 0);
+});
+
+Deno.test("changes", function () {
+  const db = new DB();
+
+  db.query(
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)",
+  );
+
+  for (const name of ["a", "b", "c"]) {
+    db.query("INSERT INTO test (name) VALUES (?)", [name]);
+    assertEquals(1, db.changes);
+  }
+
+  db.query("UPDATE test SET name = ?", ["new name"]);
+  assertEquals(3, db.changes);
+
+  assertEquals(6, db.totalChanges);
 });
