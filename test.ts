@@ -738,7 +738,7 @@ Deno.test("changes", function () {
   db.query("UPDATE test SET name = ?", ["new name"]);
   assertEquals(3, db.changes);
 
-  assertEquals(6, db.totalChanges); 
+  assertEquals(6, db.totalChanges);
 });
 
 Deno.test("outputToObjectArray", function () {
@@ -754,7 +754,9 @@ Deno.test("outputToObjectArray", function () {
     db.query("INSERT INTO users (name) VALUES ('John Doe')");
   }
 
-  const res = db.query("SELECT * FROM users").toObjects();
+  const res = [
+    ...db.query("SELECT * FROM users", undefined, { asObjects: true }),
+  ];
 
   assert(
     typeof res === "object" && res.length === 2,
@@ -779,7 +781,9 @@ Deno.test("outputToObjectArrayEmpty", function () {
   db.query(`CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)`);
 
   // All collected row ids must be the same as in the database
-  const res = db.query("SELECT * FROM users").toObjects();
+  const res = [
+    ...db.query("SELECT * FROM users", undefined, { asObjects: true }),
+  ];
 
   assert(
     typeof res === "object" && res.length === 0,

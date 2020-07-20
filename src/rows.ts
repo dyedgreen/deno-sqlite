@@ -8,10 +8,16 @@ interface ColumnName {
   tableName: string;
 }
 
+export interface RowsOptions {
+  asObjects: boolean;
+}
+
 export class Rows {
   private _db: any;
   private _stmt: number;
   private _done: boolean;
+  private _options?: RowsOptions;
+  private _columns?: ColumnName[];
 
   /**
    * Rows
@@ -24,13 +30,18 @@ export class Rows {
    * and the only correct way to obtain a `Rows`
    * object is by making a database query.
    */
-  constructor(db: any, stmt: number) {
+  constructor(db: any, stmt: number, options?: RowsOptions) {
     this._db = db;
     this._stmt = stmt;
+    this._options = options;
     this._done = false;
 
     if (!this._db) {
       this._done = true;
+    }
+
+    if (this._options?.asObjects) {
+      this._columns = this.columns();
     }
   }
 
@@ -83,7 +94,17 @@ export class Rows {
         throw this._db._error(status);
         break;
     }
-    return { value: row, done: false };
+
+    if (this._options?.asObjects) {
+      const rowAsObject: any = {};
+      for (let i = 0; i < row.length; i++) {
+        rowAsObject[this._columns![i].name] = row[i];
+      }
+
+      return { value: rowAsObject, done: false };
+    } else {
+      return { value: row, done: false };
+    }
   }
 
   /**
@@ -124,42 +145,6 @@ export class Rows {
       columns.push({ name, originName, tableName });
     }
     return columns;
-  }
-
-  /**
-   * Rows.toObjects
-   * 
-   * Call this if you need to ouput the rows as objects.
-   * 
-   * Will return an empty array if there are no entries in the table.
-   * 
-   *     const rows = db.query("SELECT name FROM users;").toObjects();
-   */
-  toObjects<T extends any = Record<string, any>>(): T[] {
-    try {
-      const cols = this.columns();
-      const rows: T[] = [];
-
-      for (let row of this) {
-        const res: any = {};
-        for (let i = 0; i < row.length; i++) {
-          res[cols[i].name] = row[i];
-        }
-        rows.push(res);
-      }
-
-      return rows;
-    } catch (e) {
-      if (
-        e instanceof SqliteError &&
-        e.code === -1 &&
-        e.message ===
-          "Unable to retrieve column names as transaction is finalized."
-      ) {
-        return [];
-      }
-      throw e;
-    }
   }
 
   [Symbol.iterator]() {

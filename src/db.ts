@@ -2,7 +2,7 @@ import instantiate from "../build/sqlite.js";
 import { getStr, setStr, setArr } from "./wasm.ts";
 import { Status, Values } from "./constants.ts";
 import SqliteError from "./error.ts";
-import { Rows, Empty } from "./rows.ts";
+import { Rows, Empty, RowsOptions } from "./rows.ts";
 
 // Possible parameters to be bound to a query
 type QueryParam =
@@ -14,6 +14,8 @@ type QueryParam =
   | undefined
   | Date
   | Uint8Array;
+
+type QueryOptions = RowsOptions;
 
 export class DB {
   private _wasm: any;
@@ -110,7 +112,11 @@ export class DB {
    * iterated over or discarded by calling
    * `.return()` or closing the iterator.
    */
-  query(sql: string, values?: object | QueryParam[]): Rows {
+  query(
+    sql: string,
+    values?: object | QueryParam[],
+    options?: QueryOptions,
+  ): Rows {
     if (!this._open) {
       throw new SqliteError("Database was closed.");
     }
@@ -208,7 +214,7 @@ export class DB {
         return Empty;
         break;
       case Status.SqliteRow:
-        const transaction = new Rows(this, stmt);
+        const transaction = new Rows(this, stmt, options);
         this._transactions.add(transaction);
         return transaction;
         break;
