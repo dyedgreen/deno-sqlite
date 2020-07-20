@@ -1,6 +1,6 @@
 import { getStr } from "./wasm.ts";
 import { Status, Values, Types } from "./constants.ts";
-import SqliteError, { ERROR_TRANSACTION_FINALIZED } from "./error.ts";
+import SqliteError from "./error.ts";
 
 interface ColumnName {
   name: string;
@@ -102,7 +102,7 @@ export class Rows {
   columns(): ColumnName[] {
     if (this._done) {
       throw new SqliteError(
-        ERROR_TRANSACTION_FINALIZED,
+        "Unable to retrieve column names as transaction is finalized.",
       );
     }
 
@@ -153,7 +153,8 @@ export class Rows {
       if (
         e instanceof SqliteError &&
         e.code === -1 &&
-        e.message === ERROR_TRANSACTION_FINALIZED
+        e.message ===
+          "Unable to retrieve column names as transaction is finalized."
       ) {
         return [];
       }
