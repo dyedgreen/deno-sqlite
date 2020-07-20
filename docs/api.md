@@ -110,6 +110,24 @@ the SQLite function `sqlite3_last_insert_rowid`.
 By default, it will return 0 if there is no row
 inserted yet.
 
+### DB.changes
+```javascript
+get changes()
+```
+Return the number of rows modified, inserted or
+deleted by the most recently completed query.
+This corresponds to the SQLite function
+`sqlite3_changes`.
+
+### DB.totalChanges
+```javascript
+get totalChanges()
+```
+Return the number of rows modified, inserted or
+deleted since the database was opened.
+This corresponds to the SQLite function
+`sqlite3_total_changes`.
+
 
 ## SqliteError
 ```javascript
