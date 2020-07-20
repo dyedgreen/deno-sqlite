@@ -4,6 +4,7 @@ import {
   assertMatch,
   assertThrows,
 } from "https://deno.land/std@0.53.0/testing/asserts.ts";
+import { createHash } from "https://deno.land/std@0.61.0/hash/mod.ts";
 import { DB, Empty, Status } from "./mod.ts";
 import SqliteError from "./src/error.ts";
 
@@ -28,6 +29,15 @@ try {
   if (e instanceof Deno.errors.PermissionDenied) {
     permRead = false;
   }
+}
+
+async function removeTestDb(name: string) {
+  try {
+    await Deno.remove(name);
+  } catch {}
+  try {
+    await Deno.remove(`${testDbFile}-journal`);
+  } catch {}
 }
 
 /** Ensure README example works as advertised. */
@@ -93,7 +103,7 @@ Deno.test("readmeExampleOld", async function () {
     "Robert Parr",
   ]);
   assertEquals(res, Empty);
-  res.done();
+  res.return();
 
   // Omit write tests, as we don't want to require ---allow-write
   // and have a write test, which checks for the flag and skips itself.
@@ -104,7 +114,7 @@ Deno.test("readmeExampleOld", async function () {
   );
   for (const [name, email] of subscribers) {
     if (Math.random() > 0.5) continue;
-    subscribers.done();
+    subscribers.return();
   }
 
   db.close();
@@ -360,9 +370,7 @@ Deno.test({
     ];
 
     // Ensure test file does not exist
-    try {
-      await Deno.remove(testDbFile);
-    } catch {}
+    await removeTestDb(testDbFile);
 
     // Write data to db
     const db = new DB(testDbFile);
@@ -412,6 +420,68 @@ Deno.test({
     for (const [id, val] of db.query("SELECT * FROM test")) {
       assertEquals(data[id - 1], val);
     }
+
+    db.close();
+  },
+});
+
+/** Prevent regression when writing to large database files. */
+Deno.test({
+  name: "largeDB",
+  ignore: !permRead || !permWrite,
+  fn: async function () {
+    // Ensure test file does not exist
+    await removeTestDb(testDbFile);
+    const db = new DB(testDbFile);
+
+    // test taken from https://github.com/dyedgreen/deno-sqlite/issues/75
+    db.query(
+      "CREATE TABLE IF NOT EXISTS nos (c1 INTEGER, c2 TEXT, c3 TEXT, c4 TEXT, c5 TEXT, c6 TEXT, c7 INTEGER, c8 TEXT UNIQUE)",
+    );
+
+    const MAX = 100000;
+
+    const xs = [];
+    for (let i = 0; i < MAX; i++) {
+      const a = i * 15000;
+      const b = a % 37;
+      const c = a * b / 41;
+      const d = c + a;
+      const e = (new Date()).getTime() + b - a;
+      const f = b - a;
+      const g = a + e;
+
+      const hash = createHash("sha1");
+      hash.update(`${a}${b}{c}{d}{e}{f}{g}`);
+      const h = hash.toString();
+
+      xs.push({
+        c1: a,
+        c2: `${b}`,
+        c3: `${c}`,
+        c4: `${d}`,
+        c5: `${e}`,
+        c6: `${f}`,
+        c7: g,
+        c8: h,
+      });
+    }
+
+    db.query("begin;");
+    for (let i = 0; i < xs.length; i++) {
+      const n = i + 1;
+      const commit = n % (MAX / 10) === 0;
+      const x = xs[i];
+      db.query(
+        "INSERT OR IGNORE INTO nos(c1, c2, c3, c4, c5, c6, c7, c8) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+        [x.c1, x.c2, x.c3, x.c4, x.c5, x.c6, x.c7, x.c8],
+      );
+      if (commit) {
+        db.query("commit;");
+        db.query("begin;");
+      }
+    }
+    db.query("commit;");
 
     db.close();
   },
@@ -475,7 +545,7 @@ Deno.test("openQueriesBlockClose", function () {
   // We have an open query
   assertThrows(() => db.close());
 
-  rows.done();
+  rows.return();
   db.close();
 });
 
@@ -579,12 +649,37 @@ Deno.test("getColumnsFromFinalizedRows", function () {
 
   const rows = db.query("SELECT id from test");
 
-  rows.done();
+  rows.return();
 
   // after iteration is done
   assertThrows(() => {
     rows.columns();
   });
+});
+
+Deno.test("closingIteratorFinalizesRows", function () {
+  const db = new DB();
+
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
+  for (let i = 0; i < 10; i++) {
+    db.query("INSERT INTO test (id) VALUES (?)", [i]);
+  }
+
+  const rows1 = db.query("SELECT * FROM test");
+  for (const _ of rows1) {
+    break;
+  }
+  assertEquals(rows1.next().done, true);
+
+  const rows2 = db.query("SELECT * FROM test");
+  try {
+    for (const _ of rows2) {
+      throw "this is an error ...";
+    }
+  } catch {}
+  assertEquals(rows2.next().done, true);
+
+  db.close();
 });
 
 Deno.test("dateTimeIsCorrect", function () {
@@ -602,7 +697,7 @@ Deno.test("lastInsertedId", function () {
   assertEquals(db.lastInsertRowId, 0);
 
   // Create table and insert value
-  db.query(`CREATE TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(255))`);
+  db.query("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)");
 
   const insertRowIds = [];
 
@@ -626,6 +721,24 @@ Deno.test("lastInsertedId", function () {
   // When the database is closed, the value
   // will be resetted to 0 again
   assertEquals(db.lastInsertRowId, 0);
+});
+
+Deno.test("changes", function () {
+  const db = new DB();
+
+  db.query(
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)",
+  );
+
+  for (const name of ["a", "b", "c"]) {
+    db.query("INSERT INTO test (name) VALUES (?)", [name]);
+    assertEquals(1, db.changes);
+  }
+
+  db.query("UPDATE test SET name = ?", ["new name"]);
+  assertEquals(3, db.changes);
+
+  assertEquals(6, db.totalChanges); 
 });
 
 Deno.test("outputToObjectArray", function () {

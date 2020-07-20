@@ -220,3 +220,11 @@ const char* EXPORT(column_table_name) (sqlite3_stmt* stmt, int col) {
 double EXPORT(last_insert_rowid) () {
   return (double)sqlite3_last_insert_rowid(database);
 }
+
+double EXPORT(changes) () {
+  return (double)sqlite3_changes(database);
+}
+
+double EXPORT(total_changes) () {
+  return (double)sqlite3_total_changes(database);
+}

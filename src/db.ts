@@ -108,7 +108,7 @@ export class DB {
    *
    * !> Any returned Rows object needs to be fully
    * iterated over or discarded by calling
-   * `.done()`.
+   * `.return()` or closing the iterator.
    */
   query(sql: string, values?: object | QueryParam[]): Rows {
     if (!this._open) {
@@ -235,7 +235,7 @@ export class DB {
     }
     if (force) {
       for (const transaction of this._transactions) {
-        transaction.done();
+        transaction.return();
       }
     }
     if (this._wasm.close() !== Status.SqliteOk) {
@@ -255,6 +255,30 @@ export class DB {
    */
   get lastInsertRowId(): number {
     return this._wasm.last_insert_rowid();
+  }
+
+  /**
+   * DB.changes
+   *
+   * Return the number of rows modified, inserted or
+   * deleted by the most recently completed query.
+   * This corresponds to the SQLite function
+   * `sqlite3_changes`.
+   */
+  get changes(): number {
+    return this._wasm.changes();
+  }
+
+  /**
+   * DB.totalChanges
+   *
+   * Return the number of rows modified, inserted or
+   * deleted since the database was opened.
+   * This corresponds to the SQLite function
+   * `sqlite3_total_changes`.
+   */
+  get totalChanges(): number {
+    return this._wasm.total_changes();
   }
 
   private _error(code?: number): SqliteError {

@@ -33,9 +33,6 @@ const names = [...db.query("SELECT name FROM people")].map(([name]) => name);
 // do something with names
 ```
 
-?> If you iterate the rows fully, using `for ... of` or the `...` syntax,
-`.done()` is called automatically!
-
 
 ## Binding Values to Queries
 
@@ -51,9 +48,6 @@ db.query("INSERT INTO people (name, email) VALUES (?, ?)", [name, email]);
 
 !> Always bind user provided data and don't use string interpolation to avoid
 [SQL injection](https://en.wikipedia.org/wiki/SQL_injection).
-
-?> Queries like `INSERT INTO` don't return any rows. For these queries `.done()`
-is called automatically.
 
 ?> You can bind `Date`s and `Uint8Array`s directly. The wrapper will automatically
 convert them to the appropriate SQLite data types.

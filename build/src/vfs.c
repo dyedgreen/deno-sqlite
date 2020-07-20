@@ -40,7 +40,7 @@ static int denoRead(sqlite3_file *pFile, void *zBuf, int iAmt, sqlite_int64 iOfs
 
   // Zero memory if read was short
   if (read_bytes < iAmt)
-    memset(&((char*)zBuf)[iOfst+read_bytes], 0, iAmt-read_bytes);
+    memset(&((char*)zBuf)[read_bytes], 0, iAmt-read_bytes);
 
   return read_bytes < iAmt ? SQLITE_IOERR_SHORT_READ : SQLITE_OK;
 }
