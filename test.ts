@@ -634,7 +634,7 @@ Deno.test("outputToObjectArray", function () {
   const expectedName = "John Doe";
 
   // Create table and insert value
-  db.query(`CREATE TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(255))`);
+  db.query(`CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)`);
 
   // Insert data to table
   for (let i = 0; i < 2; i++) {
@@ -663,7 +663,7 @@ Deno.test("outputToObjectArrayEmpty", function () {
   const db = new DB();
 
   // Create table and insert value
-  db.query(`CREATE TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(255))`);
+  db.query(`CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)`);
 
   // All collected row ids must be the same as in the database
   const res = db.query("SELECT * FROM users").toObjects();
