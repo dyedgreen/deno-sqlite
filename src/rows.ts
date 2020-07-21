@@ -9,10 +9,16 @@ export interface ColumnName {
   tableName: string;
 }
 
+export interface RowsOptions {
+  asObjects: boolean;
+}
+
 export class Rows {
   private _db: any;
   private _stmt: number;
   private _done: boolean;
+  private _options?: RowsOptions;
+  private _columns?: ColumnName[];
 
   /**
    * Rows
@@ -25,13 +31,18 @@ export class Rows {
    * and the only correct way to obtain a `Rows`
    * object is by making a database query.
    */
-  constructor(db: any, stmt: number) {
+  constructor(db: any, stmt: number, options?: RowsOptions) {
     this._db = db;
     this._stmt = stmt;
+    this._options = options;
     this._done = false;
 
     if (!this._db) {
       this._done = true;
+    }
+
+    if (this._options?.asObjects) {
+      this._columns = this.columns();
     }
   }
 
@@ -84,7 +95,17 @@ export class Rows {
         throw this._db._error(status);
         break;
     }
-    return { value: row, done: false };
+
+    if (this._options?.asObjects) {
+      const rowAsObject: any = {};
+      for (let i = 0; i < row.length; i++) {
+        rowAsObject[this._columns![i].name] = row[i];
+      }
+
+      return { value: rowAsObject, done: false };
+    } else {
+      return { value: row, done: false };
+    }
   }
 
   /**
