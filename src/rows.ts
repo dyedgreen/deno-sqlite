@@ -1,8 +1,9 @@
 import { getStr } from "./wasm.ts";
 import { Status, Values, Types } from "./constants.ts";
 import SqliteError from "./error.ts";
+import { RowObjects } from "./row_objects.ts";
 
-interface ColumnName {
+export interface ColumnName {
   name: string;
   originName: string;
   tableName: string;
@@ -127,39 +128,14 @@ export class Rows {
   }
 
   /**
-   * Rows.toObjects
+   * Rows.asObjects
    * 
    * Call this if you need to ouput the rows as objects.
    * 
-   * Will return an empty array if there are no entries in the table.
-   * 
-   *     const rows = db.query("SELECT name FROM users;").toObjects();
+   *     const rows = [...db.query("SELECT name FROM users;").asObjects()];
    */
-  toObjects<T extends any = Record<string, any>>(): T[] {
-    try {
-      const cols = this.columns();
-      const rows: T[] = [];
-
-      for (let row of this) {
-        const res: any = {};
-        for (let i = 0; i < row.length; i++) {
-          res[cols[i].name] = row[i];
-        }
-        rows.push(res);
-      }
-
-      return rows;
-    } catch (e) {
-      if (
-        e instanceof SqliteError &&
-        e.code === -1 &&
-        e.message ===
-          "Unable to retrieve column names as transaction is finalized."
-      ) {
-        return [];
-      }
-      throw e;
-    }
+  asObjects<T extends any = Record<string, any>>(): RowObjects<T> {
+    return new RowObjects<T>(this);
   }
 
   [Symbol.iterator]() {
