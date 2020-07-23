@@ -757,7 +757,7 @@ Deno.test("outputToObjectArray", function () {
   const res = [...db.query("SELECT * FROM users").asObjects()];
 
   assert(
-    typeof res === "object" && res.length === 2,
+    res.length === 2,
     "Result is not an array or does not have the correct length",
   );
 
@@ -782,7 +782,7 @@ Deno.test("outputToObjectArrayEmpty", function () {
   const res = [...db.query("SELECT * FROM users").asObjects()];
 
   assert(
-    typeof res === "object" && res.length === 0,
+    res.length === 0,
     "Result is not an array or does not have the correct length",
   );
 });
