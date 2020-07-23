@@ -13,7 +13,6 @@ export class Rows {
   private _db: any;
   private _stmt: number;
   private _done: boolean;
-  private _columns?: ColumnName[];
 
   /**
    * Rows
@@ -85,7 +84,6 @@ export class Rows {
         throw this._db._error(status);
         break;
     }
-
     return { value: row, done: false };
   }
 

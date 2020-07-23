@@ -110,10 +110,7 @@ export class DB {
    * iterated over or discarded by calling
    * `.return()` or closing the iterator.
    */
-  query(
-    sql: string,
-    values?: object | QueryParam[],
-  ): Rows {
+  query(sql: string, values?: object | QueryParam[]): Rows {
     if (!this._open) {
       throw new SqliteError("Database was closed.");
     }
