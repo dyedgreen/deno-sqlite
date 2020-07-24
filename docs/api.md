@@ -191,6 +191,34 @@ E.g. if `code` is `19`,
 `codeName` would be `SqliteConstraint`.
 
 
+## RowObjects
+```javascript
+new RowObjects(rows)
+```
+RowObjects represent a set of results 
+from a query in the form of an object.
+They are iterable and yield objects.
+
+This class is not exported from the module
+and the only correct way to obtain a `RowObjects`
+object is by making a database query
+and using the `asObject()` method on the `Rows` result.
+
+### RowObjects.return
+```javascript
+return()
+```
+Implements the closing iterator
+protocol. See also:
+https://exploringjs.com/es6/ch_iteration.html#sec_closing-iterators
+
+### RowObjects.next
+```javascript
+next()
+```
+Implements the iterator protocol.
+
+
 ## Rows
 ```javascript
 new Rows(db, stmt)
@@ -236,6 +264,12 @@ This method returns an array of objects, where each object has the following pro
 | `name`       | the result of `sqlite3_column_name`        |
 | `originName` | the result of `sqlite3_column_origin_name` |
 | `tableName`  | the result of `sqlite3_column_table_name`  |
+
+### Rows.asObjects
+
+Call this if you need to ouput the rows as objects.
+
+    const rows = [...db.query("SELECT name FROM users;").asObjects()];
 
 
 ## Empty
