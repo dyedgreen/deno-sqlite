@@ -1,8 +1,9 @@
 import { getStr } from "./wasm.ts";
 import { Status, Values, Types } from "./constants.ts";
 import SqliteError from "./error.ts";
+import { RowObjects } from "./row_objects.ts";
 
-interface ColumnName {
+export interface ColumnName {
   name: string;
   originName: string;
   tableName: string;
@@ -124,6 +125,17 @@ export class Rows {
       columns.push({ name, originName, tableName });
     }
     return columns;
+  }
+
+  /**
+   * Rows.asObjects
+   * 
+   * Call this if you need to ouput the rows as objects.
+   * 
+   *     const rows = [...db.query("SELECT name FROM users;").asObjects()];
+   */
+  asObjects<T extends any = Record<string, any>>(): RowObjects<T> {
+    return new RowObjects<T>(this);
   }
 
   [Symbol.iterator]() {
