@@ -3,6 +3,12 @@ import { getStr, setStr, setArr } from "./wasm.ts";
 import { Status, Values } from "./constants.ts";
 import SqliteError from "./error.ts";
 import { Rows, Empty } from "./rows.ts";
+import { log } from "https://deno.land/x/mysql/src/logger.ts";
+
+/** Transaction processor */
+export interface TransactionProcessor<T> {
+  (connection: DB): Promise<T>;
+}
 
 // Possible parameters to be bound to a query
 type QueryParam =
@@ -287,5 +293,42 @@ export class DB {
     }
     const msg = getStr(this._wasm, this._wasm.get_sqlite_error_str());
     return new SqliteError(msg, code);
+  }
+
+  /**
+   * Use a connection/meant for transaction processor
+   * 
+   * @param fn transation processor
+   */
+  async useConnection<T>(fn: (conn: this) => Promise<T>) {
+    if (!this._open) {
+      throw new Error("Unconnected");
+    }
+    try {
+      const result = await fn(this);
+      return result;
+    } catch (error) {
+      throw this._error();
+    }
+  }
+
+  /**
+   * Execute a transaction process, and the transaction successfully
+   * returns the return value of the transaction process
+   * @param processor transation processor
+   */
+  async transaction<T>(processor: TransactionProcessor<T>): Promise<T> {
+    return await this.useConnection(async (connection) => {
+      try {
+        await connection.query("BEGIN");
+        const result = await processor(connection);
+        await connection.query("COMMIT");
+        return result;
+      } catch (error) {
+        log.info(`ROLLBACK: ${error.message}`);
+        await connection.query("ROLLBACK");
+        throw this._error();
+      }
+    });
   }
 }
