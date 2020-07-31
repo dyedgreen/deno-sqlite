@@ -22,9 +22,13 @@ If you are interested in more details regarding the compilation setup, also see
 [this blog post][compile-wasm-blog].
 
 
-## Code Style and Review
+## Code Style, Review, and Dependencies
 
 This project uses the `deno fmt` code style.
+
+This project uses no external dependencies (with the exception of a copy of the SQLite C library).
+
+For testing purposes, Deno standard library modules may be used.
 
 
 ## Documentation
@@ -58,6 +62,23 @@ Any important functionality should be tested. Tests are in the `test.ts` file. C
 merged unless all tests are passed.
 
 Benchmarks are in the `bench.ts` file.
+
+
+# Technical Direction
+
+The goal of this module is to provide a simple and predictable interface to SQLite. The interface should
+feel like a JavaScript library, but also immediately make sense to someone who knows the SQLite C/C++
+interface. Features and interfaces should generally be orthogonal.
+
+This is a low-level library, which provides access to running SQL queries and retriving the results of
+these queries. This library will only wrap SQLite C api functions, but never try to provide a higher
+level interface to the database than plain SQL. It is meant to serve as a building block for constructing
+higher level interfaces, or for people who need an easy way to execute SQL queries on their SQLite
+database.
+
+The library should be easy to use and behave as any regular JavaScript library would in Deno. This means,
+it should only need the required permissions (e.g. if only in-memory databases are used, no permissions
+should be necessary).
 
 
 ## License
