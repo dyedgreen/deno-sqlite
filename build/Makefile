@@ -95,4 +95,4 @@ dlwasi:
 setup: dlsqlite
 setup: dlwasi
 
-.PHONY: build amalgamation dlsqlite dlwasi
+.PHONY: build amalgamation dlsqlite dlwasi setup
