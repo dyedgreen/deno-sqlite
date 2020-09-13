@@ -81,3 +81,29 @@ try {
   console.log(error.codeName);
 }
 ```
+
+## Server example
+
+A minimal example to run a small server which logs every visited url to a database.
+
+```javascript
+import { serve } from "https://deno.land/std@0.68.0/http/server.ts";
+import { DB } from "https://deno.land/x/sqlite@v2.3.0/mod.ts";
+
+const s = serve({ port: 8000 });
+const db = new DB('example.db');
+db.query("CREATE TABLE IF NOT EXISTS urls (id INTEGER PRIMARY KEY AUTOINCREMENT, url TEXT)");
+
+for await (const req of s) {
+    db.query("INSERT INTO urls (url) VALUES (?)", [req.url]);
+    req.respond({
+        body: "Seen URLs:\n".concat(
+            [...db.query("SELECT url FROM urls")]
+                .map(([url]) => url)
+                .join("\n")
+        )
+    });
+}
+
+db.close();
+```
