@@ -1,0 +1,10 @@
+{
+  "name": "sqlite",
+  "description": "Deno SQLite module",
+  "homepage": "https://github.com/dyedgreen/deno-sqlite",
+  "files": [
+    "./**/*.ts",
+    "README.md"
+  ],
+  "entry": "./mod.ts"
+}
