@@ -786,3 +786,13 @@ Deno.test("outputToObjectArrayEmpty", function () {
     "Result is not an array or does not have the correct length",
   );
 });
+
+Deno.test("json functions enabled", function () {
+  const db = new DB();
+
+  const [[json_type]] = db.query(`SELECT json_type('{}')`);
+  assertEquals(json_type, "object");
+
+  const [[json_extract]] = db.query(`SELECT json_extract('{"a": 2.5}', '$.a')`);
+  assertEquals(json_extract, 2.5);
+});

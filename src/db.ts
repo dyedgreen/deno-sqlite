@@ -1,8 +1,8 @@
 import instantiate from "../build/sqlite.js";
-import { getStr, setStr, setArr } from "./wasm.ts";
+import { getStr, setArr, setStr } from "./wasm.ts";
 import { Status, Values } from "./constants.ts";
 import SqliteError from "./error.ts";
-import { Rows, Empty } from "./rows.ts";
+import { Empty, Rows } from "./rows.ts";
 
 // Possible parameters to be bound to a query
 type QueryParam =
