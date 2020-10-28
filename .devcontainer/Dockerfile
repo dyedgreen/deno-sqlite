@@ -9,4 +9,4 @@ ENV PATH=${DENO_INSTALL}/bin:${PATH} \
     DENO_DIR=${DENO_INSTALL}/.cache/deno
 
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install --no-install-recommends fish make clang gcc
+    && apt-get -y install --no-install-recommends fish tclsh make gcc clang
