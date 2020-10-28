@@ -787,12 +787,36 @@ Deno.test("outputToObjectArrayEmpty", function () {
   );
 });
 
-Deno.test("json functions enabled", function () {
+Deno.test("jsonFunctions", function () {
   const db = new DB();
 
-  const [[json_type]] = db.query(`SELECT json_type('{}')`);
-  assertEquals(json_type, "object");
+  // The JSON1 functions should exist and we should be able to call them without unexpected errors
+  db.query(`SELECT json('["this is json"]')`);
+  db.query(`SELECT json('{"this is": "json"}')`);
+  db.query(`SELECT json('2')`);
 
-  const [[json_extract]] = db.query(`SELECT json_extract('{"a": 2.5}', '$.a')`);
-  assertEquals(json_extract, 2.5);
+  // We should expect an error if we pass invalid JSON where valid JSON is expected
+  assertThrows(() => {
+    db.query(`SELECT json('this is not json')`);
+  });
+
+  // We should be able to use bound values as arguments to the JSON1 functions,
+  // and they should produce the expected results for these simple expressions.
+  const [[object_type]] = db.query(`SELECT json_type('{}')`);
+  assertEquals(object_type, "object");
+
+  const [[integer_type]] = db.query(`SELECT json_type(?)`, ["2"]);
+  assertEquals(integer_type, "integer");
+
+  const [[real_type]] = db.query(`SELECT json_type(?)`, ["2.5"]);
+  assertEquals(real_type, "real");
+
+  const [[string_type]] = db.query(`SELECT json_type(?)`, [`"hello"`]);
+  assertEquals(string_type, "text");
+
+  const [[integer_type_at_path]] = db.query(
+    `SELECT json_type(?, ?)`,
+    [`["hello", 2, {"world": 4}]`, `$[2].world`],
+  );
+  assertEquals(integer_type_at_path, "integer");
 });
