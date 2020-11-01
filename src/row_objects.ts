@@ -1,4 +1,4 @@
-import { Rows, Empty, ColumnName } from "./rows.ts";
+import { ColumnName, Empty, Rows } from "./rows.ts";
 
 export class RowObjects<T extends any = Record<string, any>> {
   private _rows: Rows;

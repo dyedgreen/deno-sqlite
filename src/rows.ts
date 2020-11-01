@@ -1,5 +1,5 @@
 import { getStr } from "./wasm.ts";
-import { Status, Values, Types } from "./constants.ts";
+import { Status, Types, Values } from "./constants.ts";
 import SqliteError from "./error.ts";
 import { RowObjects } from "./row_objects.ts";
 
