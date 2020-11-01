@@ -787,7 +787,7 @@ Deno.test("outputToObjectArrayEmpty", function () {
   );
 });
 
-Deno.test("infinitiesAndInfinitesimals", function () {
+Deno.test("veryLargeAndVerySmall", function () {
   const db = new DB();
 
   // return
@@ -818,6 +818,20 @@ Deno.test("infinitiesAndInfinitesimals", function () {
     "Failed to return correct value for -0.",
   );
 
+  const [[selectedPositiveMassive]] = db.query("SELECT +20e20");
+  assertEquals(
+    selectedPositiveMassive,
+    +20e20,
+    "Failed to return correct value for +20e20.",
+  );
+
+  const [[selectedNegativeMassive]] = db.query("SELECT -20e20");
+  assertEquals(
+    selectedNegativeMassive,
+    -20e20,
+    "Failed to return correct value for -20e20.",
+  );
+
   // bind
 
   const [[boundPositiveInfinity]] = db.query("SELECT ?", [+Infinity]);
@@ -844,5 +858,19 @@ Deno.test("infinitiesAndInfinitesimals", function () {
   assert(
     Object.is(boundNegativeZero, -0),
     "Failed to bind correct value for -0.",
+  );
+
+  const [[boundPositiveMassive]] = db.query("SELECT ?", [+20e20]);
+  assertEquals(
+    boundPositiveMassive,
+    +20e20,
+    "Failed to bind correct value for +20e20.",
+  );
+
+  const [[boundNegativeMassive]] = db.query("SELECT ?", [-20e20]);
+  assertEquals(
+    boundNegativeMassive,
+    -20e20,
+    "Failed to bind correct value for -20e20.",
   );
 });
