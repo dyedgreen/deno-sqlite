@@ -786,3 +786,63 @@ Deno.test("outputToObjectArrayEmpty", function () {
     "Result is not an array or does not have the correct length",
   );
 });
+
+Deno.test("infinitiesAndInfinitesimals", function () {
+  const db = new DB();
+
+  // return
+
+  const [[selectedPositiveInfinity]] = db.query("SELECT +8e8888");
+  assertEquals(
+    selectedPositiveInfinity,
+    +Infinity,
+    "Failed to return correct value for +Infinity.",
+  );
+
+  const [[selectedNegativeInfinity]] = db.query("SELECT -8e8888");
+  assertEquals(
+    selectedNegativeInfinity,
+    -Infinity,
+    "Failed to return correct value for -Infinity.",
+  );
+
+  const [[selectedPositiveZero]] = db.query("SELECT +1/8e8888");
+  assert(
+    Object.is(selectedPositiveZero, +0),
+    "Failed to return correct value for +0.",
+  );
+
+  const [[selectedNegativeZero]] = db.query("SELECT -1/8e8888");
+  assert(
+    Object.is(selectedNegativeZero, -0),
+    "Failed to return correct value for -0.",
+  );
+
+  // bind
+
+  const [[boundPositiveInfinity]] = db.query("SELECT ?", [+Infinity]);
+  assertEquals(
+    boundPositiveInfinity,
+    Infinity,
+    "Failed to bind correct value for +Infinity.",
+  );
+
+  const [[boundNegativeInfinity]] = db.query("SELECT ?", [-Infinity]);
+  assertEquals(
+    boundNegativeInfinity,
+    -Infinity,
+    "Failed to bind correct value for -Infinity.",
+  );
+
+  const [[boundPositiveZero]] = db.query("SELECT ?", [+0]);
+  assert(
+    Object.is(boundPositiveZero, 0),
+    "Failed to bind correct value for +0.",
+  );
+
+  const [[boundNegativeZero]] = db.query("SELECT ?", [-0]);
+  assert(
+    Object.is(boundNegativeZero, -0),
+    "Failed to bind correct value for -0.",
+  );
+});
