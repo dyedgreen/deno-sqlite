@@ -786,3 +786,26 @@ Deno.test("outputToObjectArrayEmpty", function () {
     "Result is not an array or does not have the correct length",
   );
 });
+
+Deno.test("veryLargeNumbers", function () {
+  const db = new DB();
+
+  db.query("CREATE TABLE numbers (id INTEGER PRIMARY KEY, number REAL)");
+
+  db.query("INSERT INTO numbers (number) VALUES (?)", [+Infinity]);
+  db.query("INSERT INTO numbers (number) VALUES (?)", [-Infinity]);
+  db.query("INSERT INTO numbers (number) VALUES (?)", [+20e20]);
+  db.query("INSERT INTO numbers (number) VALUES (?)", [-20e20]);
+
+  const [
+    [positiveInfinity],
+    [negativeInfinity],
+    [positiveTwentyTwenty],
+    [negativeTwentyTwenty],
+  ] = db.query("SELECT number FROM numbers");
+
+  assertEquals(negativeInfinity, -Infinity);
+  assertEquals(positiveInfinity, +Infinity);
+  assertEquals(positiveTwentyTwenty, +20e20);
+  assertEquals(negativeTwentyTwenty, -20e20);
+});
