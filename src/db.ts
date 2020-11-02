@@ -157,7 +157,7 @@ export class DB {
           value = value ? 1 : 0;
         // fall through
         case "number":
-          if (Number.isSafeInteger(value) && !Object.is(value, -0)) {
+          if (Number.isSafeInteger(value)) {
             status = this._wasm.bind_int(stmt, i + 1, value);
           } else {
             status = this._wasm.bind_double(stmt, i + 1, value);

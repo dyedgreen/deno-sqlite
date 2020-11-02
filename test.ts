@@ -787,90 +787,25 @@ Deno.test("outputToObjectArrayEmpty", function () {
   );
 });
 
-Deno.test("veryLargeAndVerySmall", function () {
+Deno.test("veryLargeNumbers", function () {
   const db = new DB();
 
-  // return
+  db.query("CREATE TABLE numbers (id INTEGER PRIMARY KEY, number REAL)");
 
-  const [[selectedPositiveInfinity]] = db.query("SELECT +8e8888");
-  assertEquals(
-    selectedPositiveInfinity,
-    +Infinity,
-    "Failed to return correct value for +Infinity.",
-  );
+  db.query("INSERT INTO numbers (number) VALUES (?)", [+Infinity]);
+  db.query("INSERT INTO numbers (number) VALUES (?)", [-Infinity]);
+  db.query("INSERT INTO numbers (number) VALUES (?)", [+20e20]);
+  db.query("INSERT INTO numbers (number) VALUES (?)", [-20e20]);
 
-  const [[selectedNegativeInfinity]] = db.query("SELECT -8e8888");
-  assertEquals(
-    selectedNegativeInfinity,
-    -Infinity,
-    "Failed to return correct value for -Infinity.",
-  );
+  const [
+    [positiveInfinity],
+    [negativeInfinity],
+    [positiveTwentyTwenty],
+    [negativeTwentyTwenty],
+  ] = db.query("SELECT number FROM numbers");
 
-  const [[selectedPositiveZero]] = db.query("SELECT +1/8e8888");
-  assert(
-    Object.is(selectedPositiveZero, +0),
-    "Failed to return correct value for +0.",
-  );
-
-  const [[selectedNegativeZero]] = db.query("SELECT -1/8e8888");
-  assert(
-    Object.is(selectedNegativeZero, -0),
-    "Failed to return correct value for -0.",
-  );
-
-  const [[selectedPositiveMassive]] = db.query("SELECT +20e20");
-  assertEquals(
-    selectedPositiveMassive,
-    +20e20,
-    "Failed to return correct value for +20e20.",
-  );
-
-  const [[selectedNegativeMassive]] = db.query("SELECT -20e20");
-  assertEquals(
-    selectedNegativeMassive,
-    -20e20,
-    "Failed to return correct value for -20e20.",
-  );
-
-  // bind
-
-  const [[boundPositiveInfinity]] = db.query("SELECT ?", [+Infinity]);
-  assertEquals(
-    boundPositiveInfinity,
-    Infinity,
-    "Failed to bind correct value for +Infinity.",
-  );
-
-  const [[boundNegativeInfinity]] = db.query("SELECT ?", [-Infinity]);
-  assertEquals(
-    boundNegativeInfinity,
-    -Infinity,
-    "Failed to bind correct value for -Infinity.",
-  );
-
-  const [[boundPositiveZero]] = db.query("SELECT ?", [+0]);
-  assert(
-    Object.is(boundPositiveZero, 0),
-    "Failed to bind correct value for +0.",
-  );
-
-  const [[boundNegativeZero]] = db.query("SELECT ?", [-0]);
-  assert(
-    Object.is(boundNegativeZero, -0),
-    "Failed to bind correct value for -0.",
-  );
-
-  const [[boundPositiveMassive]] = db.query("SELECT ?", [+20e20]);
-  assertEquals(
-    boundPositiveMassive,
-    +20e20,
-    "Failed to bind correct value for +20e20.",
-  );
-
-  const [[boundNegativeMassive]] = db.query("SELECT ?", [-20e20]);
-  assertEquals(
-    boundNegativeMassive,
-    -20e20,
-    "Failed to bind correct value for -20e20.",
-  );
+  assertEquals(negativeInfinity, -Infinity);
+  assertEquals(positiveInfinity, +Infinity);
+  assertEquals(positiveTwentyTwenty, +20e20);
+  assertEquals(negativeTwentyTwenty, -20e20);
 });
