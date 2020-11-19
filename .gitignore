@@ -7,7 +7,8 @@ debug.js
 # Misc
 hack.js
 hack.ts
-test.db
+*.db
+*.db-journal
 build/sqlite-src
 build/wasi-sdk
 deno
