@@ -11,40 +11,24 @@ jobs:
     - name: Install Deno
       run: curl -fsSL https://deno.land/x/install/install.sh | sh
 
-    - name: Check if generated files are present
-      id: verify
-      run: stat build/sqlite.{js,wasm} build/lib/sqlite3.{c,h}
-      continue-on-error: true
-
-    - if: steps.verify.outcome == 'failure' && github.event_name == 'push'
-      name: Reading environment for git write access
-      id: git-env
-      run: |
-        echo "::set-output name=git-branch::$(echo ${GITHUB_REF#refs/heads/})"
-        echo "::set-output name=git-date::"$(git log -1 --pretty=format:'%ad')""
-
-    - if: steps.git-env.outcome == 'success'
-      id: configure
-      name: Configuring git write access
-      run: |
-        git remote rm origin
-        git remote add origin "https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
-        git checkout "${{ steps.git-env.outputs.git-branch }}"
-        git config user.name "$(git log -1 --pretty=format:'%an')"
-        git config user.email "$(git log -1 --pretty=format:'%ae')"
-
-    - if: steps.verify.outcome == 'failure'
-      name: Rebuild generated files
-      id: rebuild
+    - name: Build generated files
+      id: build
       run: |
         export DENO_INSTALL="/home/runner/.deno"
         export PATH="$DENO_INSTALL/bin:$PATH"
         rm -f build/sqlite.{js,wasm} build/lib/sqlite3.{c,h}
-        sudo apt-get -y install --no-install-recommends tclsh gcc clang
+        sudo apt-get -y install --no-install-recommends tclsh gcc
         cd build
+
         make setup
         make amalgamation
         make release
+
+        git status
+        declare had_changes="$(
+          [[ -n "$(git status --porcelain)" ]] && echo true || echo false
+        )"
+        echo "::set-output name=had-changes::${had_changes}"
 
     - name: Run the formatter
       run: /home/runner/.deno/bin/deno fmt --check
@@ -55,16 +39,36 @@ jobs:
     - name: Run benchmarks
       run: /home/runner/.deno/bin/deno run bench.ts
 
-    - if: steps.rebuild.outcome == 'success' && steps.configure.outcome == 'success'
+    - if: success() && steps.build.outputs.had-changes == 'true' && github.event_name == 'push'
+      name: Configure git write access
+      id: git
+      run: |
+        declare git_branch="$(echo ${GITHUB_REF#refs/heads/})"
+        git remote rm origin
+        git remote add origin "https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
+        git checkout "${git_branch}"
+        git config user.name "$(git log -1 --pretty=format:'%an')"
+        git config user.email "$(git log -1 --pretty=format:'%ae')"
+        echo "::set-output name=date::$(git log -1 --pretty=format:'%ad')"
+        echo "::set-output name=branch::${git_branch}"
+
+    - if: success() && steps.build.outputs.had-changes == 'true' && github.event_name == 'push'
       name: Commit and push generated files
       run: |
         git add ./build
-        git commit -m "$(printf 'Rebuilt generated files\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}')"
-        git push --set-upstream origin "${{ steps.git-env.outputs.git-branch }}"
+        git commit -m "$(printf 'Rebuild generated files\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}')"
+        git push --set-upstream origin "${{ steps.git.outputs.branch }}"
       env:
         GIT_COMMITTER_NAME: /x/sqlite
-        GIT_COMMITTER_EMAIL: x-sqlite@noreply.github.com
+        GIT_COMMITTER_EMAIL: x-sqlite@actions.noreply.github.com
         # We lock the date so the generated commit's hash won't needlessly
         # vary if the action is run multiple times.
-        GIT_COMMITTER_DATE: "${{ steps.git-env.outputs.git-date }}"
-        GIT_AUTHOR_DATE: "${{ steps.git-env.outputs.git-date }}"
+        GIT_COMMITTER_DATE: "${{ steps.git.outputs.date }}"
+        GIT_AUTHOR_DATE: "${{ steps.git.outputs.date }}"
+
+    - if: success() && steps.build.outputs.had-changes == 'true' && github.event_name != 'push'
+      name: Fail if generated files are out-of-date and we can't push
+      run: |
+        echo "Generated files are out-of-date!"
+        git status
+        exit 1
