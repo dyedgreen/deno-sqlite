@@ -11,25 +11,25 @@ jobs:
     - name: Install Deno
       run: curl -fsSL https://deno.land/x/install/install.sh | sh
 
-    - name: Verify generated files are present
+    - name: Check if generated files are present
       id: verify
       run: stat build/sqlite.{js,wasm} build/lib/sqlite3.{c,h}
       continue-on-error: true
 
     - if: steps.verify.outcome == 'failure' && github.event_name == 'push'
-      name: Reading environment
-      id: env
+      name: Reading environment for git write access
+      id: git-env
       run: |
         echo "::set-output name=git-branch::$(echo ${GITHUB_REF#refs/heads/})"
         echo "::set-output name=git-date::"$(git log -1 --pretty=format:'%ad')""
 
-    - if: steps.env.outcome == 'success'
+    - if: steps.git-env.outcome == 'success'
       id: configure
       name: Configuring git write access
       run: |
         git remote rm origin
         git remote add origin "https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
-        git checkout "${{ steps.env.outputs.git-branch }}"
+        git checkout "${{ steps.git-env.outputs.git-branch }}"
         git config user.name "$(git log -1 --pretty=format:'%an')"
         git config user.email "$(git log -1 --pretty=format:'%ae')"
 
@@ -58,11 +58,13 @@ jobs:
     - if: steps.rebuild.outcome == 'success' && steps.configure.outcome == 'success'
       name: Commit and push generated files
       run: |
-        git commit ./build/ -m $"Rebuild generated files\n\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        git push
+        git add ./build
+        git commit -m "$(printf 'Rebuilt generated files\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}')"
+        git push --set-upstream origin "${{ steps.git-env.outputs.git-branch }}"
       env:
         GIT_COMMITTER_NAME: /x/sqlite
-        GIT_COMMITTER_EMAIL: noreply@github.com
-        GIT_COMMITTER_DATE: "${{ steps.env.outputs.git-date }}"
-        GIT_AUTHOR_DATE: "${{ steps.env.outputs.git-date }}"
-      continue-on-error: true
+        GIT_COMMITTER_EMAIL: x-sqlite@noreply.github.com
+        # We lock the date so the generated commit's hash won't needlessly
+        # vary if the action is run multiple times.
+        GIT_COMMITTER_DATE: "${{ steps.git-env.outputs.git-date }}"
+        GIT_AUTHOR_DATE: "${{ steps.git-env.outputs.git-date }}"

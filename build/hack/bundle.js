@@ -5,10 +5,10 @@ const wasm = await Deno.readFile(src);
 function encode(bytes) {
   let binary = "";
   let len = bytes.length;
-  for (var i = 0; i < len; i++) {
+  for (let i = 0; i < len; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
-  return window.btoa(binary).replace(/\n/g, "");
+  return window.btoa(binary).replace(/.{72}/g, "$&\n");
 }
 
 await Deno.writeFile(
@@ -16,8 +16,9 @@ await Deno.writeFile(
   new TextEncoder().encode(
     `import env from "./vfs.js";
 
-const wasm =
-  "${encode(wasm)}";
+const wasm = \`
+${encode(wasm)}
+\`;
 
 function decode(base64) {
   const bytesStr = atob(base64);
