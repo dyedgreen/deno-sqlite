@@ -40,7 +40,15 @@ async function removeTestDb(name: string) {
   } catch {}
 }
 
-/** Ensure README example works as advertised. */
+async function dbExists(path: string) {
+  try {
+    await Deno.stat(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 Deno.test("readmeExample", function () {
   // Open a database (no file permission version of open)
   const db = new DB();
@@ -60,7 +68,6 @@ Deno.test("readmeExample", function () {
   db.close();
 });
 
-/** Ensure the old README examples works as advertised. */
 Deno.test("readmeExampleOld", async function () {
   const db = new DB();
   const first = ["Bruce", "Clark", "Peter"];
@@ -120,7 +127,6 @@ Deno.test("readmeExampleOld", async function () {
   db.close();
 });
 
-/** Ensure binding values works correctly. */
 Deno.test("bindValues", function () {
   const db = new DB();
   let vals, rows;
@@ -277,7 +283,6 @@ Deno.test("bindValues", function () {
   db.close();
 });
 
-/** Ensure binding named values works as advertised. */
 Deno.test("bindNamedParameters", function () {
   const db = new DB();
 
@@ -327,7 +332,6 @@ Deno.test("bindNamedParameters", function () {
   db.close();
 });
 
-/** Ensure blob data is copied and not viewed. */
 Deno.test("blobsAreCopies", function () {
   const db = new DB();
 
@@ -356,7 +360,6 @@ Deno.test("blobsAreCopies", function () {
   db.close();
 });
 
-/** Ensure saving to file works. */
 Deno.test({
   name: "saveToFile",
   ignore: !permRead || !permWrite,
@@ -394,7 +397,6 @@ Deno.test({
   },
 });
 
-/** Ensure temporary databases work. */
 Deno.test({
   name: "tempDB",
   ignore: !permRead || !permWrite,
@@ -425,7 +427,6 @@ Deno.test({
   },
 });
 
-/** Prevent regression when writing to large database files. */
 Deno.test({
   name: "largeDB",
   ignore: !permRead || !permWrite,
@@ -487,7 +488,6 @@ Deno.test({
   },
 });
 
-/** Test error is thrown on invalid SQL. */
 Deno.test("invalidSQL", function () {
   const db = new DB();
   const queries = [
@@ -500,7 +500,6 @@ Deno.test("invalidSQL", function () {
   db.close();
 });
 
-/** Test default is enforcing foreign key constraints. */
 Deno.test("foreignKeys", function () {
   const db = new DB();
   db.query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)");
@@ -527,7 +526,6 @@ Deno.test("foreignKeys", function () {
   db.close();
 });
 
-/** Test close behaves correctly. */
 Deno.test("closeDB", function () {
   const db = new DB();
   db.close();
@@ -535,7 +533,6 @@ Deno.test("closeDB", function () {
   assertThrows(() => db.query("CREATE TABLE test (name TEXT PRIMARY KEY)"));
 });
 
-/** Test having open queries blocks closing. */
 Deno.test("openQueriesBlockClose", function () {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
@@ -549,7 +546,6 @@ Deno.test("openQueriesBlockClose", function () {
   db.close();
 });
 
-/** Test close with forced option. */
 Deno.test("openQueriesCleanedUpByForcedClose", function () {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
@@ -560,7 +556,6 @@ Deno.test("openQueriesCleanedUpByForcedClose", function () {
   db.close(true);
 });
 
-/** Test SQLite constraint error code. */
 Deno.test("constraintErrorCode", function () {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
@@ -577,7 +572,6 @@ Deno.test("constraintErrorCode", function () {
   );
 });
 
-/** Test SQLite syntax error error code. */
 Deno.test("syntaxErrorErrorCode", function () {
   const db = new DB();
 
@@ -592,7 +586,6 @@ Deno.test("syntaxErrorErrorCode", function () {
   );
 });
 
-/** Test invalid value does not cause statement leakage. */
 Deno.test("invalidBindDoesNotLeakStatements", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER)");
@@ -819,4 +812,45 @@ Deno.test("jsonFunctions", function () {
     [`["hello", 2, {"world": 4}]`, `$[2].world`],
   );
   assertEquals(integer_type_at_path, "integer");
+});
+
+Deno.test("veryLargeNumbers", function () {
+  const db = new DB();
+
+  db.query("CREATE TABLE numbers (id INTEGER PRIMARY KEY, number REAL)");
+
+  db.query("INSERT INTO numbers (number) VALUES (?)", [+Infinity]);
+  db.query("INSERT INTO numbers (number) VALUES (?)", [-Infinity]);
+  db.query("INSERT INTO numbers (number) VALUES (?)", [+20e20]);
+  db.query("INSERT INTO numbers (number) VALUES (?)", [-20e20]);
+
+  const [
+    [positiveInfinity],
+    [negativeInfinity],
+    [positiveTwentyTwenty],
+    [negativeTwentyTwenty],
+  ] = db.query("SELECT number FROM numbers");
+
+  assertEquals(negativeInfinity, -Infinity);
+  assertEquals(positiveInfinity, +Infinity);
+  assertEquals(positiveTwentyTwenty, +20e20);
+  assertEquals(negativeTwentyTwenty, -20e20);
+});
+
+Deno.test({
+  name: "dbLarger2GB",
+  ignore: !permRead || !permWrite || !(await dbExists("movies.db")),
+  fn: async function () {
+    // This test needs to write to a very large database file (>2GB)
+    // generating/ downloading this file at test time takes a long time
+    // and so currently this test depends on the file being present in
+    // the system already. To get a copy of the file used visit
+    // https://www.kaggle.com/clementmsika/mubi-sqlite-database-for-movie-lovers
+    //
+    // TODO(dyedgreen): Somehow add large database file to GitHub test container
+    const db = new DB("movies.db");
+    const rand = () => Math.random().toString(36).substring(7);
+    db.query("INSERT INTO ratings (critic) VALUES (?)", [rand()]);
+    db.close();
+  },
 });

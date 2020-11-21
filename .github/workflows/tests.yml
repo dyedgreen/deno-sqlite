@@ -1,17 +1,70 @@
-name: tests
+name: "Build and Test"
 
 on: [push, pull_request]
 
 jobs:
-  test:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v2
+
     - name: Install Deno
       run: curl -fsSL https://deno.land/x/install/install.sh | sh
-    - uses: actions/checkout@v1
+
+    - name: Check if generated files are present
+      id: verify
+      run: stat build/sqlite.{js,wasm} build/lib/sqlite3.{c,h}
+      continue-on-error: true
+
+    - if: steps.verify.outcome == 'failure' && github.event_name == 'push'
+      name: Reading environment for git write access
+      id: git-env
+      run: |
+        echo "::set-output name=git-branch::$(echo ${GITHUB_REF#refs/heads/})"
+        echo "::set-output name=git-date::"$(git log -1 --pretty=format:'%ad')""
+
+    - if: steps.git-env.outcome == 'success'
+      id: configure
+      name: Configuring git write access
+      run: |
+        git remote rm origin
+        git remote add origin "https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
+        git checkout "${{ steps.git-env.outputs.git-branch }}"
+        git config user.name "$(git log -1 --pretty=format:'%an')"
+        git config user.email "$(git log -1 --pretty=format:'%ae')"
+
+    - if: steps.verify.outcome == 'failure'
+      name: Rebuild generated files
+      id: rebuild
+      run: |
+        export DENO_INSTALL="/home/runner/.deno"
+        export PATH="$DENO_INSTALL/bin:$PATH"
+        rm -f build/sqlite.{js,wasm} build/lib/sqlite3.{c,h}
+        sudo apt-get -y install --no-install-recommends tclsh gcc clang
+        cd build
+        make setup
+        make amalgamation
+        make release
+
     - name: Run the formatter
       run: /home/runner/.deno/bin/deno fmt --check
+
     - name: Run tests
       run: /home/runner/.deno/bin/deno test --allow-read --allow-write test.ts
+
     - name: Run benchmarks
       run: /home/runner/.deno/bin/deno run bench.ts
+
+    - if: steps.rebuild.outcome == 'success' && steps.configure.outcome == 'success'
+      name: Commit and push generated files
+      run: |
+        git add ./build
+        git commit -m "$(printf 'Rebuilt generated files\nhttps://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}')"
+        git push --set-upstream origin "${{ steps.git-env.outputs.git-branch }}"
+      env:
+        GIT_COMMITTER_NAME: /x/sqlite
+        GIT_COMMITTER_EMAIL: x-sqlite@noreply.github.com
+        # We lock the date so the generated commit's hash won't needlessly
+        # vary if the action is run multiple times.
+        GIT_COMMITTER_DATE: "${{ steps.git-env.outputs.git-date }}"
+        GIT_AUTHOR_DATE: "${{ steps.git-env.outputs.git-date }}"

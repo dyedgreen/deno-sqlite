@@ -21,8 +21,6 @@ Documentation is available as a [website][docs-web], on [Deno Docs][docs-deno], 
 
 ## Example
 
-Also try the experimental [web playground](https://dyedgreen.github.io/deno-sqlite/playground/)!
-
 ```javascript
 import { DB } from "https://deno.land/x/sqlite/mod.ts";
 
