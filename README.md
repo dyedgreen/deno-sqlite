@@ -52,7 +52,7 @@ use something like WAL, use a plugin based module like the awesome
 
 ### Advantages
 - Security: benefit from Denos security settings, without the need to trust a third party
-- Potability: runs everywhere Deno runs and can even run in the browser
+- Portability: runs everywhere Deno runs and can even run in the browser
 - Easy: takes full advantage of Denos module cache and does not require any network access after initial download
 
 ### Disadvantages
