@@ -59,6 +59,7 @@ use something like WAL, use a plugin based module like the awesome
 - Speed: file system IO through Deno can be significantly lower compared to what is achievable using a native binary
 - Weaker Persistence Guarantees: due to limitations in Denos file system APIs, SQLite can't acquire file locks or
   memory map files, which makes some persistence guarantees less strong (e.g. this module can't safely use WAL mode)
+- The entire database file is loaded into memory, operated on, then saved back to disk again
 
 ## Users
 
