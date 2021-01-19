@@ -32,7 +32,7 @@ SQLFLG = -DSQLITE_DQS=0 -DSQLITE_THREADSAFE=0 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS\
          -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_UTF16 -DSQLITE_OMIT_SHARED_CACHE\
          -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_PROGRESS_CALLBACK -DSQLITE_OMIT_TRACE\
          -DSQLITE_OS_OTHER=1 -DSQLITE_OMIT_COMPLETE -DSQLITE_OMIT_WAL\
-         -DNDEBUG=1 -DSQLITE_ENABLE_COLUMN_METADATA
+         -DNDEBUG=1 -DSQLITE_ENABLE_COLUMN_METADATA -DSQLITE_ENABLE_JSON1
 # Rational:
 # SQLITE_DQS -> we do not need to have backwards comp
 # SQLITE_THREADSAFE -> we run single-threaded
@@ -50,6 +50,7 @@ SQLFLG = -DSQLITE_DQS=0 -DSQLITE_THREADSAFE=0 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS\
 # SQLITE_OMIT_WAL -> this is doggy, as we can not memory map files
 # DNDEBUG -> "use for maximum speed"
 # SQLITE_ENABLE_COLUMN_METADATA -> we depend on column metadata interfaces (`sqlite3_column_table_name` and `sqlite3_column_origin_name`)
+# SQLITE_ENABLE_JSON1 -> json data is common in javascript
 
 all: release
 
