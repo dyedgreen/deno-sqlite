@@ -784,9 +784,7 @@ Deno.test("jsonFunctions", function () {
   const db = new DB();
 
   // The JSON1 functions should exist and we should be able to call them without unexpected errors
-  db.query(`SELECT json('["this is json"]')`);
-  db.query(`SELECT json('{"this is": "json"}')`);
-  db.query(`SELECT json('2')`);
+  db.query(`SELECT json('{"this is": ["json"]}')`);
 
   // We should expect an error if we pass invalid JSON where valid JSON is expected
   assertThrows(() => {
