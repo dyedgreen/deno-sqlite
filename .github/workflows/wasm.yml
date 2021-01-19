@@ -6,7 +6,7 @@ on:
       - "master"
 
 jobs:
-  docs:
+  wasm:
     runs-on: ubuntu-latest
     steps:
     - name: Install Deno
