@@ -26,6 +26,6 @@ jobs:
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
         commit_message: (GitHub Action) Rebuild SQLite WASM
-        file_pattern: build/*
+        file_pattern: build/sqlite.js build/sqlite.wasm
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
