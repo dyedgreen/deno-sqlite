@@ -12,7 +12,9 @@ jobs:
     steps:
     - name: Install Deno
       run: curl -fsSL https://deno.land/x/install/install.sh | sh
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.head_ref }}
     - name: Build SQLite
       id: build
       run: |
