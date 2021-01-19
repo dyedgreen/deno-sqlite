@@ -11,7 +11,7 @@ jobs:
     - name: Install Deno
       run: curl -fsSL https://deno.land/x/install/install.sh | sh
 
-    - name: Build generated files
+    - name: Build SQLite
       id: build
       run: |
         export DENO_INSTALL="/home/runner/.deno"
