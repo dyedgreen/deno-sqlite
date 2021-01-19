@@ -1,12 +1,13 @@
 name: wasm
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - "master"
 
 jobs:
-  docs:
+  wasm:
     runs-on: ubuntu-latest
     steps:
     - name: Install Deno
@@ -23,7 +24,6 @@ jobs:
     - uses: stefanzweifel/git-auto-commit-action@v2.5.0
       with:
         commit_message: (GitHub Action) Rebuild SQLite WASM
-        branch: master
         file_pattern: build/*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
