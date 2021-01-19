@@ -1,3 +1,5 @@
+name: wasm
+
 on:
   push:
     branches:
@@ -22,8 +24,6 @@ jobs:
       with:
         commit_message: (GitHub Action) Rebuild SQLite WASM
         branch: master
-        file_pattern:
-          - build/sqlite.js
-          - build/sqlite.wasm
+        file_pattern: build/*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
