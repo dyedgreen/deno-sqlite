@@ -1,3 +1,5 @@
+name: wasm
+
 on:
   push:
     branches:
