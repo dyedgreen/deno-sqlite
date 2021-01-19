@@ -16,13 +16,10 @@ jobs:
       run: |
         export DENO_INSTALL="/home/runner/.deno"
         export PATH="$DENO_INSTALL/bin:$PATH"
-        rm -f build/sqlite.{js,wasm} build/lib/sqlite3.{c,h}
         sudo apt-get -y install --no-install-recommends tclsh gcc
         cd build
 
-        make setup
-        make amalgamation
-        make release
+        make setup amalgamation release
 
         git status
         declare had_changes="$(
