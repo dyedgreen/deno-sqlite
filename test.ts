@@ -5,7 +5,7 @@ import {
   assertThrows,
 } from "https://deno.land/std@0.53.0/testing/asserts.ts";
 import { createHash } from "https://deno.land/std@0.61.0/hash/mod.ts";
-import { DB, Empty, Status } from "./mod.ts";
+import { DB, Empty, encodeIdentifier, SQL, Status, toSQL } from "./mod.ts";
 import SqliteError from "./src/error.ts";
 
 // file used for fs io tests
@@ -810,6 +810,52 @@ Deno.test("jsonFunctions", function () {
     [`["hello", 2, {"world": 4}]`, `$[2].world`],
   );
   assertEquals(integer_type_at_path, "integer");
+});
+
+Deno.test("SQL`` tagged strings", function () {
+  const db = new DB();
+
+  // No interpolated value:
+  assertEquals([...db.query(SQL`SELECT 1 as x`).asObjects()], [{ x: 1 }]);
+
+  // Hypothetical near-worst-case identifier:
+  const recordsTable = encodeIdentifier(`table[\`'"] of records`, {
+    allowWeird: true,
+  });
+
+  // Interpolating identifier:
+  db.query(
+    SQL
+      `CREATE TABLE ${recordsTable} (id INTEGER PRIMARY KEY, left TEXT, right TEXT)`,
+  );
+
+  // Also interpolating values:
+  db.query(
+    SQL
+      `INSERT INTO ${recordsTable} (left, right) VALUES (${"left"}, ${"RIGHT"})`,
+  );
+
+  // Interpolating a clause with bound values, including a convertible object:
+  const valueClause = SQL`VALUES (${"LEFT"}, ${{
+    [toSQL]() {
+      return SQL`${"right"}`;
+    },
+  }})`;
+  db.query(SQL`INSERT INTO ${recordsTable} (left, right) ${valueClause}`);
+
+  const res = [
+    ...db.query(SQL`SELECT left, right FROM ${recordsTable}`).asObjects(),
+  ];
+  assertEquals(res, [
+    {
+      left: "left",
+      right: "RIGHT",
+    },
+    {
+      left: "LEFT",
+      right: "right",
+    },
+  ]);
 });
 
 Deno.test("veryLargeNumbers", function () {

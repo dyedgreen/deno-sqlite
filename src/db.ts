@@ -3,9 +3,10 @@ import { getStr, setArr, setStr } from "./wasm.ts";
 import { Status, Values } from "./constants.ts";
 import SqliteError from "./error.ts";
 import { Empty, Rows } from "./rows.ts";
+import { SQLExpression } from "./sql.ts";
 
 // Possible parameters to be bound to a query
-type QueryParam =
+export type QueryParam =
   | boolean
   | number
   | bigint
@@ -110,7 +111,14 @@ export class DB {
    * iterated over or discarded by calling
    * `.return()` or closing the iterator.
    */
-  query(sql: string, values?: object | QueryParam[]): Rows {
+  query(sql: string, values?: object | QueryParam[]): Rows;
+  query(sql: SQLExpression): Rows;
+  query(sql: string | SQLExpression, values?: object | QueryParam[]): Rows {
+    if (sql instanceof SQLExpression) {
+      values = sql.sqlParams;
+      sql = sql.literalSql.join("?");
+    }
+
     if (!this._open) {
       throw new SqliteError("Database was closed.");
     }
@@ -249,7 +257,7 @@ export class DB {
    *
    * Get last inserted row id. This corresponds to
    * the SQLite function `sqlite3_last_insert_rowid`.
-   * 
+   *
    * By default, it will return 0 if there is no row
    * inserted yet.
    */
