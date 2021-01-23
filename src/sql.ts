@@ -83,14 +83,15 @@ export const SQL = (
  */
 export const encodeIdentifier = (
   identifier: string,
-  opts: { allowWeird?: boolean } = {},
+  opts: {
+    allowWeird?: boolean;
+    allowInternal?: boolean;
+  } = {},
 ): SQLExpression => {
   if (identifier.includes("\x00")) {
     throw new TypeError('identifier included a ␀ ("\\x00") character');
   }
 
-  // We know UTF-8 is being used because that's the only encoding the WASM
-  // SQLite build supports.
   const asUtf8 = (new TextEncoder()).encode(identifier);
   const fromUtf8 = (new TextDecoder()).decode(asUtf8);
   if (identifier !== fromUtf8) {
@@ -118,14 +119,28 @@ export const encodeIdentifier = (
   // It should be safe, but we disallow it by default to be sure it's not a sign
   // of something unintentional happening.
   const identifierIsWeird = !/^[A-Za-z0-9_]+$/.test(identifier);
-  if (identifierIsWeird) {
-    if (!opts.allowWeird) {
-      throw new TypeError(
-        `Weird SQL identifier ${
-          JSON.stringify(identifier)
-        }, encoded as ${encoded}, is not allowed.`,
-      );
-    }
+  if (identifierIsWeird && !opts.allowWeird) {
+    throw new TypeError(
+      `Weird SQL identifier ${
+        JSON.stringify(identifier)
+      }, encoded as ${encoded}, is not allowed.`,
+    );
+  }
+
+  // Quoting https://github.com/sqlite/sqlite/blob/c8af879e5f501595d5bc59e15621ce25ab76d566/src/build.c#L879-L881
+  //
+  // > The sqlite3CheckObjectName routine is used to check if the UTF-8
+  // > string zName is a legal unqualified name for a new schema object (table,
+  // > index, view or trigger). All names are legal except those that begin
+  // > with the string "sqlite_" (in upper, lower or mixed case). This portion
+  // > of the namespace is reserved for internal use.
+  const identifierIsInternal = /^sqlite_/i.test(identifier);
+  if (identifierIsInternal && !opts.allowInternal) {
+    throw new TypeError(
+      `Internal SQLite identifier ${
+        JSON.stringify(identifier)
+      } is not allowed.`,
+    );
   }
 
   return new SQLExpression([encoded]);
