@@ -88,6 +88,9 @@ export const encodeIdentifier = (
     allowInternal?: boolean;
   } = {},
 ): SQLExpression => {
+  const allowWeird = opts.allowWeird ?? true;
+  const allowInternal = opts.allowInternal ?? false;
+
   if (identifier.includes("\x00")) {
     throw new TypeError('identifier included a ␀ ("\\x00") character');
   }
@@ -116,10 +119,8 @@ export const encodeIdentifier = (
 
   // We quote all identifiers to avoid potential conflict with keywords, but
   // if you're using a name that syntactically *requires* quoting, that's weird.
-  // It should be safe, but we disallow it by default to be sure it's not a sign
-  // of something unintentional happening.
-  const identifierIsWeird = !/^[A-Za-z0-9_]+$/.test(identifier);
-  if (identifierIsWeird && !opts.allowWeird) {
+  const identifierIsWeird = !/^[a-z_][a-z_0-9]*$/i.test(identifier);
+  if (identifierIsWeird && !allowWeird) {
     throw new TypeError(
       `Weird SQL identifier ${
         JSON.stringify(identifier)
@@ -135,7 +136,7 @@ export const encodeIdentifier = (
   // > with the string "sqlite_" (in upper, lower or mixed case). This portion
   // > of the namespace is reserved for internal use.
   const identifierIsInternal = /^sqlite_/i.test(identifier);
-  if (identifierIsInternal && !opts.allowInternal) {
+  if (identifierIsInternal && !allowInternal) {
     throw new TypeError(
       `Internal SQLite identifier ${
         JSON.stringify(identifier)

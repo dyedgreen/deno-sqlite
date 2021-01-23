@@ -819,9 +819,7 @@ Deno.test("SQL`` tagged strings", function () {
   assertEquals([...db.query(SQL`SELECT 1 as x`).asObjects()], [{ x: 1 }]);
 
   // Hypothetical near-worst-case identifier:
-  const recordsTable = encodeIdentifier(`table[\`'"] of records`, {
-    allowWeird: true,
-  });
+  const recordsTable = encodeIdentifier(`table[\`'"] of records`);
 
   // Interpolating identifier:
   db.query(
