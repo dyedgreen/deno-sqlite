@@ -96,4 +96,8 @@ dlwasi:
 setup: dlsqlite
 setup: dlwasi
 
-.PHONY: build amalgamation dlsqlite dlwasi setup
+clean:
+	rm -rf sqlite-src
+	rm -rf wasi-sdk
+
+.PHONY: build amalgamation dlsqlite dlwasi setup clean
