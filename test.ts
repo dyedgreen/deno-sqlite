@@ -11,25 +11,8 @@ import SqliteError from "./src/error.ts";
 // file used for fs io tests
 const testDbFile = "test.db";
 
-// permissions for skipping tests which require them
-// if the permission can't be read, it is assumed granted
-// TODO(dyedgreen): Update these once permissions can be introspected
-let permWrite = true;
-try {
-  await Deno.remove(testDbFile);
-} catch (e) {
-  if (e instanceof Deno.errors.PermissionDenied) {
-    permWrite = false;
-  }
-}
-let permRead = true;
-try {
-  await Deno.stat(testDbFile);
-} catch (e) {
-  if (e instanceof Deno.errors.PermissionDenied) {
-    permRead = false;
-  }
-}
+let permRead = await Deno.permissions.query({name: "read", path: "./"});
+let permWrite = await Deno.permissions.query({name: "write", path: "./"});
 
 async function removeTestDb(name: string) {
   try {
