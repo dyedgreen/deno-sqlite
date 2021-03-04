@@ -17,6 +17,8 @@ jobs:
         sudo apt-get -y install --no-install-recommends tclsh gcc
         cd build
         make setup amalgamation release
+    - name: Fix any not tracked files that were generated before format lint
+      run: /home/runner/.deno/bin/deno fmt build/sqlite-src/** build/wasi-sdk/**
     - name: Run the formatter
       run: |
         shopt -s globstar failglob
