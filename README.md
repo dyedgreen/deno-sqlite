@@ -7,17 +7,18 @@
 [docs-deno]: https://deno.land/x/sqlite
 [docs-web]: https://dyedgreen.github.io/deno-sqlite/
 
-This is an SQLite module for JavaScript. The wrapper is targeted at [Deno](https://deno.land)
-and uses a version of SQLite3 compiled to WebAssembly (WASM). This module focuses on ease of use
-and performance.
+This is an SQLite module for JavaScript. The wrapper is targeted at
+[Deno](https://deno.land) and uses a version of SQLite3 compiled to WebAssembly
+(WASM). This module focuses on ease of use and performance.
 
-This module guarantees API compatibility according to [semantic versioning](https://semver.org). Please
-report any issues you encounter.
+This module guarantees API compatibility according to
+[semantic versioning](https://semver.org). Please report any issues you
+encounter.
 
 ## Documentation
 
-Documentation is available as a [website][docs-web], on [Deno Docs][docs-deno], or in the
-[`docs`](./docs/README.md) folder.
+Documentation is available as a [website][docs-web], on [Deno Docs][docs-deno],
+or in the [`docs`](./docs/README.md) folder.
 
 ## Example
 
@@ -26,17 +27,21 @@ import { DB } from "https://deno.land/x/sqlite/mod.ts";
 
 // Open a database
 const db = new DB("test.db");
-db.query("CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)");
+db.query(
+  "CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)",
+);
 
 const names = ["Peter Parker", "Clark Kent", "Bruce Wayne"];
 
 // Run a simple query
-for (const name of names)
+for (const name of names) {
   db.query("INSERT INTO people (name) VALUES (?)", [name]);
+}
 
 // Print out data in table
-for (const [name] of db.query("SELECT name FROM people"))
+for (const [name] of db.query("SELECT name FROM people")) {
   console.log(name);
+}
 
 // Close connection
 db.close();
@@ -45,24 +50,33 @@ db.close();
 ## Comparison to Plugin based Modules
 
 ### TL;DR
-If you just want something that works, use this library. If you need serious speed,
-or really need to take full advantage of SQLites persistence guarantees and want to
-use something like WAL, use a plugin based module like the awesome
+
+If you just want something that works, use this library. If you need serious
+speed, or really need to take full advantage of SQLites persistence guarantees
+and want to use something like WAL, use a plugin based module like the awesome
 [deno_sqlite_plugin](https://github.com/crabmusket/deno_sqlite_plugin).
 
 ### Advantages
-- Security: benefit from Denos security settings, without the need to trust a third party
+
+- Security: benefit from Denos security settings, without the need to trust a
+  third party
 - Portability: runs everywhere Deno runs and can even run in the browser
-- Easy: takes full advantage of Denos module cache and does not require any network access after initial download
+- Easy: takes full advantage of Denos module cache and does not require any
+  network access after initial download
 
 ### Disadvantages
-- Speed: file system IO through Deno can be significantly lower compared to what is achievable using a native binary
-- Weaker Persistence Guarantees: due to limitations in Denos file system APIs, SQLite can't acquire file locks or
-  memory map files, which makes some persistence guarantees less strong (e.g. this module can't safely use WAL mode)
+
+- Speed: file system IO through Deno can be significantly lower compared to what
+  is achievable using a native binary
+- Weaker Persistence Guarantees: due to limitations in Denos file system APIs,
+  SQLite can't acquire file locks or memory map files, which makes some
+  persistence guarantees less strong (e.g. this module can't safely use WAL
+  mode)
 
 ## Users
 
 _(In alphabetical order)_
+
 - [cotton](https://github.com/rahmanfadhil/cotton)
 - [deno-nessie](https://github.com/halvardssm/deno-nessie)
 - [denodb](https://github.com/eveningkid/denodb)

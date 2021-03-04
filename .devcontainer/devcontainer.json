@@ -1,11 +1,11 @@
 {
-    "name": "Deno SQLite",
-    "dockerFile": "Dockerfile",
-    "settings": { 
-        "terminal.integrated.shell.linux": "/usr/bin/fish"
-    },
-    "extensions": [
-        "denoland.vscode-deno",
-        "ms-vscode.cpptools"
-    ]
+  "name": "Deno SQLite",
+  "dockerFile": "Dockerfile",
+  "settings": {
+    "terminal.integrated.shell.linux": "/usr/bin/fish"
+  },
+  "extensions": [
+    "denoland.vscode-deno",
+    "ms-vscode.cpptools"
+  ]
 }
