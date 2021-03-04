@@ -15,6 +15,8 @@ jobs:
     - name: Build docs
       # Update this, if more files are to be included in build ...
       run: /home/runner/.deno/bin/deno run --allow-read --allow-write docs/generate.js docs/api.md mod.ts src/**
+    - name: Format docs with deno fmt
+      run: /home/runner/.deno/bin/deno fmt docs/api.md
     - uses: stefanzweifel/git-auto-commit-action@v2.5.0
       with:
         commit_message: Automatically update documentation
