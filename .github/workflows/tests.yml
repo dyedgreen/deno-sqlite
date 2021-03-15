@@ -14,9 +14,16 @@ jobs:
       run: |
         export DENO_INSTALL="/home/runner/.deno"
         export PATH="$DENO_INSTALL/bin:$PATH"
-        sudo apt-get -y install --no-install-recommends tclsh gcc
+        sudo apt-get -y install --no-install-recommends tclsh gcc brotli
         cd build
         make setup amalgamation release
+        echo "::group::WASM File Sizes"
+        gzip --best < sqlite.js > sqlite.js.gz
+        gzip --best < sqlite.wasm > sqlite.wasm.gz
+        brotli --best < sqlite.js > sqlite.js.br
+        brotli --best < sqlite.wasm > sqlite.wasm.br
+        ls -l sqlite.* | awk '{printf "%-15s➜%7s bytes\n",$9,$5}'
+        echo "::endgroup::"
     - name: Remove any non tracked build artifacts
       run: |
         cd build
