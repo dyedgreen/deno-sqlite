@@ -62,6 +62,13 @@ bundle:
 	$(DENO) run --allow-read --allow-write hack/bundle.js $(OUT_WA) $(OUT_BN)
 	$(DENO) fmt $(OUT_BN)
 
+size.txt: sqlite.js sqlite.wasm
+	gzip --best < sqlite.js > sqlite.js.gz
+	gzip --best < sqlite.wasm > sqlite.wasm.gz
+	brotli --best < sqlite.js > sqlite.js.br
+	brotli --best < sqlite.wasm > sqlite.wasm.br
+	ls -l sqlite.* | awk '{printf "%-15s➜%7s bytes\n",$$9,$$5}' | tee size.txt
+
 debug: FLGS += $(DFLG)
 debug: build
 debug: bundle
