@@ -601,6 +601,30 @@ Deno.test("getColumnsWithoutNames", function () {
   ]);
 });
 
+Deno.test("insertReturning", function () {
+  const db = new DB();
+
+  db.query(
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)",
+  );
+  const result = db.query(
+    "INSERT INTO test (name) VALUES (?) RETURNING *",
+    ["name"],
+  );
+
+  assertEquals(result.columns(), [
+    { name: "id", originName: "", tableName: "" },
+    { name: "name", originName: "", tableName: "" },
+  ]);
+
+  assertEquals([...result.asObjects()], [
+    {
+      "id": 1,
+      "name": "name",
+    },
+  ]);
+});
+
 Deno.test("getColumnsWithNames", function () {
   const db = new DB();
 

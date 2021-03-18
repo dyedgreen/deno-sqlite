@@ -5,8 +5,8 @@ CC    = $(WASI)/bin/clang
 OUT_WA = "sqlite.wasm"
 OUT_BN = "sqlite.js"
 
-SQLITE_DLD = "https://sqlite.org/2020/sqlite-src-3310100.zip"
-SQLITE_DIR = "sqlite-src-3310100"
+SQLITE_DLD = "https://sqlite.org/2021/sqlite-src-3350000.zip"
+SQLITE_DIR = "sqlite-src-3350000"
 
 WASI_DLD = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-11/wasi-sdk-11.0-linux.tar.gz"
 WASI_TAR = wasi_dl_linux.tar.gz
