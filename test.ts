@@ -573,13 +573,24 @@ Deno.test("syntaxErrorErrorCode", function () {
   );
 });
 
+Deno.test("invalidBindingThrows", function() {
+  const db = new DB();
+  db.query("CREATE TABLE test (id INTEGER)");
+  assertThrows(() => {
+    let bad_binding: any = [{}];
+    db.query("SELECT * FORM test WHERE id = ?", bad_binding);
+  });
+  db.close();
+});
+
 Deno.test("invalidBindDoesNotLeakStatements", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER)");
 
   for (let n = 0; n < 100; n++) {
     try {
-      db.query("INSERT INTO test (id) VALUES (?)", [{}]);
+      let bad_binding: any = [{}];
+      db.query("INSERT INTO test (id) VALUES (?)", bad_binding);
     } catch {}
   }
 
