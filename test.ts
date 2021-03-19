@@ -11,8 +11,12 @@ import SqliteError from "./src/error.ts";
 // file used for fs io tests
 const testDbFile = "test.db";
 
-let permRead = (await Deno.permissions.query({ name: "read", path: "./" })).state === "granted";
-let permWrite = (await Deno.permissions.query({ name: "write", path: "./" })).state === "granted";
+let permRead =
+  (await Deno.permissions.query({ name: "read", path: "./" })).state ===
+    "granted";
+let permWrite =
+  (await Deno.permissions.query({ name: "write", path: "./" })).state ===
+    "granted";
 
 async function removeTestDb(name: string) {
   try {
