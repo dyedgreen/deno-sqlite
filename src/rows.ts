@@ -42,15 +42,15 @@ export class Rows {
    * protocol. See also:
    * https://exploringjs.com/es6/ch_iteration.html#sec_closing-iterators
    */
-  return(): IteratorResult<any> {
+  return(): IteratorResult<any[]> {
     if (this._done) {
-      return { done: true, value: undefined };
+      return { done: true, value: [] };
     }
     // Release transaction slot
     this._db._wasm.finalize(this._stmt);
     this._db._transactions.delete(this);
     this._done = true;
-    return { done: true, value: undefined };
+    return { done: true, value: [] };
   }
 
   /**
@@ -134,8 +134,8 @@ export class Rows {
    * 
    *     const rows = [...db.query("SELECT name FROM users;").asObjects()];
    */
-  asObjects<T extends any = Record<string, any>>(): RowObjects<T> {
-    return new RowObjects<T>(this);
+  asObjects(): RowObjects {
+    return new RowObjects(this);
   }
 
   [Symbol.iterator]() {

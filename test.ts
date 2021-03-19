@@ -573,7 +573,7 @@ Deno.test("syntaxErrorErrorCode", function () {
   );
 });
 
-Deno.test("invalidBindingThrows", function() {
+Deno.test("invalidBindingThrows", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER)");
   assertThrows(() => {
