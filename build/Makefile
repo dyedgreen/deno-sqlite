@@ -63,10 +63,12 @@ bundle:
 	$(DENO) fmt $(OUT_BN)
 
 size.txt: sqlite.js sqlite.wasm
+	rm -f size.txt *.gz *.br
 	gzip --best < sqlite.js > sqlite.js.gz
 	gzip --best < sqlite.wasm > sqlite.wasm.gz
-	brotli --best < sqlite.js > sqlite.js.br
-	brotli --best < sqlite.wasm > sqlite.wasm.br
+	brotli --best -o sqlite.js.br < sqlite.js && \
+	brotli --best -o sqlite.wasm.br < sqlite.wasm || \
+		echo "WARN: brotli size comparison unavailable"
 	ls -l sqlite.* | awk '{printf "%-15s➜%7s bytes\n",$$9,$$5}' | tee size.txt
 
 debug: FLGS += $(DFLG)
@@ -76,6 +78,7 @@ debug: bundle
 release: FLGS += $(RFLG)
 release: build
 release: bundle
+release: size.txt
 
 amalgamation:
 	make -C sqlite-src clean
