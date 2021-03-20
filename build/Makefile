@@ -70,6 +70,12 @@ release: FLGS += $(RFLG)
 release: build
 release: bundle
 
+testdb:
+	gcc -Ilib lib/sqlite3.c hack/gen_test_db.c -o gen_test_db
+	rm -f 2GB_test.db
+	./gen_test_db
+	rm gen_test_db
+
 amalgamation:
 	make -C sqlite-src clean
 	make -C sqlite-src sqlite3.c SQLFLG="$(SQLFLG)"
