@@ -137,6 +137,8 @@ type StringPtr = number;
 type StatementPtr = number;
 
 export interface Wasm {
+  memory: WebAssembly.Memory;
+
   ${items.map(generateDecl).join(";\n  ")};
 }
 

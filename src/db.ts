@@ -5,7 +5,7 @@ import SqliteError from "./error.ts";
 import { Empty, Rows } from "./rows.ts";
 
 // Possible parameters to be bound to a query
-type QueryParam =
+export type QueryParam =
   | boolean
   | number
   | bigint

@@ -5,6 +5,8 @@ type StringPtr = number;
 type StatementPtr = number;
 
 export interface Wasm {
+  memory: WebAssembly.Memory;
+
   malloc: (size: number) => VoidPtr;
   free: (ptr: VoidPtr) => void;
   str_len: (str: StringPtr) => number;
