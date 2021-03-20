@@ -4,6 +4,7 @@ CC    = $(WASI)/bin/clang
 
 OUT_WA = "sqlite.wasm"
 OUT_BN = "sqlite.js"
+OUT_TY = "sqlite.d.ts"
 
 SQLITE_DLD = "https://sqlite.org/2021/sqlite-src-3350000.zip"
 SQLITE_DIR = "sqlite-src-3350000"
@@ -25,6 +26,9 @@ DFLG  = -DDEBUG_BUILD
 WAFLG = --target=wasm32-unknown-wasi -Wl,--no-entry -nostartfiles --sysroot $(WASI)/share/wasi-sysroot\
         -DWASI_BUILD -Wl,--export,malloc -Wl,--export,free -Wl,--allow-undefined-file=vfs.syms
 INCS  = -Ilib
+
+# Location of wrapper library which contains all c-land export
+CWRP = "./src/wrapper.c"
 
 # Configure sqlite for out use-case
 SQLFLG = -DSQLITE_DQS=0 -DSQLITE_THREADSAFE=0 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS\
@@ -62,13 +66,19 @@ bundle:
 	$(DENO) run --allow-read --allow-write hack/bundle.js $(OUT_WA) $(OUT_BN)
 	$(DENO) fmt $(OUT_BN)
 
+types:
+	$(DENO) run --allow-read --allow-write hack/gen_types.ts $(CWRP) $(OUT_TY)
+	$(DENO) fmt $(OUT_TY)
+
 debug: FLGS += $(DFLG)
 debug: build
 debug: bundle
+debug: types
 
 release: FLGS += $(RFLG)
 release: build
 release: bundle
+release: types
 
 amalgamation:
 	make -C sqlite-src clean
