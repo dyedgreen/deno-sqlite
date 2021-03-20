@@ -40,7 +40,7 @@ const typeRegexp =
   `(const +)?(void|sqlite3_stmt\\*|char\\*|void\\*|int|double)`;
 const argRegexp = `${typeRegexp} +[a-z_]+`;
 const exportSignature = new RegExp(
-  `${typeRegexp} +EXPORT\\([a-z_]+\\) +\\(${argRegexp}( *, *${argRegexp})*\\)`,
+  `${typeRegexp} +EXPORT\\([a-z_]+\\) +\\(((${argRegexp}( *, *${argRegexp})*)|)\\)`,
 );
 
 function nullThrows<T>(value: T | null | undefined): T {
@@ -82,15 +82,19 @@ function getName(line: string): string {
 }
 
 function getArguments(line: string): Argument[] {
-  const [, argList] = nullThrows(/EXPORT\([a-z_]+\) *\(([^)]+)\)/.exec(line));
-  return argList.split(",").map((arg) => {
-    const regexp = new RegExp(`${typeRegexp} +([a-z_]+)`);
-    const [, _const, cType, name] = nullThrows(regexp.exec(arg));
-    return {
-      name,
-      type: typeFromCType(cType),
-    };
-  });
+  const [, argList] = nullThrows(/EXPORT\([a-z_]+\) *\(([^)]*)\)/.exec(line));
+  if (argList.length === 0) {
+    return [];
+  } else {
+    return argList.split(",").map((arg) => {
+      const regexp = new RegExp(`${typeRegexp} +([a-z_]+)`);
+      const [, _const, cType, name] = nullThrows(regexp.exec(arg));
+      return {
+        name,
+        type: typeFromCType(cType),
+      };
+    });
+  }
 }
 
 function generateType(tp: Type): string {

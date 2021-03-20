@@ -11,7 +11,10 @@ export interface Wasm {
   free: (ptr: VoidPtr) => void;
   str_len: (str: StringPtr) => number;
   seed_rng: (seed: number) => void;
+  get_status: () => number;
   open: (filename: StringPtr) => number;
+  close: () => number;
+  get_sqlite_error_str: () => StringPtr;
   prepare: (sql: StringPtr) => StatementPtr;
   finalize: (stmt: StatementPtr) => number;
   bind_int: (stmt: StatementPtr, idx: number, value: number) => number;
@@ -37,6 +40,9 @@ export interface Wasm {
   column_name: (stmt: StatementPtr, col: number) => StringPtr;
   column_origin_name: (stmt: StatementPtr, col: number) => StringPtr;
   column_table_name: (stmt: StatementPtr, col: number) => StringPtr;
+  last_insert_rowid: () => number;
+  changes: () => number;
+  total_changes: () => number;
 }
 
 export default function instantiate(): { exports: Wasm };

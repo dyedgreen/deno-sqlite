@@ -1,4 +1,5 @@
-import instantiate from "../build/sqlite.js";
+// @deno-types="../build/sqlite.d.ts"
+import instantiate, { Wasm } from "../build/sqlite.js";
 import { getStr, setArr, setStr } from "./wasm.ts";
 import { Status, Values } from "./constants.ts";
 import SqliteError from "./error.ts";
@@ -16,7 +17,7 @@ export type QueryParam =
   | Uint8Array;
 
 export class DB {
-  private _wasm: any;
+  private _wasm: Wasm;
   private _open: boolean;
   private _transactions: Set<Rows>;
 
