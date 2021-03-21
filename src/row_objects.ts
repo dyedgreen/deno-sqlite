@@ -1,6 +1,6 @@
 import { ColumnName, Empty, Rows } from "./rows.ts";
 
-export class RowObjects<T extends any = Record<string, any>> {
+export class RowObjects {
   private _rows: Rows;
   private _columns?: ColumnName[];
 
@@ -31,8 +31,9 @@ export class RowObjects<T extends any = Record<string, any>> {
    * protocol. See also:
    * https://exploringjs.com/es6/ch_iteration.html#sec_closing-iterators
    */
-  return(): IteratorResult<T> {
-    return this._rows.return();
+  return(): IteratorResult<Record<string, any>> {
+    this._rows.return();
+    return { done: true, value: null };
   }
 
   /**
@@ -40,19 +41,17 @@ export class RowObjects<T extends any = Record<string, any>> {
    *
    * Implements the iterator protocol.
    */
-  next(): IteratorResult<T> {
+  next(): IteratorResult<Record<string, any>> {
     const { value, done } = this._rows.next();
     if (done) {
-      return { value: value, done: true };
+      return { value: null, done: true };
+    } else {
+      const rowAsObject: Record<string, any> = {};
+      for (let i = 0; i < value.length; i++) {
+        rowAsObject[this._columns![i].name] = value[i];
+      }
+      return { value: rowAsObject, done: false };
     }
-
-    const rowAsObject: any = {};
-
-    for (let i = 0; i < value.length; i++) {
-      rowAsObject[this._columns![i].name] = value[i];
-    }
-
-    return { value: rowAsObject, done: false };
   }
 
   [Symbol.iterator]() {
