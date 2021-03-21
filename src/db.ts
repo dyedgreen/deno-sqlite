@@ -1,11 +1,12 @@
-import instantiate from "../build/sqlite.js";
+// @deno-types="../build/sqlite.d.ts"
+import instantiate, { Wasm } from "../build/sqlite.js";
 import { getStr, setArr, setStr } from "./wasm.ts";
 import { Status, Values } from "./constants.ts";
 import SqliteError from "./error.ts";
 import { Empty, Rows } from "./rows.ts";
 
 // Possible parameters to be bound to a query
-type QueryParam =
+export type QueryParam =
   | boolean
   | number
   | bigint
@@ -16,7 +17,7 @@ type QueryParam =
   | Uint8Array;
 
 export class DB {
-  private _wasm: any;
+  private _wasm: Wasm;
   private _open: boolean;
   private _transactions: Set<Rows>;
 
@@ -110,7 +111,7 @@ export class DB {
    * iterated over or discarded by calling
    * `.return()` or closing the iterator.
    */
-  query(sql: string, values?: object | QueryParam[]): Rows {
+  query(sql: string, values?: Record<string, QueryParam> | QueryParam[]): Rows {
     if (!this._open) {
       throw new SqliteError("Database was closed.");
     }

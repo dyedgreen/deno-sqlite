@@ -28,7 +28,7 @@ The default opens an in-memory database.
 ### DB.query
 
 ```javascript
-query(sql, values);
+query(sql, values, QueryParam> | QueryParam[])
 ```
 
 Run a query against the database. The query can contain placeholder parameters,
@@ -263,6 +263,10 @@ properties:
 | `tableName`  | the result of `sqlite3_column_table_name`  |
 
 ### Rows.asObjects
+
+```javascript
+asObjects();
+```
 
 Call this if you need to ouput the rows as objects.
 

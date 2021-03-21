@@ -1,8 +1,10 @@
+// @deno-types="../build/sqlite.d.ts"
+import { Wasm } from "../build/sqlite.js";
 import SqliteError from "./error.ts";
 
 // Move string to C
 export function setStr(
-  wasm: any,
+  wasm: Wasm,
   str: string,
   closure: (ptr: number) => void,
 ) {
@@ -20,7 +22,7 @@ export function setStr(
 
 // Move Uint8Array to C
 export function setArr(
-  wasm: any,
+  wasm: Wasm,
   arr: Uint8Array,
   closure: (ptr: number) => void,
 ) {
@@ -35,7 +37,7 @@ export function setArr(
 }
 
 // Read string from C
-export function getStr(wasm: any, ptr: number): string {
+export function getStr(wasm: Wasm, ptr: number): string {
   const len = wasm.str_len(ptr);
   const bytes = new Uint8Array(wasm.memory.buffer, ptr, len);
   if (len > 16) {
