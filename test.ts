@@ -414,67 +414,6 @@ Deno.test({
   },
 });
 
-Deno.test({
-  name: "largeDB",
-  ignore: !permRead || !permWrite,
-  fn: async function () {
-    // Ensure test file does not exist
-    await removeTestDb(testDbFile);
-    const db = new DB(testDbFile);
-
-    // test taken from https://github.com/dyedgreen/deno-sqlite/issues/75
-    db.query(
-      "CREATE TABLE IF NOT EXISTS nos (c1 INTEGER, c2 TEXT, c3 TEXT, c4 TEXT, c5 TEXT, c6 TEXT, c7 INTEGER, c8 TEXT UNIQUE)",
-    );
-
-    const MAX = 100000;
-
-    const xs = [];
-    for (let i = 0; i < MAX; i++) {
-      const a = i * 15000;
-      const b = a % 37;
-      const c = a * b / 41;
-      const d = c + a;
-      const e = (new Date()).getTime() + b - a;
-      const f = b - a;
-      const g = a + e;
-
-      const hash = createHash("sha1");
-      hash.update(`${a}${b}{c}{d}{e}{f}{g}`);
-      const h = hash.toString();
-
-      xs.push({
-        c1: a,
-        c2: `${b}`,
-        c3: `${c}`,
-        c4: `${d}`,
-        c5: `${e}`,
-        c6: `${f}`,
-        c7: g,
-        c8: h,
-      });
-    }
-
-    db.query("begin;");
-    for (let i = 0; i < xs.length; i++) {
-      const n = i + 1;
-      const commit = n % (MAX / 10) === 0;
-      const x = xs[i];
-      db.query(
-        "INSERT OR IGNORE INTO nos(c1, c2, c3, c4, c5, c6, c7, c8) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
-        [x.c1, x.c2, x.c3, x.c4, x.c5, x.c6, x.c7, x.c8],
-      );
-      if (commit) {
-        db.query("commit;");
-        db.query("begin;");
-      }
-    }
-    db.query("commit;");
-
-    db.close();
-  },
-});
-
 Deno.test("invalidSQL", function () {
   const db = new DB();
   const queries = [
@@ -859,18 +798,18 @@ Deno.test("veryLargeNumbers", function () {
 
 Deno.test({
   name: "dbLarger2GB",
-  ignore: !permRead || !permWrite || !(await dbExists("movies.db")),
+  ignore: !permRead || !permWrite || !(await dbExists("./build/2GB_test.db")),
   fn: async function () {
-    // This test needs to write to a very large database file (>2GB)
-    // generating/ downloading this file at test time takes a long time
-    // and so currently this test depends on the file being present in
-    // the system already. To get a copy of the file used visit
-    // https://www.kaggle.com/clementmsika/mubi-sqlite-database-for-movie-lovers
-    //
-    // TODO(dyedgreen): Somehow add large database file to GitHub test container
-    const db = new DB("movies.db");
-    const rand = () => Math.random().toString(36).substring(7);
-    db.query("INSERT INTO ratings (critic) VALUES (?)", [rand()]);
+    const db = new DB("./build/2GB_test.db"); // can be generated with `cd build && make testdb`
+
+    db.query("INSERT INTO test (value) VALUES (?)", ["This is a test..."]);
+
+    let rows = [
+      ...db.query("SELECT value FROM test ORDER BY id DESC LIMIT 10"),
+    ];
+    assertEquals(rows.length, 10);
+    assertEquals(rows[0][0], "This is a test...");
+
     db.close();
   },
 });

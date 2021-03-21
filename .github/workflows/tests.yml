@@ -17,6 +17,10 @@ jobs:
         sudo apt-get -y install --no-install-recommends tclsh gcc brotli
         cd build
         make setup amalgamation release
+    - name: Generate Test Database
+      run: |
+        cd build
+        make testdb
     - name: Remove any non tracked build artifacts
       run: |
         cd build
