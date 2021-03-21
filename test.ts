@@ -804,7 +804,9 @@ Deno.test({
 
     db.query("INSERT INTO test (value) VALUES (?)", ["This is a test..."]);
 
-    let rows = [...db.query("SELECT value FROM test ORDER BY id DESC LIMIT 10")];
+    let rows = [
+      ...db.query("SELECT value FROM test ORDER BY id DESC LIMIT 10"),
+    ];
     assertEquals(rows.length, 10);
     assertEquals(rows[0][0], "This is a test...");
 
