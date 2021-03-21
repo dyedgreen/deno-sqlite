@@ -43,14 +43,13 @@ export class Rows {
    * https://exploringjs.com/es6/ch_iteration.html#sec_closing-iterators
    */
   return(): IteratorResult<any[]> {
-    if (this._done) {
-      return { done: true, value: [] };
+    if (!this._done) {
+      // Release transaction slot
+      this._db._wasm.finalize(this._stmt);
+      this._db._transactions.delete(this);
+      this._done = true;
     }
-    // Release transaction slot
-    this._db._wasm.finalize(this._stmt);
-    this._db._transactions.delete(this);
-    this._done = true;
-    return { done: true, value: [] };
+    return { done: true, value: null };
   }
 
   /**
@@ -68,7 +67,7 @@ export class Rows {
    * Implements the iterator protocol.
    */
   next(): IteratorResult<any[]> {
-    if (this._done) return { value: undefined, done: true };
+    if (this._done) return { value: null, done: true };
     // Load row data and advance statement
     const row = this._get();
     const status = this._db._wasm.step(this._stmt);

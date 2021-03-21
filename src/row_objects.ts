@@ -32,8 +32,8 @@ export class RowObjects {
    * https://exploringjs.com/es6/ch_iteration.html#sec_closing-iterators
    */
   return(): IteratorResult<Record<string, any>> {
-    let { value, done } = this._rows.return();
-    return { done, value: {} };
+    this._rows.return();
+    return { done: true, value: null };
   }
 
   /**
@@ -44,15 +44,14 @@ export class RowObjects {
   next(): IteratorResult<Record<string, any>> {
     const { value, done } = this._rows.next();
     if (done) {
-      return { value: value, done: true };
+      return { value: null, done: true };
+    } else {
+      const rowAsObject: Record<string, any> = {};
+      for (let i = 0; i < value.length; i++) {
+        rowAsObject[this._columns![i].name] = value[i];
+      }
+      return { value: rowAsObject, done: false };
     }
-
-    const rowAsObject: Record<string, any> = {};
-    for (let i = 0; i < value.length; i++) {
-      rowAsObject[this._columns![i].name] = value[i];
-    }
-
-    return { value: rowAsObject, done: false };
   }
 
   [Symbol.iterator]() {
