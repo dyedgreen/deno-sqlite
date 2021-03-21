@@ -1,3 +1,4 @@
+sqlite.d.ts    ➜   1883 bytes
 sqlite.js      ➜ 888075 bytes
 sqlite.js.br   ➜ 297608 bytes
 sqlite.js.gz   ➜ 361214 bytes
