@@ -37,7 +37,7 @@ const wrapperSrc = await Deno.readTextFile(src);
 
 // int EXPORT(bind_int) (sqlite3_stmt* stmt, int idx, double value)
 const typeRegexp =
-  `(const +)?(void|sqlite3_stmt\\*|char\\*|void\\*|int|double)`;
+  `(const +)?(sqlite3_stmt\\*|char\\*|void\\*|int|double|void)`;
 const argRegexp = `${typeRegexp} +[a-z_]+`;
 const exportSignature = new RegExp(
   `${typeRegexp} +EXPORT\\([a-z_]+\\) +\\(((${argRegexp}( *, *${argRegexp})*)|)\\)`,

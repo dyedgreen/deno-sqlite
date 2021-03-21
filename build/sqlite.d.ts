@@ -35,7 +35,7 @@ export interface Wasm {
   column_int: (stmt: StatementPtr, col: number) => number;
   column_double: (stmt: StatementPtr, col: number) => number;
   column_text: (stmt: StatementPtr, col: number) => StringPtr;
-  column_blob: (stmt: StatementPtr, col: number) => void;
+  column_blob: (stmt: StatementPtr, col: number) => VoidPtr;
   column_bytes: (stmt: StatementPtr, col: number) => number;
   column_name: (stmt: StatementPtr, col: number) => StringPtr;
   column_origin_name: (stmt: StatementPtr, col: number) => StringPtr;
