@@ -114,7 +114,7 @@ dlwasi:
 	rm "${WASI_TAR}"
 
 testdb:
-	gcc -Ilib lib/sqlite3.c hack/gen_test_db.c -o gen_test_db
+	gcc -Ilib lib/sqlite3.c hack/gen_test_db.c -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o gen_test_db
 	rm -f 2GB_test.db
 	./gen_test_db
 	rm gen_test_db
