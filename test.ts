@@ -798,18 +798,16 @@ Deno.test("veryLargeNumbers", function () {
 
 Deno.test({
   name: "dbLarger2GB",
-  ignore: !permRead || !permWrite || !(await dbExists("movies.db")),
+  ignore: !permRead || !permWrite || !(await dbExists("./build/2GB_test.db")),
   fn: async function () {
-    // This test needs to write to a very large database file (>2GB)
-    // generating/ downloading this file at test time takes a long time
-    // and so currently this test depends on the file being present in
-    // the system already. To get a copy of the file used visit
-    // https://www.kaggle.com/clementmsika/mubi-sqlite-database-for-movie-lovers
-    //
-    // TODO(dyedgreen): Somehow add large database file to GitHub test container
-    const db = new DB("movies.db");
-    const rand = () => Math.random().toString(36).substring(7);
-    db.query("INSERT INTO ratings (critic) VALUES (?)", [rand()]);
+    const db = new DB("./build/2GB_test.db"); // can be generated with `cd build && make testdb`
+
+    db.query("INSERT INTO test (value) VALUES (?)", ["This is a test..."]);
+
+    let rows = [...db.query("SELECT value FROM test ORDER BY id DESC LIMIT 10")];
+    assertEquals(rows.length, 10);
+    assertEquals(rows[0][0], "This is a test...");
+
     db.close();
   },
 });
