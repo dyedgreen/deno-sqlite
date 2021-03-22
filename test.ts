@@ -813,3 +813,14 @@ Deno.test({
     db.close();
   },
 });
+
+Deno.test("emptyConstantIsIterable", function() {
+  assertEquals([], [...Empty]);
+});
+
+Deno.test("emptyQueryReturnsEmpty", function() {
+  const db = new DB();
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
+  assertEquals(Empty, db.query("SELECT * FROM test"));
+  db.close();
+});

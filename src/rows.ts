@@ -1,4 +1,6 @@
-import { getStr } from "./wasm.ts";
+// @deno-types="../build/sqlite.d.ts"
+import { Wasm, StatementPtr } from "../build/sqlite.js";
+import { getStr, getSQLiteError } from "./wasm.ts";
 import { Status, Types, Values } from "./constants.ts";
 import SqliteError from "./error.ts";
 import { RowObjects } from "./row_objects.ts";
@@ -10,8 +12,9 @@ export interface ColumnName {
 }
 
 export class Rows {
-  private _db: any;
-  private _stmt: number;
+  private _wasm: Wasm;
+  private _stmt: StatementPtr;
+  private _cleanup?: Set<StatementPtr>;
   private _done: boolean;
 
   /**
@@ -25,12 +28,15 @@ export class Rows {
    * and the only correct way to obtain a `Rows`
    * object is by making a database query.
    */
-  constructor(db: any, stmt: number) {
-    this._db = db;
+  constructor(wasm: Wasm, stmt: StatementPtr, cleanup?: Set<StatementPtr>) {
+    this._wasm = wasm;
     this._stmt = stmt;
     this._done = false;
 
-    if (!this._db) {
+    // if this is set, the Rows object will finalize the statement and remove it from the given set
+    this._cleanup = cleanup;
+
+    if (wasm == null) {
       this._done = true;
     }
   }
@@ -44,9 +50,12 @@ export class Rows {
    */
   return(): IteratorResult<any[]> {
     if (!this._done) {
-      // Release transaction slot
-      this._db._wasm.finalize(this._stmt);
-      this._db._transactions.delete(this);
+      // Release transaction slot, if cleanup is
+      // the responsibility of this Rows object
+      if (this._cleanup != null) {
+        this._wasm.finalize(this._stmt);
+        this._cleanup.delete(this._stmt);
+      }
       this._done = true;
     }
     return { done: true, value: null };
@@ -70,7 +79,7 @@ export class Rows {
     if (this._done) return { value: null, done: true };
     // Load row data and advance statement
     const row = this._get();
-    const status = this._db._wasm.step(this._stmt);
+    const status = this._wasm.step(this._stmt);
     switch (status) {
       case Status.SqliteRow:
         // NO OP
@@ -80,7 +89,7 @@ export class Rows {
         break;
       default:
         this.return();
-        throw this._db._error(status);
+        throw getSQLiteError(this._wasm, status);
         break;
     }
     return { value: row, done: false };
@@ -106,20 +115,20 @@ export class Rows {
       );
     }
 
-    const columnCount = this._db._wasm.column_count(this._stmt);
+    const columnCount = this._wasm.column_count(this._stmt);
     const columns: ColumnName[] = [];
     for (let i = 0; i < columnCount; i++) {
       const name = getStr(
-        this._db._wasm,
-        this._db._wasm.column_name(this._stmt, i),
+        this._wasm,
+        this._wasm.column_name(this._stmt, i),
       );
       const originName = getStr(
-        this._db._wasm,
-        this._db._wasm.column_origin_name(this._stmt, i),
+        this._wasm,
+        this._wasm.column_origin_name(this._stmt, i),
       );
       const tableName = getStr(
-        this._db._wasm,
-        this._db._wasm.column_table_name(this._stmt, i),
+        this._wasm,
+        this._wasm.column_table_name(this._stmt, i),
       );
       columns.push({ name, originName, tableName });
     }
@@ -146,42 +155,42 @@ export class Rows {
     const row = [];
     // return row;
     for (
-      let i = 0, c = this._db._wasm.column_count(this._stmt);
+      let i = 0, c = this._wasm.column_count(this._stmt);
       i < c;
       i++
     ) {
-      switch (this._db._wasm.column_type(this._stmt, i)) {
+      switch (this._wasm.column_type(this._stmt, i)) {
         case Types.Integer:
-          row.push(this._db._wasm.column_int(this._stmt, i));
+          row.push(this._wasm.column_int(this._stmt, i));
           break;
         case Types.Float:
-          row.push(this._db._wasm.column_double(this._stmt, i));
+          row.push(this._wasm.column_double(this._stmt, i));
           break;
         case Types.Text:
           row.push(
             getStr(
-              this._db._wasm,
-              this._db._wasm.column_text(this._stmt, i),
+              this._wasm,
+              this._wasm.column_text(this._stmt, i),
             ),
           );
           break;
         case Types.Blob: {
-          const ptr = this._db._wasm.column_blob(this._stmt, i);
+          const ptr = this._wasm.column_blob(this._stmt, i);
           if (ptr === 0) {
             // Zero pointer results in null
             row.push(null);
           } else {
-            const length = this._db._wasm.column_bytes(this._stmt, i);
+            const length = this._wasm.column_bytes(this._stmt, i);
             // Slice should copy the bytes, as it makes a shallow copy
             row.push(
-              new Uint8Array(this._db._wasm.memory.buffer, ptr, length).slice(),
+              new Uint8Array(this._wasm.memory.buffer, ptr, length).slice(),
             );
           }
           break;
         }
         case Types.BigInteger: {
-          const ptr = this._db._wasm.column_text(this._stmt, i);
-          row.push(BigInt(getStr(this._db._wasm, ptr)));
+          const ptr = this._wasm.column_text(this._stmt, i);
+          row.push(BigInt(getStr(this._wasm, ptr)));
           break;
         }
         default:
@@ -204,4 +213,5 @@ export class Rows {
  * `Empty` is returned from queries which return
  * no data.
  */
-export const Empty = new Rows(null, Values.Null);
+export const Empty = new Rows(null as any, Values.Null);
+(Empty as any)._done = true; // TODO(dyedgreen): This is yikes...

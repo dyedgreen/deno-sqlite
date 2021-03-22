@@ -1,8 +1,8 @@
 // Deno SQLite WASM binding types
 
-type VoidPtr = number;
-type StringPtr = number;
-type StatementPtr = number;
+export type VoidPtr = number;
+export type StringPtr = number;
+export type StatementPtr = number;
 
 export interface Wasm {
   memory: WebAssembly.Memory;
