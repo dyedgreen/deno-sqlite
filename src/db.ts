@@ -1,6 +1,6 @@
 // @deno-types="../build/sqlite.d.ts"
-import instantiate, { Wasm } from "../build/sqlite.js";
-import { getStr, setArr, setStr } from "./wasm.ts";
+import instantiate, { Wasm, StatementPtr } from "../build/sqlite.js";
+import { getSQLiteError, setArr, setStr } from "./wasm.ts";
 import { Status, Values } from "./constants.ts";
 import SqliteError from "./error.ts";
 import { Empty, Rows } from "./rows.ts";
@@ -19,7 +19,7 @@ export type QueryParam =
 export class DB {
   private _wasm: Wasm;
   private _open: boolean;
-  private _transactions: Set<Rows>;
+  private _statements: Set<StatementPtr>;
 
   /**
    * DB
@@ -34,7 +34,7 @@ export class DB {
   constructor(path: string = ":memory:") {
     this._wasm = instantiate().exports;
     this._open = false;
-    this._transactions = new Set();
+    this._statements = new Set();
 
     // Try to open the database
     let status;
@@ -42,7 +42,7 @@ export class DB {
       status = this._wasm.open(ptr);
     });
     if (status !== Status.SqliteOk) {
-      throw this._error();
+      throw getSQLiteError(this._wasm, status);
     }
     this._open = true;
   }
@@ -122,7 +122,7 @@ export class DB {
       stmt = this._wasm.prepare(ptr);
     });
     if (stmt === Values.Null) {
-      throw this._error();
+      throw getSQLiteError(this._wasm);
     }
 
     // Prepare parameter array
@@ -197,7 +197,7 @@ export class DB {
       }
       if (status !== Status.SqliteOk) {
         this._wasm.finalize(stmt);
-        throw this._error(status);
+        throw getSQLiteError(this._wasm, status);
       }
     }
 
@@ -209,13 +209,12 @@ export class DB {
         return Empty;
         break;
       case Status.SqliteRow:
-        const transaction = new Rows(this, stmt);
-        this._transactions.add(transaction);
-        return transaction;
+        this._statements.add(stmt);
+        return new Rows(this._wasm, stmt, this._statements);
         break;
       default:
         this._wasm.finalize(stmt);
-        throw this._error(status);
+        throw getSQLiteError(this._wasm, status);
         break;
     }
   }
@@ -235,12 +234,14 @@ export class DB {
       return;
     }
     if (force) {
-      for (const transaction of this._transactions) {
-        transaction.return();
+      for (const stmt of this._statements) {
+        if (this._wasm.finalize(stmt) !== Status.SqliteOk) {
+          throw getSQLiteError(this._wasm);
+        }
       }
     }
     if (this._wasm.close() !== Status.SqliteOk) {
-      throw this._error();
+      throw getSQLiteError(this._wasm);
     }
     this._open = false;
   }
@@ -280,13 +281,5 @@ export class DB {
    */
   get totalChanges(): number {
     return this._wasm.total_changes();
-  }
-
-  private _error(code?: number): SqliteError {
-    if (code === undefined) {
-      code = this._wasm.get_status() as number;
-    }
-    const msg = getStr(this._wasm, this._wasm.get_sqlite_error_str());
-    return new SqliteError(msg, code);
   }
 }
