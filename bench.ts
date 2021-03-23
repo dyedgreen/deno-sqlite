@@ -43,6 +43,22 @@ bench({
   },
 });
 
+bench({
+  name: "insert (prepared)",
+  runs: 10_000,
+  func: (b): void => {
+    const query = db.prepareQuery(
+      "INSERT INTO users (name, balance) VALUES (?, ?)",
+    );
+    b.start();
+    for (let i = 0; i < 100; i++) {
+      query([names[n % names.length], n]);
+    }
+    b.stop();
+    query.finalize();
+  },
+});
+
 /** Performance of select statements (select + iterate 1000 rows). */
 bench({
   name: "select",
