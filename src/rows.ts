@@ -1,6 +1,6 @@
 // @deno-types="../build/sqlite.d.ts"
-import { Wasm, StatementPtr } from "../build/sqlite.js";
-import { getStr, getSQLiteError } from "./wasm.ts";
+import { StatementPtr, Wasm } from "../build/sqlite.js";
+import { getSQLiteError, getStr } from "./wasm.ts";
 import { Status, Types, Values } from "./constants.ts";
 import SqliteError from "./error.ts";
 import { RowObjects } from "./row_objects.ts";
