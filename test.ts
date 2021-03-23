@@ -478,6 +478,8 @@ Deno.test("openQueriesCleanedUpByForcedClose", function () {
   db.query("INSERT INTO test (name) VALUES (?)", ["Deno"]);
   const rows = db.query("SELECT name FROM test");
 
+  db.prepareQuery("SELECT name FROM test WHERE name like '%test%'");
+
   assertThrows(() => db.close());
   db.close(true);
 });
@@ -529,6 +531,10 @@ Deno.test("invalidBindDoesNotLeakStatements", function () {
   for (let n = 0; n < 100; n++) {
     try {
       let bad_binding: any = [{}];
+      db.query("INSERT INTO test (id) VALUES (?)", bad_binding);
+    } catch {}
+    try {
+      let bad_binding = { missingKey: null };
       db.query("INSERT INTO test (id) VALUES (?)", bad_binding);
     } catch {}
   }
@@ -822,5 +828,52 @@ Deno.test("emptyQueryReturnsEmpty", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
   assertEquals(Empty, db.query("SELECT * FROM test"));
+  db.close();
+});
+
+Deno.test("prepareQueryCanBeReused", function () {
+  const db = new DB();
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
+
+  const query = db.prepareQuery("INSERT INTO test (id) VALUES (?)");
+  query([1]);
+  query([2]);
+  query([3]);
+
+  assertEquals([[1], [2], [3]], [...db.query("SELECT id FROM test")]);
+
+  query.finalize();
+  db.close();
+});
+
+Deno.test("prepareQueryClearsBindingsBeforeReused", function () {
+  const db = new DB();
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY, value INTEGER)");
+
+  const query = db.prepareQuery("INSERT INTO test (value) VALUES (?)");
+  query([1]);
+  query();
+
+  assertEquals([[1], [null]], [...db.query("SELECT value FROM test")]);
+
+  query.finalize();
+  db.close();
+});
+
+Deno.test("prepareQueryMarksOldRowsAsDoneWhenReused", function () {
+  const db = new DB();
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
+  db.query("INSERT INTO test (id) VALUES (?), (?), (?)", [1, 2, 3]);
+
+  const query = db.prepareQuery("SELECT id FROM test");
+
+  const a = query();
+  assertEquals({ done: false, value: [1] }, a.next());
+
+  const b = query();
+  assertEquals([], [...a]);
+  assertEquals([[1], [2], [3]], [...b]);
+
+  query.finalize();
   db.close();
 });

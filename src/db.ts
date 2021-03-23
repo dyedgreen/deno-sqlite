@@ -16,6 +16,11 @@ export type QueryParam =
   | Date
   | Uint8Array;
 
+export interface PreparedQuery {
+  (values?: Record<string, QueryParam> | QueryParam[]): Rows;
+  finalize: () => void;
+}
+
 export class DB {
   private _wasm: Wasm;
   private _open: boolean;
@@ -112,21 +117,103 @@ export class DB {
    * `.return()` or closing the iterator.
    */
   query(sql: string, values?: Record<string, QueryParam> | QueryParam[]): Rows {
+    const stmt: StatementPtr = this.prepareStmt(sql);
+    if (values != null) {
+      try {
+        this.bindStmt(stmt, values);
+      } catch (err) {
+        this._wasm.finalize(stmt);
+        throw err;
+      }
+    }
+
+    // Step once to handle case where result is empty
+    const status = this._wasm.step(stmt);
+    switch (status) {
+      case Status.SqliteDone:
+        this._wasm.finalize(stmt);
+        return Empty;
+      case Status.SqliteRow:
+        this._statements.add(stmt);
+        return new Rows(this._wasm, stmt, this._statements);
+      default:
+        this._wasm.finalize(stmt);
+        throw getSQLiteError(this._wasm, status);
+    }
+  }
+
+  /**
+   * DB.prepareQuery
+   *
+   * TODO(dyedgreen): Write docs.
+   */
+  prepareQuery(sql: string): PreparedQuery {
+    const stmt: StatementPtr = this.prepareStmt(sql);
+    const query: {
+      (values?: Record<string, QueryParam> | QueryParam[]): Rows;
+      finalize: () => void;
+      lastRows: Rows | null;
+    } = (values) => {
+      // Mark previous rows object as done, such that
+      // they won't intermingle and produce wired
+      // results.
+      if (query.lastRows != null) {
+        query.lastRows.return();
+        query.lastRows = null;
+      }
+
+      this._wasm.reset(stmt);
+      this._wasm.clear_bindings(stmt);
+      if (values != null) {
+        this.bindStmt(stmt, values);
+      }
+
+      // Step once to handle case where result is empty
+      const status = this._wasm.step(stmt);
+      switch (status) {
+        case Status.SqliteDone:
+          return Empty;
+        case Status.SqliteRow:
+          query.lastRows = new Rows(this._wasm, stmt); // don't pass statement set for cleanup
+          return query.lastRows;
+        default:
+          throw getSQLiteError(this._wasm, status);
+      }
+    };
+
+    this._statements.add(stmt);
+    query.finalize = () => {
+      this._wasm.finalize(stmt);
+      this._statements.delete(stmt);
+    };
+
+    query.lastRows = null;
+    return query;
+  }
+
+  private prepareStmt(sql: string): StatementPtr {
     if (!this._open) {
       throw new SqliteError("Database was closed.");
     }
 
-    // Prepare sqlite query statement
-    let stmt: number = Values.Null;
+    let stmt: StatementPtr = Values.Null;
     setStr(this._wasm, sql, (ptr) => {
       stmt = this._wasm.prepare(ptr);
     });
+
     if (stmt === Values.Null) {
       throw getSQLiteError(this._wasm);
     }
 
+    return stmt;
+  }
+
+  private bindStmt(
+    stmt: StatementPtr,
+    values: Record<string, QueryParam> | QueryParam[],
+  ) {
     // Prepare parameter array
-    let parameters: any[] = [];
+    let parameters = [];
     if (Array.isArray(values)) {
       parameters = values;
     } else if (typeof values === "object") {
@@ -142,7 +229,6 @@ export class DB {
           idx = this._wasm.bind_parameter_index(stmt, ptr);
         });
         if (idx === Values.Error) {
-          this._wasm.finalize(stmt);
           throw new SqliteError(`No parameter named '${name}'.`);
         }
         parameters[idx - 1] = (values as any)[key];
@@ -190,32 +276,13 @@ export class DB {
             // Both null and undefined result in a NULL entry
             status = this._wasm.bind_null(stmt, i + 1);
           } else {
-            this._wasm.finalize(stmt);
             throw new SqliteError(`Can not bind ${typeof value}.`);
           }
           break;
       }
       if (status !== Status.SqliteOk) {
-        this._wasm.finalize(stmt);
         throw getSQLiteError(this._wasm, status);
       }
-    }
-
-    // Step once to handle case where result is empty
-    const status = this._wasm.step(stmt);
-    switch (status) {
-      case Status.SqliteDone:
-        this._wasm.finalize(stmt);
-        return Empty;
-        break;
-      case Status.SqliteRow:
-        this._statements.add(stmt);
-        return new Rows(this._wasm, stmt, this._statements);
-        break;
-      default:
-        this._wasm.finalize(stmt);
-        throw getSQLiteError(this._wasm, status);
-        break;
     }
   }
 
