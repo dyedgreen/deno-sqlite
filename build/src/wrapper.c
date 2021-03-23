@@ -91,6 +91,20 @@ int EXPORT(finalize) (sqlite3_stmt* stmt) {
   return last_status;
 }
 
+// Reset a given statement so it can be re-used.
+int EXPORT(reset) (sqlite3_stmt* stmt) {
+  last_status = sqlite3_reset(stmt);
+  debug_printf("reset statement (status %i)\n", last_status);
+  return last_status;
+}
+
+// Resets all bound parameter values for this statement.
+int EXPORT(clear_bindings) (sqlite3_stmt* stmt) {
+  last_status = sqlite3_clear_bindings(stmt);
+  debug_printf("clear bindings (status %i)\n", last_status);
+  return last_status;
+}
+
 // Wrappers for bind statements, these return the status directly
 int EXPORT(bind_int) (sqlite3_stmt* stmt, int idx, double value) {
   // we use double to pass in the value, as JS does not support 64 bit integers,
