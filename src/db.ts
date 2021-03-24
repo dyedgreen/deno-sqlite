@@ -1,6 +1,6 @@
 // @deno-types="../build/sqlite.d.ts"
 import instantiate, { StatementPtr, Wasm } from "../build/sqlite.js";
-import { getSQLiteError, setArr, setStr } from "./wasm.ts";
+import { setArr, setStr } from "./wasm.ts";
 import { Status, Values } from "./constants.ts";
 import SqliteError from "./error.ts";
 import { Empty, Rows } from "./rows.ts";
@@ -47,7 +47,7 @@ export class DB {
       status = this._wasm.open(ptr);
     });
     if (status !== Status.SqliteOk) {
-      throw getSQLiteError(this._wasm, status);
+      throw new SqliteError(this._wasm, status);
     }
     this._open = true;
   }
@@ -138,7 +138,7 @@ export class DB {
         return new Rows(this._wasm, stmt, this._statements);
       default:
         this._wasm.finalize(stmt);
-        throw getSQLiteError(this._wasm, status);
+        throw new SqliteError(this._wasm, status);
     }
   }
 
@@ -177,7 +177,7 @@ export class DB {
           query.lastRows = new Rows(this._wasm, stmt); // don't pass statement set for cleanup
           return query.lastRows;
         default:
-          throw getSQLiteError(this._wasm, status);
+          throw new SqliteError(this._wasm, status);
       }
     };
 
@@ -202,7 +202,7 @@ export class DB {
     });
 
     if (stmt === Values.Null) {
-      throw getSQLiteError(this._wasm);
+      throw new SqliteError(this._wasm);
     }
 
     return stmt;
@@ -281,7 +281,7 @@ export class DB {
           break;
       }
       if (status !== Status.SqliteOk) {
-        throw getSQLiteError(this._wasm, status);
+        throw new SqliteError(this._wasm, status);
       }
     }
   }
@@ -303,12 +303,12 @@ export class DB {
     if (force) {
       for (const stmt of this._statements) {
         if (this._wasm.finalize(stmt) !== Status.SqliteOk) {
-          throw getSQLiteError(this._wasm);
+          throw new SqliteError(this._wasm);
         }
       }
     }
     if (this._wasm.close() !== Status.SqliteOk) {
-      throw getSQLiteError(this._wasm);
+      throw new SqliteError(this._wasm);
     }
     this._open = false;
   }
