@@ -145,21 +145,45 @@ export class DB {
   /**
    * DB.prepareQuery
    *
-   * TODO(dyedgreen): Write docs.
+   * This is similar to `query()`, with the difference
+   * that the returned function can be called multiple
+   * times (with different values to bind each time).
+   *
+   * Using a prepared query instead of `query()` will
+   * improve performance if the query is issued a lot,
+   * e.g. when writing a web server, the queries used
+   * by the server could be prepared once and then used
+   * through it's runtime.
+   *
+   * A prepared query must be finalized when it is no
+   * longer in used by calling `query.finalize()`. So
+   * the complete lifetime of a query would look like
+   * this:
+   *
+   *     // once
+   *     const query = db.prepareQuery("INSERT INTO messages (message, author) VALUES (?, ?)");
+   *     
+   *     // many times
+   *     query([messageValueOne, authorValueOne]);
+   *     query([messageValueTwo, authorValueTwo]);
+   *     // ...
+   *     
+   *     // once
+   *     query.finalize();
    */
   prepareQuery(sql: string): PreparedQuery {
     const stmt: StatementPtr = this.prepareStmt(sql);
-    const query: {
-      (values?: Record<string, QueryParam> | QueryParam[]): Rows;
-      finalize: () => void;
-      lastRows: Rows | null;
-    } = (values) => {
+    let lastRows: Rows | null = null;
+
+    const query = (
+      values?: Record<string, QueryParam> | QueryParam[],
+    ): Rows => {
       // Mark previous rows object as done, such that
       // they won't intermingle and produce wired
       // results.
-      if (query.lastRows != null) {
-        query.lastRows.return();
-        query.lastRows = null;
+      if (lastRows != null) {
+        lastRows.return();
+        lastRows = null;
       }
 
       this._wasm.reset(stmt);
@@ -174,8 +198,8 @@ export class DB {
         case Status.SqliteDone:
           return Empty;
         case Status.SqliteRow:
-          query.lastRows = new Rows(this._wasm, stmt); // don't pass statement set for cleanup
-          return query.lastRows;
+          lastRows = new Rows(this._wasm, stmt); // don't pass statement set for cleanup
+          return lastRows;
         default:
           throw new SqliteError(this._wasm, status);
       }
@@ -187,7 +211,6 @@ export class DB {
       this._statements.delete(stmt);
     };
 
-    query.lastRows = null;
     return query;
   }
 

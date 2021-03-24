@@ -82,6 +82,33 @@ zero entries).
 !> Any returned Rows object needs to be fully iterated over or discarded by
 calling `.return()` or closing the iterator.
 
+### DB.prepareQuery
+
+```javascript
+prepareQuery(sql);
+```
+
+This is similar to `query()`, with the difference that the returned function can
+be called multiple times (with different values to bind each time).
+
+Using a prepared query instead of `query()` will improve performance if the
+query is issued a lot, e.g. when writing a web server, the queries used by the
+server could be prepared once and then used through it's runtime.
+
+A prepared query must be finalized when it is no longer in used by calling
+`query.finalize()`. So the complete lifetime of a query would look like this:
+
+    // once
+    const query = db.prepareQuery("INSERT INTO messages (message, author) VALUES (?, ?)");
+
+    // many times
+    query([messageValueOne, authorValueOne]);
+    query([messageValueTwo, authorValueTwo]);
+    // ...
+
+    // once
+    query.finalize();
+
 ### DB.close
 
 ```javascript
@@ -125,7 +152,7 @@ opened. This corresponds to the SQLite function `sqlite3_total_changes`.
 ## SqliteError
 
 ```javascript
-new SqliteError(message, code);
+new SqliteError(context, code);
 ```
 
 Extension over the standard JS Error object to also contain class members for
@@ -211,7 +238,7 @@ Implements the iterator protocol.
 ## Rows
 
 ```javascript
-new Rows(db, stmt);
+new Rows(wasm, stmt, cleanup);
 ```
 
 Rows represent a set of results from a query. They are iterable and yield arrays
