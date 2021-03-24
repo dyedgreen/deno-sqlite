@@ -17,6 +17,8 @@ export interface Wasm {
   get_sqlite_error_str: () => StringPtr;
   prepare: (sql: StringPtr) => StatementPtr;
   finalize: (stmt: StatementPtr) => number;
+  reset: (stmt: StatementPtr) => number;
+  clear_bindings: (stmt: StatementPtr) => number;
   bind_int: (stmt: StatementPtr, idx: number, value: number) => number;
   bind_double: (stmt: StatementPtr, idx: number, value: number) => number;
   bind_text: (stmt: StatementPtr, idx: number, value: StringPtr) => number;
