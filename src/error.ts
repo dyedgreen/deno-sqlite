@@ -1,3 +1,6 @@
+// @deno-types="../build/sqlite.d.ts"
+import { Wasm } from "../build/sqlite.js";
+import { getStr } from "./wasm.ts";
 import { Status } from "./constants.ts";
 
 export default class SqliteError extends Error {
@@ -12,10 +15,15 @@ export default class SqliteError extends Error {
    * should only be obtained from exceptions raised
    * in this module.
    */
-  constructor(message: string, code?: number) {
-    super(message);
+  constructor(context: Wasm | string, code?: number) {
+    if (typeof context === "string") {
+      super(context);
+      this.code = code ?? Status.Unknown;
+    } else {
+      super(getStr(context, context.get_sqlite_error_str()));
+      this.code = code ?? context.get_status();
+    }
     this.name = "SqliteError";
-    this.code = typeof code === "number" ? code : Status.Unknown;
   }
 
   /**

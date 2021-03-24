@@ -1,6 +1,6 @@
 // @deno-types="../build/sqlite.d.ts"
 import { StatementPtr, Wasm } from "../build/sqlite.js";
-import { getSQLiteError, getStr } from "./wasm.ts";
+import { getStr } from "./wasm.ts";
 import { Status, Types, Values } from "./constants.ts";
 import SqliteError from "./error.ts";
 import { RowObjects } from "./row_objects.ts";
@@ -89,7 +89,7 @@ export class Rows {
         break;
       default:
         this.return();
-        throw getSQLiteError(this._wasm, status);
+        throw new SqliteError(this._wasm, status);
         break;
     }
     return { value: row, done: false };

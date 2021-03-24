@@ -74,11 +74,3 @@ export function getStr(wasm: Wasm, ptr: number): string {
     return str;
   }
 }
-
-export function getSQLiteError(wasm: Wasm, code?: number): SqliteError {
-  if (code == undefined) {
-    code = wasm.get_status();
-  }
-  const msg = getStr(wasm, wasm.get_sqlite_error_str());
-  return new SqliteError(msg, code);
-}
