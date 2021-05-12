@@ -169,12 +169,10 @@ export class DB {
    *
    *     // once
    *     const query = db.prepareQuery("INSERT INTO messages (message, author) VALUES (?, ?)");
-   *     
    *     // many times
    *     query([messageValueOne, authorValueOne]);
    *     query([messageValueTwo, authorValueTwo]);
    *     // ...
-   *     
    *     // once
    *     query.finalize();
    */
@@ -348,7 +346,7 @@ export class DB {
    *
    * Get last inserted row id. This corresponds to
    * the SQLite function `sqlite3_last_insert_rowid`.
-   * 
+   *
    * By default, it will return 0 if there is no row
    * inserted yet.
    */

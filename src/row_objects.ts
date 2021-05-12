@@ -7,7 +7,7 @@ export class RowObjects {
   /**
    * RowObjects
    *
-   * RowObjects represent a set of results 
+   * RowObjects represent a set of results
    * from a query in the form of an object.
    * They are iterable and yield objects.
    *

@@ -137,9 +137,9 @@ export class Rows {
 
   /**
    * Rows.asObjects
-   * 
+   *
    * Call this if you need to ouput the rows as objects.
-   * 
+   *
    *     const rows = [...db.query("SELECT name FROM users;").asObjects()];
    */
   asObjects(): RowObjects {
