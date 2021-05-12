@@ -82,6 +82,13 @@ zero entries).
 !> Any returned Rows object needs to be fully iterated over or discarded by
 calling `.return()` or closing the iterator.
 
+!> To prevent SQL injections, sql queries should never be obtained via string
+interpolation. Instead, dynamic parameters should be bound using query
+parameters:
+
+    db.query("SELECT name FROM users WHERE id = ?", [id]); // GOOD
+    db.query(`SELECT name FROM users WHERE id = ${id}`); // BAD: Potential SQL injection!
+
 ### DB.prepareQuery
 
 ```javascript
@@ -100,12 +107,10 @@ A prepared query must be finalized when it is no longer in used by calling
 
     // once
     const query = db.prepareQuery("INSERT INTO messages (message, author) VALUES (?, ?)");
-
     // many times
     query([messageValueOne, authorValueOne]);
     query([messageValueTwo, authorValueTwo]);
     // ...
-
     // once
     query.finalize();
 
