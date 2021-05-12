@@ -115,6 +115,13 @@ export class DB {
    * !> Any returned Rows object needs to be fully
    * iterated over or discarded by calling
    * `.return()` or closing the iterator.
+   *
+   * !> To prevent SQL injections, sql queries should
+   * never be obtained via string interpolation. Instead,
+   * dynamic parameters should be bound using query parameters:
+   *
+   *     db.query("SELECT name FROM users WHERE id = ?", [id]); // GOOD
+   *     db.query(`SELECT name FROM users WHERE id = ${id}`); // BAD: Potential SQL injection!
    */
   query(sql: string, values?: Record<string, QueryParam> | QueryParam[]): Rows {
     const stmt: StatementPtr = this.prepareStmt(sql);
