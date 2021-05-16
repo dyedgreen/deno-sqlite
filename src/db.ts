@@ -281,7 +281,9 @@ export class DB {
         case "bigint":
           // bigint is bound as two 32bit integers and reassembled on the C side
           if (value > 9223372036854775807n || value < -9223372036854775808n) {
-            throw new SqliteError(`BigInt value ${value} overflows 64 bit integer.`);
+            throw new SqliteError(
+              `BigInt value ${value} overflows 64 bit integer.`,
+            );
           }
           const pos_val = value >= 0n ? value : -value;
           const sign = value >= 0n ? 1 : -1;

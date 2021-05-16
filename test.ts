@@ -880,17 +880,26 @@ Deno.test("prepareQueryMarksOldRowsAsDoneWhenReused", function () {
 
 Deno.test("bigIntegersBindCorrectly", function () {
   const db = new DB();
-  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)");
+  db.query(
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)",
+  );
 
   let goodValues = [0n, 42n, -42n, 9223372036854775807n, -9223372036854775808n];
-  let overflowValues = [9223372036854775807n + 1n, -9223372036854775808n - 1n, 2352359223372036854775807n, -32453249223372036854775807n];
+  let overflowValues = [
+    9223372036854775807n + 1n,
+    -9223372036854775808n - 1n,
+    2352359223372036854775807n,
+    -32453249223372036854775807n,
+  ];
 
   let query = db.prepareQuery("INSERT INTO test (val) VALUES (?)");
   for (const val of goodValues) {
     query([val]);
   }
 
-  let dbValues = [...db.query("SELECT val FROM test ORDER BY id")].map(([id]) => BigInt(id));
+  let dbValues = [...db.query("SELECT val FROM test ORDER BY id")].map(([id]) =>
+    BigInt(id)
+  );
   assertEquals(goodValues, dbValues);
 
   for (const bigVal of overflowValues) {

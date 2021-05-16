@@ -52,8 +52,9 @@ db.close();
 ### TL;DR
 
 If you just want something that works, use this library. Depending on your
-specific needs, there is also [deno_sqlite_plugin](https://github.com/crabmusket/deno_sqlite_plugin),
-however this module seems to no longer be actively maintained.
+specific needs, there is also
+[deno_sqlite_plugin](https://github.com/crabmusket/deno_sqlite_plugin), however
+this module seems to no longer be actively maintained.
 
 ### Advantages
 
@@ -65,8 +66,8 @@ however this module seems to no longer be actively maintained.
 
 ### Disadvantages
 
-- Speed: file system IO through Deno can be lower compared to what
-  is achievable using a native code
+- Speed: file system IO through Deno can be lower compared to what is achievable
+  using a native code
 - Weaker Persistence Guarantees: due to limitations in Denos file system APIs,
   SQLite can't acquire file locks or memory map files (e.g. this module can't
   safely use WAL mode)
