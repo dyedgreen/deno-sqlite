@@ -279,10 +279,15 @@ export class DB {
           }
           break;
         case "bigint":
-          // bigint is bound as a string and converted to i64 on C side
-          setStr(this._wasm, value.toString(), (ptr) => {
-            status = this._wasm.bind_big_int(stmt, i + 1, ptr);
-          });
+          // bigint is bound as two 32bit integers and reassembled on the C side
+          if (value > 9223372036854775807n || value < -9223372036854775808n) {
+            throw new SqliteError(`BigInt value ${value} overflows 64 bit integer.`);
+          }
+          const pos_val = value >= 0n ? value : -value;
+          const sign = value >= 0n ? 1 : -1;
+          const upper = Number(BigInt.asUintN(32, pos_val >> 32n));
+          const lower = Number(BigInt.asUintN(32, pos_val));
+          status = this._wasm.bind_big_int(stmt, i + 1, sign, upper, lower);
           break;
         case "string":
           setStr(this._wasm, value, (ptr) => {

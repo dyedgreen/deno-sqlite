@@ -139,17 +139,12 @@ int EXPORT(bind_blob) (sqlite3_stmt* stmt, int idx, void* value, int size) {
   return last_status;
 }
 
-int EXPORT(bind_big_int) (sqlite3_stmt* stmt, int idx, const char* value) {
-  // Bind a big integer, passed as a string
-  sqlite3_int64 int_val = 0;
-  sqlite3_int64 pow = 1;
-  for (int i = 0; value[i] != '\0'; i ++)
-    pow *= 10;
-  for (int i = 0; value[i] != '\0'; i ++) {
-    pow /= 10;
-    int_val += pow * (value[i] - '0');
-  }
-  debug_printf("binding big_int '%s' -> %lld", value, int_val);
+int EXPORT(bind_big_int) (sqlite3_stmt* stmt, int idx, int sign, uint32_t high, uint32_t low) {
+  // Bind a big integer within the 64 bit integer range by passing it as two 32
+  // bit integers. The integers are assumed to be positive, and a sign is passed
+  // separately.
+  sqlite3_int64 int_val = ((sqlite3_int64)low + ((sqlite3_int64)high << 32)) * (sqlite3_int64)sign;
+  debug_printf("binding big_int %lld", int_val);
   last_status = sqlite3_bind_int64(stmt, idx, int_val);
   return last_status;
 }
