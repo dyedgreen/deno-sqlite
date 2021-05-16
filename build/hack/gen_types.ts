@@ -37,7 +37,7 @@ const wrapperSrc = await Deno.readTextFile(src);
 
 // int EXPORT(bind_int) (sqlite3_stmt* stmt, int idx, double value)
 const typeRegexp =
-  `(const +)?(sqlite3_stmt\\*|char\\*|void\\*|int|double|void)`;
+  `(const +)?(sqlite3_stmt\\*|char\\*|void\\*|int|uint32_t|double|void)`;
 const argRegexp = `${typeRegexp} +[a-z_]+`;
 const exportSignature = new RegExp(
   `${typeRegexp} +EXPORT\\([a-z_]+\\) +\\(((${argRegexp}( *, *${argRegexp})*)|)\\)`,
@@ -64,6 +64,7 @@ function typeFromCType(cType: string): Type {
     case "double":
       return Type.Double;
     case "int":
+    case "uint32_t":
       return Type.Int;
     default:
       throw new Error("Unknown type");

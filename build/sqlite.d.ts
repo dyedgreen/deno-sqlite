@@ -28,7 +28,13 @@ export interface Wasm {
     value: VoidPtr,
     size: number,
   ) => number;
-  bind_big_int: (stmt: StatementPtr, idx: number, value: StringPtr) => number;
+  bind_big_int: (
+    stmt: StatementPtr,
+    idx: number,
+    sign: number,
+    high: number,
+    low: number,
+  ) => number;
   bind_null: (stmt: StatementPtr, idx: number) => number;
   bind_parameter_index: (stmt: StatementPtr, name: StringPtr) => number;
   step: (stmt: StatementPtr) => number;
