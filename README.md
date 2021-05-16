@@ -51,10 +51,9 @@ db.close();
 
 ### TL;DR
 
-If you just want something that works, use this library. If you need serious
-speed, or really need to take full advantage of SQLites persistence guarantees
-and want to use something like WAL, use a plugin based module like the awesome
-[deno_sqlite_plugin](https://github.com/crabmusket/deno_sqlite_plugin).
+If you just want something that works, use this library. Depending on your
+specific needs, there is also [deno_sqlite_plugin](https://github.com/crabmusket/deno_sqlite_plugin),
+however this module seems to no longer be actively maintained.
 
 ### Advantages
 
@@ -66,12 +65,11 @@ and want to use something like WAL, use a plugin based module like the awesome
 
 ### Disadvantages
 
-- Speed: file system IO through Deno can be significantly lower compared to what
-  is achievable using a native binary
+- Speed: file system IO through Deno can be lower compared to what
+  is achievable using a native code
 - Weaker Persistence Guarantees: due to limitations in Denos file system APIs,
-  SQLite can't acquire file locks or memory map files, which makes some
-  persistence guarantees less strong (e.g. this module can't safely use WAL
-  mode)
+  SQLite can't acquire file locks or memory map files (e.g. this module can't
+  safely use WAL mode)
 
 ## Users
 
@@ -82,3 +80,4 @@ _(In alphabetical order)_
 - [denodb](https://github.com/eveningkid/denodb)
 - [denolib/typeorm](https://github.com/denolib/typeorm)
 - [dexecutor](https://github.com/denjucks/dexecutor)
+- [small-orm-sqlite](https://github.com/enimatek-nl/small-orm-sqlite)
