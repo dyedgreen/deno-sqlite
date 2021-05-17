@@ -111,7 +111,7 @@ export class Rows {
   columns(): ColumnName[] {
     if (this._done) {
       throw new SqliteError(
-        "Unable to retrieve column names as transaction is finalized.",
+        "Unable to retrieve column names as Rows already returned.",
       );
     }
 

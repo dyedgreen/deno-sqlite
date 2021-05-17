@@ -465,10 +465,13 @@ Deno.test("openQueriesBlockClose", function () {
   db.query("INSERT INTO test (name) VALUES (?)", ["Deno"]);
   const rows = db.query("SELECT name FROM test");
 
-  // We have an open query
   assertThrows(() => db.close());
-
   rows.return();
+
+  const query = db.prepareQuery("SELECT name FROM test");
+  assertThrows(() => db.close());
+  query.finalize();
+
   db.close();
 });
 
@@ -476,8 +479,8 @@ Deno.test("openQueriesCleanedUpByForcedClose", function () {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
   db.query("INSERT INTO test (name) VALUES (?)", ["Deno"]);
-  const rows = db.query("SELECT name FROM test");
 
+  const rows = db.query("SELECT name FROM test");
   db.prepareQuery("SELECT name FROM test WHERE name like '%test%'");
 
   assertThrows(() => db.close());
@@ -910,4 +913,40 @@ Deno.test("bigIntegersBindCorrectly", function () {
 
   query.finalize();
   db.close();
+});
+
+Deno.test("queryFinalizedPreparedQueryFails", function () {
+  const db = new DB();
+  db.query("CREATE TABLE test (name TEXT)");
+  const query = db.prepareQuery("INSERT INTO test (name) VALUES (?)");
+  query.finalize();
+
+  assertThrows(() => query(["test"]));
+  db.close();
+});
+
+Deno.test("rowsOnPreparedQuery", function () {
+  const db = new DB();
+  db.query(
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEST, age INTEGER)",
+  );
+  db.query("INSERT INTO test (name, age) VALUES (?, ?)", ["Peter Parker", 21]);
+
+  const rows = db.query("SELECT * FROM test");
+  const columnsFromRows = rows.columns();
+  rows.return();
+
+  const query = db.prepareQuery("SELECT * FROM test");
+  const columnsFromPreparedQuery = query.columns();
+  query.finalize();
+
+  assertEquals(columnsFromRows, columnsFromPreparedQuery);
+  assertEquals(
+    [{ name: "id", originName: "id", tableName: "test" }, {
+      name: "name",
+      originName: "name",
+      tableName: "test",
+    }, { name: "age", originName: "age", tableName: "test" }],
+    columnsFromPreparedQuery,
+  );
 });

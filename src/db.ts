@@ -3,7 +3,7 @@ import instantiate, { StatementPtr, Wasm } from "../build/sqlite.js";
 import { setArr, setStr } from "./wasm.ts";
 import { Status, Values } from "./constants.ts";
 import SqliteError from "./error.ts";
-import { Empty, Rows } from "./rows.ts";
+import { ColumnName, Empty, Rows } from "./rows.ts";
 
 // Possible parameters to be bound to a query
 export type QueryParam =
@@ -19,6 +19,7 @@ export type QueryParam =
 export interface PreparedQuery {
   (values?: Record<string, QueryParam> | QueryParam[]): Rows;
   finalize: () => void;
+  columns: () => ColumnName[];
 }
 
 export class DB {
@@ -180,9 +181,16 @@ export class DB {
     const stmt: StatementPtr = this.prepareStmt(sql);
     let lastRows: Rows | null = null;
 
+    let finalized = false;
+    this._statements.add(stmt);
+
     const query = (
       values?: Record<string, QueryParam> | QueryParam[],
     ): Rows => {
+      if (finalized) {
+        throw new SqliteError("Query already finalized.");
+      }
+
       // Mark previous rows object as done, such that
       // they won't intermingle and produce wired
       // results.
@@ -210,10 +218,23 @@ export class DB {
       }
     };
 
-    this._statements.add(stmt);
     query.finalize = () => {
-      this._wasm.finalize(stmt);
-      this._statements.delete(stmt);
+      if (!finalized) {
+        finalized = true;
+        this._wasm.finalize(stmt);
+        this._statements.delete(stmt);
+      }
+    };
+
+    query.columns = () => {
+      if (finalized) {
+        throw new SqliteError(
+          "Unable to return column names of finalized query.",
+        );
+      }
+      // TODO(dyedgreen): This is a bit of a hack, but moving everything
+      // into a Statement class also doesn't feel quite right...
+      return (new Rows(this._wasm, stmt)).columns();
     };
 
     return query;
