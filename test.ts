@@ -940,13 +940,22 @@ Deno.test("rowsOnPreparedQuery", function () {
   const columnsFromPreparedQuery = query.columns();
   query.finalize();
 
-  assertEquals(columnsFromRows, columnsFromPreparedQuery);
+  const queryEmpty = db.prepareQuery("SELECT * FROM test WHERE 1 = 0");
+  const columnsFromPreparedQueryWithEmptyQuery = queryEmpty.columns();
+  assertEquals(queryEmpty(), Empty);
+  query.finalize();
+
   assertEquals(
     [{ name: "id", originName: "id", tableName: "test" }, {
       name: "name",
       originName: "name",
       tableName: "test",
     }, { name: "age", originName: "age", tableName: "test" }],
+    columnsFromPreparedQuery,
+  );
+  assertEquals(columnsFromRows, columnsFromPreparedQuery);
+  assertEquals(
+    columnsFromPreparedQueryWithEmptyQuery,
     columnsFromPreparedQuery,
   );
 });
