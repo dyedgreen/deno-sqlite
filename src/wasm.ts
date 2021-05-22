@@ -16,8 +16,13 @@ export function setStr(
   const mem = new Uint8Array(wasm.memory.buffer, ptr, bytes.length + 1);
   mem.set(bytes);
   mem[bytes.length] = 0; // \0 terminator
-  closure(ptr);
-  wasm.free(ptr);
+  try {
+    closure(ptr);
+    wasm.free(ptr);
+  } catch (error) {
+    wasm.free(ptr);
+    throw error;
+  }
 }
 
 // Move Uint8Array to C
@@ -32,8 +37,13 @@ export function setArr(
   }
   const mem = new Uint8Array(wasm.memory.buffer, ptr, arr.length);
   mem.set(arr);
-  closure(ptr);
-  wasm.free(ptr);
+  try {
+    closure(ptr);
+    wasm.free(ptr);
+  } catch (error) {
+    wasm.free(ptr);
+    throw error;
+  }
 }
 
 // Read string from C
