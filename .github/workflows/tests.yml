@@ -9,6 +9,10 @@ jobs:
     - name: Install Deno
       run: curl -fsSL https://deno.land/x/install/install.sh | sh
     - uses: actions/checkout@v1
+    - name: Run the formatter
+      run: |
+        shopt -s globstar failglob
+        /home/runner/.deno/bin/deno fmt --check
     - name: Build SQLite
       id: build
       run: |
@@ -25,10 +29,6 @@ jobs:
       run: |
         cd build
         make clean
-    - name: Run the formatter
-      run: |
-        shopt -s globstar failglob
-        /home/runner/.deno/bin/deno fmt --check
     - name: Run tests
       run: /home/runner/.deno/bin/deno test --allow-read --allow-write test.ts
     - name: Run benchmarks
