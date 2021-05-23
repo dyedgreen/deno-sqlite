@@ -26,7 +26,7 @@ export default function env(inst) {
           path = Deno.makeTempFileSync({ prefix: "deno_sqlite" });
           break;
       }
-      let rid =
+      const rid =
         Deno.openSync(path, { read: true, write: true, create: true }).rid;
       files.set(rid, path);
       return rid;
@@ -38,7 +38,7 @@ export default function env(inst) {
     },
     // Delete file at path
     js_delete: (path_ptr) => {
-      let path = getStr(inst.exports, path_ptr);
+      const path = getStr(inst.exports, path_ptr);
       Deno.removeSync(path);
     },
     // Read from a file to a buffer in the module

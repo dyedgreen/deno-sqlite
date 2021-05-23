@@ -280,7 +280,7 @@ export class DB {
         if (idx === Values.Error) {
           throw new SqliteError(`No parameter named '${name}'.`);
         }
-        parameters[idx - 1] = (values as any)[key];
+        parameters[idx - 1] = values[key];
       }
     }
 
@@ -305,12 +305,13 @@ export class DB {
             throw new SqliteError(
               `BigInt value ${value} overflows 64 bit integer.`,
             );
+          } else {
+            const posVal = value >= 0n ? value : -value;
+            const sign = value >= 0n ? 1 : -1;
+            const upper = Number(BigInt.asUintN(32, posVal >> 32n));
+            const lower = Number(BigInt.asUintN(32, posVal));
+            status = this._wasm.bind_big_int(stmt, i + 1, sign, upper, lower);
           }
-          const pos_val = value >= 0n ? value : -value;
-          const sign = value >= 0n ? 1 : -1;
-          const upper = Number(BigInt.asUintN(32, pos_val >> 32n));
-          const lower = Number(BigInt.asUintN(32, pos_val));
-          status = this._wasm.bind_big_int(stmt, i + 1, sign, upper, lower);
           break;
         case "string":
           setStr(this._wasm, value, (ptr) => {
@@ -325,8 +326,9 @@ export class DB {
             });
           } else if (value instanceof Uint8Array) {
             // Uint8Arrays are allowed and bound to BLOB
+            const size = value.length;
             setArr(this._wasm, value, (ptr) => {
-              status = this._wasm.bind_blob(stmt, i + 1, ptr, value.length);
+              status = this._wasm.bind_blob(stmt, i + 1, ptr, size);
             });
           } else if (value === null || value === undefined) {
             // Both null and undefined result in a NULL entry
@@ -352,7 +354,7 @@ export class DB {
    * If force is specified, any on-going transactions
    * will be closed.
    */
-  close(force: boolean = false) {
+  close(force = false) {
     if (!this._open) {
       return;
     }

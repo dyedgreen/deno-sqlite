@@ -90,7 +90,6 @@ export class Rows {
       default:
         this.return();
         throw new SqliteError(this._wasm, status);
-        break;
     }
     return { value: row, done: false };
   }

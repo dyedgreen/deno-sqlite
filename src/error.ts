@@ -16,13 +16,17 @@ export default class SqliteError extends Error {
    * in this module.
    */
   constructor(context: Wasm | string, code?: number) {
+    let message;
+    let status;
     if (typeof context === "string") {
-      super(context);
-      this.code = code ?? Status.Unknown;
+      message = context;
+      status = Status.Unknown;
     } else {
-      super(getStr(context, context.get_sqlite_error_str()));
-      this.code = code ?? context.get_status();
+      message = getStr(context, context.get_sqlite_error_str());
+      status = context.get_status();
     }
+    super(message);
+    this.code = code ?? status;
     this.name = "SqliteError";
   }
 

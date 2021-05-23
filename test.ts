@@ -4,27 +4,26 @@ import {
   assertMatch,
   assertThrows,
 } from "https://deno.land/std@0.53.0/testing/asserts.ts";
-import { createHash } from "https://deno.land/std@0.61.0/hash/mod.ts";
 import { DB, Empty, Status } from "./mod.ts";
 import SqliteError from "./src/error.ts";
 
 // file used for fs io tests
 const testDbFile = "test.db";
 
-let permRead =
+const permRead =
   (await Deno.permissions.query({ name: "read", path: "./" })).state ===
     "granted";
-let permWrite =
+const permWrite =
   (await Deno.permissions.query({ name: "write", path: "./" })).state ===
     "granted";
 
 async function removeTestDb(name: string) {
   try {
     await Deno.remove(name);
-  } catch {}
+  } catch { /* no op */ }
   try {
     await Deno.remove(`${testDbFile}-journal`);
-  } catch {}
+  } catch { /* no op */ }
 }
 
 async function dbExists(path: string) {
@@ -55,7 +54,7 @@ Deno.test("readmeExample", function () {
   db.close();
 });
 
-Deno.test("readmeExampleOld", async function () {
+Deno.test("readmeExampleOld", function () {
   const db = new DB();
   const first = ["Bruce", "Clark", "Peter"];
   const last = ["Wane", "Kent", "Parker"];
@@ -198,16 +197,16 @@ Deno.test("bindValues", function () {
   db.query(
     "CREATE TABLE bigints (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)",
   );
-  const int_vals: (bigint | number)[] = [9007199254741991n, 100n];
-  for (const val of int_vals) {
+  const intVals: (bigint | number)[] = [9007199254741991n, 100n];
+  for (const val of intVals) {
     db.query(
       "INSERT INTO bigints (val) VALUES (?)",
       [val],
     );
   }
   rows = [...db.query("SELECT val FROM bigints")].map(([v]) => v);
-  int_vals[1] = 100;
-  assertEquals(rows, int_vals);
+  intVals[1] = 100;
+  assertEquals(rows, intVals);
 
   // null & undefined
   db.query(
@@ -480,7 +479,7 @@ Deno.test("openQueriesCleanedUpByForcedClose", function () {
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
   db.query("INSERT INTO test (name) VALUES (?)", ["Deno"]);
 
-  const rows = db.query("SELECT name FROM test");
+  db.query("SELECT name FROM test");
   db.prepareQuery("SELECT name FROM test WHERE name like '%test%'");
 
   assertThrows(() => db.close());
@@ -521,8 +520,8 @@ Deno.test("invalidBindingThrows", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER)");
   assertThrows(() => {
-    let bad_binding: any = [{}];
-    db.query("SELECT * FORM test WHERE id = ?", bad_binding);
+    const badBinding: any = [{}];
+    db.query("SELECT * FORM test WHERE id = ?", badBinding);
   });
   db.close();
 });
@@ -532,14 +531,14 @@ Deno.test("invalidBindDoesNotLeakStatements", function () {
   db.query("CREATE TABLE test (id INTEGER)");
 
   for (let n = 0; n < 100; n++) {
-    try {
-      let bad_binding: any = [{}];
-      db.query("INSERT INTO test (id) VALUES (?)", bad_binding);
-    } catch {}
-    try {
-      let bad_binding = { missingKey: null };
-      db.query("INSERT INTO test (id) VALUES (?)", bad_binding);
-    } catch {}
+    assertThrows(() => {
+      const badBinding: any = [{}];
+      db.query("INSERT INTO test (id) VALUES (?)", badBinding);
+    });
+    assertThrows(() => {
+      const badBinding = { missingKey: null };
+      db.query("INSERT INTO test (id) VALUES (?)", badBinding);
+    });
   }
 
   db.query("INSERT INTO test (id) VALUES (1)");
@@ -635,11 +634,11 @@ Deno.test("closingIteratorFinalizesRows", function () {
   assertEquals(rows1.next().done, true);
 
   const rows2 = db.query("SELECT * FROM test");
-  try {
+  assertThrows(() => {
     for (const _ of rows2) {
       throw "this is an error ...";
     }
-  } catch {}
+  });
   assertEquals(rows2.next().done, true);
 
   db.close();
@@ -682,7 +681,7 @@ Deno.test("lastInsertedId", function () {
   db.close();
 
   // When the database is closed, the value
-  // will be resetted to 0 again
+  // will be reset to 0 again
   assertEquals(db.lastInsertRowId, 0);
 });
 
@@ -724,7 +723,7 @@ Deno.test("outputToObjectArray", function () {
     "Result is not an array or does not have the correct length",
   );
 
-  for (let row of res) {
+  for (const row of res) {
     assert(typeof row === "object", "Row is not an object");
     assert(
       row.hasOwnProperty("id") && row.hasOwnProperty("name"),
@@ -763,23 +762,23 @@ Deno.test("jsonFunctions", function () {
 
   // We should be able to use bound values as arguments to the JSON1 functions,
   // and they should produce the expected results for these simple expressions.
-  const [[object_type]] = db.query(`SELECT json_type('{}')`);
-  assertEquals(object_type, "object");
+  const [[objectType]] = db.query(`SELECT json_type('{}')`);
+  assertEquals(objectType, "object");
 
-  const [[integer_type]] = db.query(`SELECT json_type(?)`, ["2"]);
-  assertEquals(integer_type, "integer");
+  const [[integerType]] = db.query(`SELECT json_type(?)`, ["2"]);
+  assertEquals(integerType, "integer");
 
-  const [[real_type]] = db.query(`SELECT json_type(?)`, ["2.5"]);
-  assertEquals(real_type, "real");
+  const [[realType]] = db.query(`SELECT json_type(?)`, ["2.5"]);
+  assertEquals(realType, "real");
 
-  const [[string_type]] = db.query(`SELECT json_type(?)`, [`"hello"`]);
-  assertEquals(string_type, "text");
+  const [[stringType]] = db.query(`SELECT json_type(?)`, [`"hello"`]);
+  assertEquals(stringType, "text");
 
-  const [[integer_type_at_path]] = db.query(
+  const [[integerTypeAtPath]] = db.query(
     `SELECT json_type(?, ?)`,
     [`["hello", 2, {"world": 4}]`, `$[2].world`],
   );
-  assertEquals(integer_type_at_path, "integer");
+  assertEquals(integerTypeAtPath, "integer");
 });
 
 Deno.test("veryLargeNumbers", function () {
@@ -808,12 +807,12 @@ Deno.test("veryLargeNumbers", function () {
 Deno.test({
   name: "dbLarger2GB",
   ignore: !permRead || !permWrite || !(await dbExists("./build/2GB_test.db")),
-  fn: async function () {
+  fn: function () {
     const db = new DB("./build/2GB_test.db"); // can be generated with `cd build && make testdb`
 
     db.query("INSERT INTO test (value) VALUES (?)", ["This is a test..."]);
 
-    let rows = [
+    const rows = [
       ...db.query("SELECT value FROM test ORDER BY id DESC LIMIT 10"),
     ];
     assertEquals(rows.length, 10);
@@ -887,22 +886,28 @@ Deno.test("bigIntegersBindCorrectly", function () {
     "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)",
   );
 
-  let goodValues = [0n, 42n, -42n, 9223372036854775807n, -9223372036854775808n];
-  let overflowValues = [
+  const goodValues = [
+    0n,
+    42n,
+    -42n,
+    9223372036854775807n,
+    -9223372036854775808n,
+  ];
+  const overflowValues = [
     9223372036854775807n + 1n,
     -9223372036854775808n - 1n,
     2352359223372036854775807n,
     -32453249223372036854775807n,
   ];
 
-  let query = db.prepareQuery("INSERT INTO test (val) VALUES (?)");
+  const query = db.prepareQuery("INSERT INTO test (val) VALUES (?)");
   for (const val of goodValues) {
     query([val]);
   }
 
-  let dbValues = [...db.query("SELECT val FROM test ORDER BY id")].map(([id]) =>
-    BigInt(id)
-  );
+  const dbValues = [...db.query("SELECT val FROM test ORDER BY id")].map((
+    [id],
+  ) => BigInt(id));
   assertEquals(goodValues, dbValues);
 
   for (const bigVal of overflowValues) {

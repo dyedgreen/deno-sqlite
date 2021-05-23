@@ -57,17 +57,17 @@ export function getStr(wasm: Wasm, ptr: number): string {
     let str = "";
     let idx = 0;
     while (idx < len) {
-      var u0 = bytes[idx++];
+      let u0 = bytes[idx++];
       if (!(u0 & 0x80)) {
         str += String.fromCharCode(u0);
         continue;
       }
-      var u1 = bytes[idx++] & 63;
+      const u1 = bytes[idx++] & 63;
       if ((u0 & 0xE0) == 0xC0) {
         str += String.fromCharCode(((u0 & 31) << 6) | u1);
         continue;
       }
-      var u2 = bytes[idx++] & 63;
+      const u2 = bytes[idx++] & 63;
       if ((u0 & 0xF0) == 0xE0) {
         u0 = ((u0 & 15) << 12) | (u1 << 6) | u2;
       } else {
@@ -77,7 +77,7 @@ export function getStr(wasm: Wasm, ptr: number): string {
       if (u0 < 0x10000) {
         str += String.fromCharCode(u0);
       } else {
-        var ch = u0 - 0x10000;
+        const ch = u0 - 0x10000;
         str += String.fromCharCode(0xD800 | (ch >> 10), 0xDC00 | (ch & 0x3FF));
       }
     }
