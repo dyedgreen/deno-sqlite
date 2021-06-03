@@ -3,11 +3,6 @@ import { getStr } from "../src/wasm.ts";
 // Closure to return an environment that links
 // the current wasm context
 export default function env(inst) {
-  // Map file rids to file names, since
-  // some of Deno's os methods use files-names
-  // instead of resource ids.
-  const files = new Map();
-
   // Exported environment
   const env = {
     // Print a string pointer to console
@@ -28,13 +23,11 @@ export default function env(inst) {
       }
       const rid =
         Deno.openSync(path, { read: true, write: true, create: true }).rid;
-      files.set(rid, path);
       return rid;
     },
     // Close a file
     js_close: (rid) => {
       Deno.close(rid);
-      files.delete(rid);
     },
     // Delete file at path
     js_delete: (path_ptr) => {
@@ -63,11 +56,11 @@ export default function env(inst) {
     },
     // Truncate the given file
     js_truncate: (rid, size) => {
-      Deno.truncateSync(files.get(rid), size);
+      Deno.ftruncateSync(rid, size);
     },
     // Retrieve the size of the given file
     js_size: (rid) => {
-      return Deno.statSync(files.get(rid)).size;
+      return Deno.fstatSync(rid).size;
     },
     // Return current time in ms since UNIX epoch
     js_time: () => {
