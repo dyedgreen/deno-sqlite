@@ -58,6 +58,10 @@ export default function env(inst) {
     js_truncate: (rid, size) => {
       Deno.ftruncateSync(rid, size);
     },
+    // Sync file data to disk
+    js_sync: (rid) => {
+      Deno.fdatasyncSync(rid);
+    },
     // Retrieve the size of the given file
     js_size: (rid) => {
       return Deno.fstatSync(rid).size;

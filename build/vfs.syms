@@ -5,6 +5,7 @@ js_delete
 js_read
 js_write
 js_truncate
+js_sync
 js_size
 js_time
 js_exists

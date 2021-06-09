@@ -86,7 +86,9 @@ static int denoTruncate(sqlite3_file *pFile, sqlite_int64 size) {
 // just have a no-op here.
 // TODO(dyedgreen): Investigate if there is a better way
 static int denoSync(sqlite3_file *pFile, int flags) {
-  debug_printf("no-op call to sync");
+  DenoFile *p = (DenoFile*)pFile;
+  js_sync(p->rid);
+  debug_printf("syncing file (rid %i)\n", p->rid);
   return SQLITE_OK;
 }
 
