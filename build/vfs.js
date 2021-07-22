@@ -11,7 +11,7 @@ export default function env(inst) {
       console.log(text[text.length - 1] === "\n" ? text.slice(0, -1) : text);
     },
     // Open the file at path, mode = 0 is open RW, mode = 1 is open TEMP
-    js_open: (path_ptr, mode) => {
+    js_open: (path_ptr, mode, flags) => {
       let path;
       switch (mode) {
         case 0:
@@ -21,8 +21,10 @@ export default function env(inst) {
           path = Deno.makeTempFileSync({ prefix: "deno_sqlite" });
           break;
       }
-      const rid =
-        Deno.openSync(path, { read: true, write: true, create: true }).rid;
+
+      const write = !!(flags & 0x00000002);
+      const create = !!(flags & 0x00000004);
+      const rid = Deno.openSync(path, { read: true, write, create }).rid;
       return rid;
     },
     // Close a file

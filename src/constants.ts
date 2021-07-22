@@ -34,6 +34,14 @@ export enum Status {
   SqliteDone = 101, // sqlite3_step() has finished executing
 }
 
+export enum OpenFlags {
+  ReadOnly = 0x00000001,
+  ReadWrite = 0x00000002,
+  Create = 0x00000004,
+  Uri = 0x00000040,
+  Memory = 0x00000080,
+}
+
 export enum Types {
   Integer = 1,
   Float = 2,

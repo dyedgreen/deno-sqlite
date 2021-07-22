@@ -159,7 +159,7 @@ static int denoOpen(
   // the permission error on the vfs.js side of things,
   // should the error be propagates through the wrapper
   // and be raised on the wrapper side of things?
-  p->rid = js_open(zName, zName ? 0 : 1);
+  p->rid = js_open(zName, zName ? 0 : 1, flags);
 
   if (pOutFlags) {
     *pOutFlags = flags;
