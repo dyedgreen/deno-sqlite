@@ -34,7 +34,7 @@ int EXPORT(get_status) () {
 }
 
 // Initialize the database and return the status.
-int EXPORT(open) (const char* filename) {
+int EXPORT(open) (const char* filename, int flags) {
   // Return error is database is already open
   if (database) {
     last_status = SQLITE_MISUSE;
@@ -42,7 +42,7 @@ int EXPORT(open) (const char* filename) {
   }
 
   // Open SQLite db connection
-  last_status = sqlite3_open(filename, &database);
+  last_status = sqlite3_open_v2(filename, &database, flags, NULL);
   if (last_status != SQLITE_OK) {
     debug_printf("failed to open database with status %i\n", last_status);
     return last_status;

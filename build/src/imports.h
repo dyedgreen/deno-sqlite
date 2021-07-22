@@ -4,7 +4,7 @@
 // WASM imports specified in vfs.syms
 
 extern void   js_print(const char*);
-extern int    js_open(const char*, int);
+extern int    js_open(const char*, int, int);
 extern void   js_close(int);
 extern void   js_delete(const char*);
 extern int    js_read(int, const char*, double, int);

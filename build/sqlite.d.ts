@@ -12,7 +12,7 @@ export interface Wasm {
   str_len: (str: StringPtr) => number;
   seed_rng: (seed: number) => void;
   get_status: () => number;
-  open: (filename: StringPtr) => number;
+  open: (filename: StringPtr, flags: number) => number;
   close: () => number;
   get_sqlite_error_str: () => StringPtr;
   prepare: (sql: StringPtr) => StatementPtr;

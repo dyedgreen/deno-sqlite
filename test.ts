@@ -964,3 +964,53 @@ Deno.test("rowsOnPreparedQuery", function () {
     columnsFromPreparedQuery,
   );
 });
+
+// Tests which drop the permission from read + write to read only
+// and should run after any other test.
+
+Deno.test({
+  name: "databaseOpenOptions",
+  ignore: !permRead || !permWrite,
+  fn: async function () {
+    await removeTestDb(testDbFile);
+
+    // when no file exists, these should error
+    assertThrows(() => new DB(testDbFile, { mode: "write" }));
+    assertThrows(() => new DB(testDbFile, { mode: "read" }));
+
+    // create the database
+    const dbCreate = new DB(testDbFile, { mode: "create" });
+    dbCreate.query(
+      "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL)",
+    );
+    dbCreate.close();
+
+    const dbWrite = new DB(testDbFile, { mode: "write" });
+    dbWrite.query("INSERT INTO test (name) VALUES (?)", ["open-options-test"]);
+    dbWrite.close();
+
+    const dbRead = new DB(testDbFile, { mode: "read" });
+    const rows = [...dbRead.query("SELECT id, name FROM test")];
+    assertEquals(rows, [[1, "open-options-test"]]);
+    assertThrows(() =>
+      dbRead.query("INTERT INTO test (name) VALUES (?)", ["this-fails"])
+    );
+    dbRead.close();
+
+    await Deno.permissions.revoke({ name: "write" });
+    assertThrows(() => new DB(testDbFile));
+    assertThrows(() => new DB(testDbFile, { mode: "create" }));
+    assertThrows(() => new DB(testDbFile, { mode: "write" }));
+    (new DB(testDbFile, { mode: "read" })).close();
+
+    // with memory flag set, the database will be in memory and
+    // not require any permissions
+    await Deno.permissions.revoke({ name: "read" });
+    assertThrows(() => new DB(testDbFile, { mode: "read" }));
+    (new DB(testDbFile, { memory: true })).close();
+
+    // the mode can also be specified via uri flag and setting the
+    // relevant parameter
+    (new DB(`file:${testDbFile}?mode=memory`, { uri: true })).close();
+  },
+});

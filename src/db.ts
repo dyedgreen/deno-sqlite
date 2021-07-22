@@ -1,7 +1,7 @@
 // @deno-types="../build/sqlite.d.ts"
 import instantiate, { StatementPtr, Wasm } from "../build/sqlite.js";
 import { setArr, setStr } from "./wasm.ts";
-import { Status, Values } from "./constants.ts";
+import { OpenFlags, Status, Values } from "./constants.ts";
 import SqliteError from "./error.ts";
 import { ColumnName, Empty, Rows } from "./rows.ts";
 
@@ -15,6 +15,12 @@ export type QueryParam =
   | undefined
   | Date
   | Uint8Array;
+
+export interface SqliteOptions {
+  mode?: "read" | "write" | "create";
+  memory?: boolean;
+  uri?: boolean;
+}
 
 export interface PreparedQuery {
   (values?: Record<string, QueryParam> | QueryParam[]): Rows;
@@ -37,15 +43,36 @@ export class DB {
    *
    * The default opens an in-memory database.
    */
-  constructor(path: string = ":memory:") {
+  constructor(path: string = ":memory:", options: SqliteOptions = {}) {
     this._wasm = instantiate().exports;
     this._open = false;
     this._statements = new Set();
 
+    // Configure flags
+    let flags = 0;
+    switch (options.mode) {
+      case "read":
+        flags = OpenFlags.ReadOnly;
+        break;
+      case "write":
+        flags = OpenFlags.ReadWrite;
+        break;
+      case "create": // fall through
+      default:
+        flags = OpenFlags.ReadWrite | OpenFlags.Create;
+        break;
+    }
+    if (options.memory === true) {
+      flags |= OpenFlags.Memory;
+    }
+    if (options.uri === true) {
+      flags |= OpenFlags.Uri;
+    }
+
     // Try to open the database
     let status;
     setStr(this._wasm, path, (ptr) => {
-      status = this._wasm.open(ptr);
+      status = this._wasm.open(ptr, flags);
     });
     if (status !== Status.SqliteOk) {
       throw new SqliteError(this._wasm, status);
