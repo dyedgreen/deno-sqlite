@@ -17,7 +17,7 @@ The above statement lists all the available imports.
 ## DB
 
 ```javascript
-new DB(path = ":memory:");
+new DB(path = ":memory:", options = {});
 ```
 
 Create a new database. The passed path will be opened with read/ write
