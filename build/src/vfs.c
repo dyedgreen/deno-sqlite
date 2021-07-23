@@ -234,8 +234,7 @@ static int denoCurrentTime(sqlite3_vfs *pVfs, double *pTime) {
 struct tm* localtime_r(const time_t *time, struct tm *result) {
   time_t shifted = *time - 60 * js_timezone();
   debug_printf("running localtime_r");
-  gmtime_r(&shifted, result);
-  return result;
+  return gmtime_r(&shifted, result);
 }
 
 // This function returns a pointer to the VFS implemented in this file.
