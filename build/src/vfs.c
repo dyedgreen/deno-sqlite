@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <time.h>
 #include <sqlite3.h>
 #include <pcg.h>
 #include "debug.h"
@@ -227,6 +228,13 @@ static int denoSleep(sqlite3_vfs *pVfs, int nMicro) {
 static int denoCurrentTime(sqlite3_vfs *pVfs, double *pTime) {
   *pTime = js_time() / 1000 / 86400.0 + 2440587.5;
   return SQLITE_OK;
+}
+
+// Implement localtime_r
+struct tm* localtime_r(const time_t *time, struct tm *result) {
+  debug_printf("running localtime_r");
+  time_t shifted = *time - 60 * js_timezone();
+  return gmtime_r(&shifted, result);
 }
 
 // This function returns a pointer to the VFS implemented in this file.

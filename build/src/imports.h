@@ -13,6 +13,7 @@ extern void   js_truncate(int, double);
 extern void   js_sync(int);
 extern double js_size(int);
 extern double js_time();
+extern int    js_timezone();
 extern int    js_exists(const char*);
 extern int    js_access(const char*);
 
