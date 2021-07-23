@@ -965,6 +965,22 @@ Deno.test("rowsOnPreparedQuery", function () {
   );
 });
 
+Deno.test("localtimeReflectsSystemLocalTime", function () {
+  const db = new DB();
+  const [[timeDb]] = db.query("SELECT datetime('now', 'localtime')");
+  const now = new Date();
+
+  const jsMonth = `${now.getMonth() + 1}`.padStart(2, "0");
+  const jsDate = `${now.getDate()}`.padStart(2, "0");
+  const jsHour = `${now.getHours()}`.padStart(2, "0");
+  const jsMinute = `${now.getMinutes()}`.padStart(2, "0");
+  const jsSecond = `${now.getSeconds()}`.padStart(2, "0");
+  const timeJs =
+    `${now.getFullYear()}-${jsMonth}-${jsDate} ${jsHour}:${jsMinute}:${jsSecond}`;
+
+  assertEquals(timeDb, timeJs);
+});
+
 // Tests which drop the permission from read + write to read only
 // and should run after any other test.
 
