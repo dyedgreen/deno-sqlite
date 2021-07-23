@@ -965,7 +965,7 @@ Deno.test("rowsOnPreparedQuery", function () {
   );
 });
 
-Deno.test("localtimeReflectsSystemLocalTime", function () {
+Deno.test("localtimeReflectsSystemLocale", function () {
   const db = new DB();
   const [[timeDb]] = db.query("SELECT datetime('now', 'localtime')");
   const now = new Date();

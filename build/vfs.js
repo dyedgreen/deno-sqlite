@@ -72,6 +72,11 @@ export default function env(inst) {
     js_time: () => {
       return Date.now();
     },
+    // Return the timezone offset in minutes for
+    // the current locale.
+    js_timezone: () => {
+      return (new Date()).getTimezoneOffset();
+    },
     // Determine if a path exists
     js_exists: (path_ptr) => {
       const path = getStr(inst.exports, path_ptr);
