@@ -232,8 +232,8 @@ static int denoCurrentTime(sqlite3_vfs *pVfs, double *pTime) {
 
 // Implement localtime_r
 struct tm* localtime_r(const time_t *time, struct tm *result) {
-  time_t shifted = *time - 60 * js_timezone();
   debug_printf("running localtime_r");
+  time_t shifted = *time - 60 * js_timezone();
   return gmtime_r(&shifted, result);
 }
 
