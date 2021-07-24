@@ -5,7 +5,7 @@ import {
   assertThrows,
 } from "https://deno.land/std@0.53.0/testing/asserts.ts";
 import { DB, Status } from "./mod.ts";
-import SqliteError from "./src/error.ts";
+import { SqliteError } from "./src/error.ts";
 
 // file used for fs io tests
 const testDbFile = "test.db";

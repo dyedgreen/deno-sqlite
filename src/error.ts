@@ -5,8 +5,6 @@ import { Status } from "./constants.ts";
 
 export class SqliteError extends Error {
   /**
-   * SqliteError
-   *
    * Extension over the standard JS Error object
    * to also contain class members for error code
    * and error code name.
@@ -15,7 +13,7 @@ export class SqliteError extends Error {
    * should only be obtained from exceptions raised
    * in this module.
    */
-  constructor(context: Wasm | string, code?: number) {
+  constructor(context: Wasm | string, code?: Status) {
     let message;
     let status;
     if (typeof context === "string") {
@@ -31,8 +29,6 @@ export class SqliteError extends Error {
   }
 
   /**
-   * SqliteError.code
-   *
    * The SQLite result status code,
    * see the SQLite docs for more
    * information about each code.
@@ -70,11 +66,9 @@ export class SqliteError extends Error {
    * These codes are accessible via
    * the exported `Status` object.
    */
-  code: number;
+  code: Status;
 
   /**
-   * SqliteError.codeName
-   *
    * Key of code in exported `status`
    * object.
    *
