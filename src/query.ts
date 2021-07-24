@@ -87,15 +87,16 @@ export class PreparedQuery {
     } else if (typeof params === "object") {
       // Resolve parameter index for named parameter
       for (const key of Object.keys(params)) {
-        let idx = Values.Error;
         let name = key;
         // blank names default to ':'
         if (name[0] !== ":" && name[0] !== "@" && name[0] !== "$") {
           name = `:${name}`;
         }
-        setStr(this._wasm, name, (ptr) => {
-          idx = this._wasm.bind_parameter_index(this._stmt, ptr);
-        });
+        const idx = setStr(
+          this._wasm,
+          name,
+          (ptr) => this._wasm.bind_parameter_index(this._stmt, ptr),
+        );
         if (idx === Values.Error) {
           throw new SqliteError(`No parameter named '${name}'.`);
         }
@@ -139,22 +140,28 @@ export class PreparedQuery {
           }
           break;
         case "string":
-          setStr(this._wasm, value, (ptr) => {
-            status = this._wasm.bind_text(this._stmt, i + 1, ptr);
-          });
+          status = setStr(
+            this._wasm,
+            value,
+            (ptr) => this._wasm.bind_text(this._stmt, i + 1, ptr),
+          );
           break;
         default:
           if (value instanceof Date) {
             // Dates are allowed and bound to TEXT, formatted `YYYY-MM-DDTHH:MM:SS.SSSZ`
-            setStr(this._wasm, value.toISOString(), (ptr) => {
-              status = this._wasm.bind_text(this._stmt, i + 1, ptr);
-            });
+            status = setStr(
+              this._wasm,
+              value.toISOString(),
+              (ptr) => this._wasm.bind_text(this._stmt, i + 1, ptr),
+            );
           } else if (value instanceof Uint8Array) {
             // Uint8Arrays are allowed and bound to BLOB
             const size = value.length;
-            setArr(this._wasm, value, (ptr) => {
-              status = this._wasm.bind_blob(this._stmt, i + 1, ptr, size);
-            });
+            status = setArr(
+              this._wasm,
+              value,
+              (ptr) => this._wasm.bind_blob(this._stmt, i + 1, ptr, size),
+            );
           } else if (value === null || value === undefined) {
             // Both null and undefined result in a NULL entry
             status = this._wasm.bind_null(this._stmt, i + 1);
