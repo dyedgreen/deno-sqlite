@@ -82,7 +82,7 @@ export class DB {
    * See `QueryParameterSet` for documentation on
    * how values can be bound to SQL statements.
    *
-   * See `QueryParameterSet` for documentation on how
+   * See `QueryParameter` for documentation on how
    * values are returned from the database.
    */
   query(sql: string, params?: QueryParameterSet): Array<Row> {
