@@ -34,7 +34,7 @@ async function dbExists(path: string) {
   }
 }
 
-Deno.test("readmeExample", function () {
+Deno.test("README example", function () {
   // Open a database (no file permission version of open)
   const db = new DB();
   db.query(
@@ -53,7 +53,7 @@ Deno.test("readmeExample", function () {
   db.close();
 });
 
-Deno.test("readmeExampleOld", function () {
+Deno.test("old README example", function () {
   const db = new DB();
   const first = ["Bruce", "Clark", "Peter"];
   const last = ["Wane", "Kent", "Parker"];
@@ -111,7 +111,7 @@ Deno.test("readmeExampleOld", function () {
   db.close();
 });
 
-Deno.test("bindValues", function () {
+Deno.test("bind values", function () {
   const db = new DB();
   let vals, rows;
 
@@ -267,7 +267,7 @@ Deno.test("bindValues", function () {
   db.close();
 });
 
-Deno.test("bindNamedParameters", function () {
+Deno.test("bind named parameters", function () {
   const db = new DB();
 
   db.query(
@@ -316,7 +316,7 @@ Deno.test("bindNamedParameters", function () {
   db.close();
 });
 
-Deno.test("preparedQueryQueryMethod", function () {
+Deno.test("query from prepared query", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
   db.query("INSERT INTO test (id) VALUES (1), (2), (3)");
@@ -332,7 +332,7 @@ Deno.test("preparedQueryQueryMethod", function () {
   db.close();
 });
 
-Deno.test("preparedQueryQueryAllMethod", function () {
+Deno.test("query all from prepared query", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
   const select = db.prepareQuery("SELECT id FROM test");
@@ -345,7 +345,7 @@ Deno.test("preparedQueryQueryAllMethod", function () {
   db.close();
 });
 
-Deno.test("preparedQueryQueryOneMethod", function () {
+Deno.test("query one from prepared query", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
   db.query("INSERT INTO test (id) VALUES (1), (2), (3)");
@@ -361,7 +361,7 @@ Deno.test("preparedQueryQueryOneMethod", function () {
   db.close();
 });
 
-Deno.test("preparedQueryExecuteMethod", function () {
+Deno.test("execute from prepared query", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
 
@@ -375,7 +375,7 @@ Deno.test("preparedQueryExecuteMethod", function () {
   db.close();
 });
 
-Deno.test("blobsAreCopies", function () {
+Deno.test("blobs are copies", function () {
   const db = new DB();
 
   db.query(
@@ -404,7 +404,7 @@ Deno.test("blobsAreCopies", function () {
 });
 
 Deno.test({
-  name: "saveToFile",
+  name: "save to file",
   ignore: !permRead || !permWrite,
   fn: async function () {
     const data = [
@@ -441,7 +441,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "tempDB",
+  name: "temporary database",
   ignore: !permRead || !permWrite,
   fn: function () {
     const data = [
@@ -470,7 +470,7 @@ Deno.test({
   },
 });
 
-Deno.test("invalidSQL", function () {
+Deno.test("invalid SQL", function () {
   const db = new DB();
   const queries = [
     "INSERT INTO does_not_exist (balance) VALUES (5)",
@@ -482,7 +482,7 @@ Deno.test("invalidSQL", function () {
   db.close();
 });
 
-Deno.test("foreignKeys", function () {
+Deno.test("foreign key constraints enabled", function () {
   const db = new DB();
   db.query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)");
   db.query(
@@ -508,14 +508,14 @@ Deno.test("foreignKeys", function () {
   db.close();
 });
 
-Deno.test("closeDB", function () {
+Deno.test("close database", function () {
   const db = new DB();
   db.close();
-
   assertThrows(() => db.query("CREATE TABLE test (name TEXT PRIMARY KEY)"));
+  db.close(); // check close is idempotent and won't throw
 });
 
-Deno.test("openQueriesBlockClose", function () {
+Deno.test("open queries block close", function () {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
 
@@ -526,19 +526,18 @@ Deno.test("openQueriesBlockClose", function () {
   db.close();
 });
 
-Deno.test("openQueriesCleanedUpByForcedClose", function () {
+Deno.test("open queries cleaned up by forced close", function () {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
   db.query("INSERT INTO test (name) VALUES (?)", ["Deno"]);
 
-  db.query("SELECT name FROM test");
   db.prepareQuery("SELECT name FROM test WHERE name like '%test%'");
 
   assertThrows(() => db.close());
   db.close(true);
 });
 
-Deno.test("constraintErrorCode", function () {
+Deno.test("constraint error code is correct", function () {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
   db.query("INSERT INTO test (name) VALUES (?)", ["A"]);
@@ -554,7 +553,7 @@ Deno.test("constraintErrorCode", function () {
   );
 });
 
-Deno.test("syntaxErrorErrorCode", function () {
+Deno.test("syntax error code is correct", function () {
   const db = new DB();
 
   const e = assertThrows(() =>
@@ -568,7 +567,7 @@ Deno.test("syntaxErrorErrorCode", function () {
   );
 });
 
-Deno.test("invalidBindingThrows", function () {
+Deno.test("invalid binding throws", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER)");
   assertThrows(() => {
@@ -579,7 +578,7 @@ Deno.test("invalidBindingThrows", function () {
   db.close();
 });
 
-Deno.test("invalidBindDoesNotLeakStatements", function () {
+Deno.test("invalid bind does not leak statements", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER)");
 
@@ -600,7 +599,7 @@ Deno.test("invalidBindDoesNotLeakStatements", function () {
   db.close();
 });
 
-Deno.test("getColumnsWithoutNames", function () {
+Deno.test("get columns from select query", function () {
   const db = new DB();
 
   db.query(
@@ -615,7 +614,7 @@ Deno.test("getColumnsWithoutNames", function () {
   ]);
 });
 
-Deno.test("insertReturning", function () {
+Deno.test("get columns from returning query", function () {
   const db = new DB();
 
   db.query(
@@ -633,7 +632,7 @@ Deno.test("insertReturning", function () {
   assertEquals(query.queryAll(["name"]), [[1, "name"]]);
 });
 
-Deno.test("getColumnsWithNames", function () {
+Deno.test("get columns with renamed column", function () {
   const db = new DB();
 
   db.query(
@@ -652,7 +651,7 @@ Deno.test("getColumnsWithNames", function () {
   ]);
 });
 
-Deno.test("getColumnsFromFinalizedRows", function () {
+Deno.test("get columns from finalized query throws", function () {
   const db = new DB();
 
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
@@ -666,7 +665,7 @@ Deno.test("getColumnsFromFinalizedRows", function () {
   });
 });
 
-Deno.test("dateTimeIsCorrect", function () {
+Deno.test("date time is correct", function () {
   const db = new DB();
   // the date/ time is passed from JS and should be current (note that it is GMT)
   const [[now]] = [...db.query("SELECT current_timestamp")];
@@ -674,7 +673,7 @@ Deno.test("dateTimeIsCorrect", function () {
   db.close();
 });
 
-Deno.test("lastInsertedId", function () {
+Deno.test("last inserted id", function () {
   const db = new DB();
 
   // By default, lastInsertRowId must be 0
@@ -707,7 +706,7 @@ Deno.test("lastInsertedId", function () {
   assertEquals(db.lastInsertRowId, 0);
 });
 
-Deno.test("changes", function () {
+Deno.test("changes is correct", function () {
   const db = new DB();
 
   db.query(
@@ -725,7 +724,7 @@ Deno.test("changes", function () {
   assertEquals(6, db.totalChanges);
 });
 
-Deno.test("jsonFunctions", function () {
+Deno.test("json functions exist", function () {
   const db = new DB();
 
   // The JSON1 functions should exist and we should be able to call them without unexpected errors
@@ -757,7 +756,7 @@ Deno.test("jsonFunctions", function () {
   assertEquals(integerTypeAtPath, "integer");
 });
 
-Deno.test("veryLargeNumbers", function () {
+Deno.test("very large numbers", function () {
   const db = new DB();
 
   db.query("CREATE TABLE numbers (id INTEGER PRIMARY KEY, number REAL)");
@@ -781,7 +780,7 @@ Deno.test("veryLargeNumbers", function () {
 });
 
 Deno.test({
-  name: "dbLarger2GB",
+  name: "database larger than 2GB",
   ignore: !permRead || !permWrite || !(await dbExists("./build/2GB_test.db")),
   fn: function () {
     const db = new DB("./build/2GB_test.db"); // can be generated with `cd build && make testdb`
@@ -798,14 +797,14 @@ Deno.test({
   },
 });
 
-Deno.test("emptyQueryReturnsEmptyArray", function () {
+Deno.test("empty query returns empty array", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
   assertEquals([], db.query("SELECT * FROM test"));
   db.close();
 });
 
-Deno.test("prepareQueryCanBeReused", function () {
+Deno.test("prepared query can be reused", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
 
@@ -820,7 +819,7 @@ Deno.test("prepareQueryCanBeReused", function () {
   db.close();
 });
 
-Deno.test("prepareQueryClearsBindingsBeforeReused", function () {
+Deno.test("prepared query clears bindings before reused", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY, value INTEGER)");
 
@@ -834,26 +833,7 @@ Deno.test("prepareQueryClearsBindingsBeforeReused", function () {
   db.close();
 });
 
-// TODO(dyedgreen): Should it?
-// Deno.test("prepareQueryMarksOldRowsAsDoneWhenReused", function () {
-//   const db = new DB();
-//   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
-//   db.query("INSERT INTO test (id) VALUES (?), (?), (?)", [1, 2, 3]);
-//
-//   const query = db.prepareQuery("SELECT id FROM test");
-//
-//   const a = query.query();
-//   assertEquals({ done: false, value: [1] }, a.next());
-//
-//   const b = query();
-//   assertEquals([], [...a]);
-//   assertEquals([[1], [2], [3]], [...b]);
-//
-//   query.finalize();
-//   db.close();
-// });
-
-Deno.test("bigIntegersBindCorrectly", function () {
+Deno.test("big integers bind correctly", function () {
   const db = new DB();
   db.query(
     "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, val INTEGER)",
@@ -893,7 +873,7 @@ Deno.test("bigIntegersBindCorrectly", function () {
   db.close();
 });
 
-Deno.test("queryFinalizedPreparedQueryFails", function () {
+Deno.test("using finalized prepared query throws", function () {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT)");
   const query = db.prepareQuery("INSERT INTO test (name) VALUES (?)");
@@ -903,7 +883,7 @@ Deno.test("queryFinalizedPreparedQueryFails", function () {
   db.close();
 });
 
-Deno.test("rowsOnPreparedQuery", function () {
+Deno.test("columns can be obtained from empty prepared query", function () {
   const db = new DB();
   db.query(
     "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEST, age INTEGER)",
@@ -933,7 +913,7 @@ Deno.test("rowsOnPreparedQuery", function () {
   );
 });
 
-Deno.test("localtimeReflectsSystemLocale", function () {
+Deno.test("SQL localtime reflects system locale", function () {
   const db = new DB();
   const [[timeDb]] = db.query("SELECT datetime('now', 'localtime')");
   const now = new Date();
@@ -953,7 +933,7 @@ Deno.test("localtimeReflectsSystemLocale", function () {
 // and should run after any other test.
 
 Deno.test({
-  name: "databaseOpenOptions",
+  name: "database open options",
   ignore: !permRead || !permWrite,
   fn: async function () {
     await removeTestDb(testDbFile);
