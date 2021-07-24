@@ -4,6 +4,14 @@ import {
 } from "https://deno.land/std@0.53.0/testing/bench.ts";
 import { DB } from "./mod.ts";
 
+if (Deno.args[0]) {
+  try {
+    await Deno.remove(Deno.args[0]);
+  } catch (_) {
+    // ignore
+  }
+}
+
 const dbFile = Deno.args[0] || ":memory:";
 const db = new DB(dbFile);
 
@@ -15,8 +23,8 @@ db.query(
 const names = "Deno Land Peter Parker Clark Kent Robert Parr".split(" ");
 
 bench({
-  name: "insert (named)",
-  runs: 10,
+  name: "insert 10 000 (named)",
+  runs: 100,
   func: (b): void => {
     b.start();
     const query = db.prepareQuery(
@@ -32,8 +40,8 @@ bench({
 });
 
 bench({
-  name: "insert (positional)",
-  runs: 10,
+  name: "insert 10 000 (positional)",
+  runs: 100,
   func: (b): void => {
     b.start();
     const query = db.prepareQuery(
@@ -50,8 +58,8 @@ bench({
 
 /** Performance of select statements (select all; 10_000). */
 bench({
-  name: "select",
-  runs: 10,
+  name: "select 10 000 (select all)",
+  runs: 100,
   func: (b): void => {
     b.start();
     db.query(
@@ -61,35 +69,17 @@ bench({
   },
 });
 
-/** Performance when sorting rows (select and sort 1000 rows). */
+/** Performance of select statements (select individually; 10_000). */
 bench({
-  name: "order",
+  name: "select 10 000 (select one)",
   runs: 100,
   func: (b): void => {
     b.start();
-    for (
-      const [_name, _balance] of db.query(
-        "SELECT name, balance FROM users ORDER BY balance DESC LIMIT 1000",
-      )
-    ) {
-      continue;
-    }
-    b.stop();
-  },
-});
-
-/** Performance when sorting using random order. */
-bench({
-  name: "random",
-  runs: 100,
-  func: (b): void => {
-    b.start();
-    for (
-      const [name, balance] of db.query(
-        "SELECT name, balance FROM users ORDER BY RANDOM() LIMIT 1000",
-      )
-    ) {
-      continue;
+    const select = db.prepareQuery(
+      "SELECT name, balance FROM users WHERE id = ?",
+    );
+    for (let id = 1; id <= 10_000; id++) {
+      select.queryOne([id]);
     }
     b.stop();
   },
