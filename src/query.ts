@@ -2,7 +2,7 @@
 import { StatementPtr, Wasm } from "../build/sqlite.js";
 import { getStr, setArr, setStr } from "./wasm.ts";
 import { Status, Types, Values } from "./constants.ts";
-import SqliteError from "./error.ts";
+import { SqliteError } from "./error.ts";
 
 // deno-lint-ignore no-explicit-any
 export type Row = Array<any>;
@@ -234,7 +234,7 @@ export class PreparedQuery {
   /**
    * Implements the iterable protocol.
    */
-  [Symbol.iterator](): PreparedQuery {
+  [Symbol.iterator](): RowsIterator {
     return this;
   }
 

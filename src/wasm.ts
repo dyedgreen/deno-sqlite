@@ -1,6 +1,6 @@
 // @deno-types="../build/sqlite.d.ts"
 import { Wasm } from "../build/sqlite.js";
-import SqliteError from "./error.ts";
+import { SqliteError } from "./error.ts";
 
 // Move string to C
 export function setStr<T>(
