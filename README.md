@@ -51,8 +51,10 @@ db.close();
 
 ### TL;DR
 
-If you just want something that works, use this library. Depending on your
-specific needs, there is also
+If you want something that just works (and is fast) in the majority of cases,
+use this library.
+
+Depending on your specific needs, there is also
 [deno_sqlite_plugin](https://github.com/crabmusket/deno_sqlite_plugin), however
 this module seems to no longer be actively maintained.
 
@@ -63,14 +65,15 @@ this module seems to no longer be actively maintained.
 - Portability: runs everywhere Deno runs and can even run in the browser
 - Easy: takes full advantage of Denos module cache and does not require any
   network access after initial download
+- Speed: thanks to WASM, the database performance is comparable to native
+  bindings in most situations and the API is carefully designed to provide
+  optimal performance
 
 ### Disadvantages
 
-- Speed: file system IO through Deno can be lower compared to what is achievable
-  using a native code
 - Weaker Persistence Guarantees: due to limitations in Denos file system APIs,
-  SQLite can't acquire file locks or memory map files (e.g. this module can't
-  safely use WAL mode)
+  SQLite can't acquire file locks or memory map files (e.g. this module does not
+  support WAL mode)
 
 ## Users
 
