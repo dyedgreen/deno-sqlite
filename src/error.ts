@@ -9,9 +9,9 @@ export class SqliteError extends Error {
    * to also contain class members for error code
    * and error code name.
    *
-   * This class is not exported by the module and
-   * should only be obtained from exceptions raised
-   * in this module.
+   * Instances of this class should not be constructed
+   * directly and should only be obtained
+   * from exceptions raised in this module.
    */
   constructor(context: Wasm | string, code?: Status) {
     let message;

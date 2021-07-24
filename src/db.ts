@@ -56,10 +56,11 @@ export class DB {
     }
 
     // Try to open the database
-    let status;
-    setStr(this._wasm, path, (ptr) => {
-      status = this._wasm.open(ptr, flags);
-    });
+    const status = setStr(
+      this._wasm,
+      path,
+      (ptr) => this._wasm.open(ptr, flags),
+    );
     if (status !== Status.SqliteOk) {
       throw new SqliteError(this._wasm, status);
     }
@@ -83,7 +84,7 @@ export class DB {
       throw new SqliteError("Database was closed.");
     }
 
-    const stmt: StatementPtr = setStr(
+    const stmt = setStr(
       this._wasm,
       sql,
       (ptr) => this._wasm.prepare(ptr),
