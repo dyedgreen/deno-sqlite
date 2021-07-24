@@ -52,7 +52,7 @@ bench({
     );
     b.start();
     for (let i = 0; i < 100; i++) {
-      query([names[n % names.length], n]);
+      query.execute([names[n % names.length], n]);
     }
     b.stop();
     query.finalize();
@@ -66,7 +66,7 @@ bench({
   func: (b): void => {
     b.start();
     for (
-      const [name, balance] of db.query(
+      const [_name, _balance] of db.query(
         "SELECT name, balance FROM users LIMIT 1000",
       )
     ) {
@@ -83,7 +83,7 @@ bench({
   func: (b): void => {
     b.start();
     for (
-      const [name, balance] of db.query(
+      const [_name, _balance] of db.query(
         "SELECT name, balance FROM users ORDER BY balance DESC LIMIT 1000",
       )
     ) {

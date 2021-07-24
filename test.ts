@@ -4,7 +4,7 @@ import {
   assertMatch,
   assertThrows,
 } from "https://deno.land/std@0.53.0/testing/asserts.ts";
-import { DB, Empty, Status } from "./mod.ts";
+import { DB, Status } from "./mod.ts";
 import SqliteError from "./src/error.ts";
 
 // file used for fs io tests
@@ -49,7 +49,7 @@ Deno.test("readmeExample", function () {
   db.query("INSERT INTO people (name) VALUES (?)", [name]);
 
   // Print out data in table
-  for (const [name] of db.query("SELECT name FROM people")) continue; // no console.log ;)
+  for (const [_name] of db.query("SELECT name FROM people")) continue; // no console.log ;)
 
   db.close();
 });
@@ -95,8 +95,7 @@ Deno.test("readmeExampleOld", function () {
   const res = db.query("SELECT email FROM users WHERE name LIKE ?", [
     "Robert Parr",
   ]);
-  assertEquals(res, Empty);
-  res.return();
+  assertEquals(res, []);
 
   // Omit write tests, as we don't want to require ---allow-write
   // and have a write test, which checks for the flag and skips itself.
@@ -105,9 +104,9 @@ Deno.test("readmeExampleOld", function () {
     "SELECT name, email FROM users WHERE subscribed = ?",
     [true],
   );
-  for (const [name, email] of subscribers) {
+  for (const [_name, _email] of subscribers) {
     if (Math.random() > 0.5) continue;
-    subscribers.return();
+    break;
   }
 
   db.close();
@@ -221,7 +220,7 @@ Deno.test("bindValues", function () {
   }
   rows = [...db.query("SELECT val FROM nulls")].map(([v]) => v);
   assertEquals(rows.length, vals.length);
-  assertEquals(rows, [null, null]); // TODO(hsjoberg) undefined -> null
+  assertEquals(rows, [null, null]);
 
   // mixed
   db.query(
@@ -461,11 +460,6 @@ Deno.test("closeDB", function () {
 Deno.test("openQueriesBlockClose", function () {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
-  db.query("INSERT INTO test (name) VALUES (?)", ["Deno"]);
-  const rows = db.query("SELECT name FROM test");
-
-  assertThrows(() => db.close());
-  rows.return();
 
   const query = db.prepareQuery("SELECT name FROM test");
   assertThrows(() => db.close());
@@ -520,6 +514,7 @@ Deno.test("invalidBindingThrows", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER)");
   assertThrows(() => {
+    // deno-lint-ignore no-explicit-any
     const badBinding: any = [{}];
     db.query("SELECT * FORM test WHERE id = ?", badBinding);
   });
@@ -532,6 +527,7 @@ Deno.test("invalidBindDoesNotLeakStatements", function () {
 
   for (let n = 0; n < 100; n++) {
     assertThrows(() => {
+      // deno-lint-ignore no-explicit-any
       const badBinding: any = [{}];
       db.query("INSERT INTO test (id) VALUES (?)", badBinding);
     });
@@ -552,12 +548,10 @@ Deno.test("getColumnsWithoutNames", function () {
   db.query(
     "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)",
   );
-  db.query("INSERT INTO test (name) VALUES (?)", ["name"]);
 
-  const rows = db.query("SELECT id, name from test");
-  const columns = rows.columns();
+  const query = db.prepareQuery("SELECT id, name from test");
 
-  assertEquals(columns, [
+  assertEquals(query.columns(), [
     { name: "id", originName: "id", tableName: "test" },
     { name: "name", originName: "name", tableName: "test" },
   ]);
@@ -569,22 +563,16 @@ Deno.test("insertReturning", function () {
   db.query(
     "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)",
   );
-  const result = db.query(
+  const query = db.prepareQuery(
     "INSERT INTO test (name) VALUES (?) RETURNING *",
-    ["name"],
   );
 
-  assertEquals(result.columns(), [
+  assertEquals(query.columns(), [
     { name: "id", originName: "", tableName: "" },
     { name: "name", originName: "", tableName: "" },
   ]);
 
-  assertEquals([...result.asObjects()], [
-    {
-      "id": 1,
-      "name": "name",
-    },
-  ]);
+  assertEquals(query.queryAll(["name"]), [[1, "name"]]);
 });
 
 Deno.test("getColumnsWithNames", function () {
@@ -595,8 +583,10 @@ Deno.test("getColumnsWithNames", function () {
   );
   db.query("INSERT INTO test (name) VALUES (?)", ["name"]);
 
-  const rows = db.query("SELECT id AS test_id, name AS test_name from test");
-  const columns = rows.columns();
+  const query = db.prepareQuery(
+    "SELECT id AS test_id, name AS test_name from test",
+  );
+  const columns = query.columns();
 
   assertEquals(columns, [
     { name: "test_id", originName: "id", tableName: "test" },
@@ -609,39 +599,13 @@ Deno.test("getColumnsFromFinalizedRows", function () {
 
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
 
-  const rows = db.query("SELECT id from test");
-
-  rows.return();
+  const query = db.prepareQuery("SELECT id from test");
+  query.finalize();
 
   // after iteration is done
   assertThrows(() => {
-    rows.columns();
+    query.columns();
   });
-});
-
-Deno.test("closingIteratorFinalizesRows", function () {
-  const db = new DB();
-
-  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
-  for (let i = 0; i < 10; i++) {
-    db.query("INSERT INTO test (id) VALUES (?)", [i]);
-  }
-
-  const rows1 = db.query("SELECT * FROM test");
-  for (const _ of rows1) {
-    break;
-  }
-  assertEquals(rows1.next().done, true);
-
-  const rows2 = db.query("SELECT * FROM test");
-  assertThrows(() => {
-    for (const _ of rows2) {
-      throw "this is an error ...";
-    }
-  });
-  assertEquals(rows2.next().done, true);
-
-  db.close();
 });
 
 Deno.test("dateTimeIsCorrect", function () {
@@ -701,52 +665,6 @@ Deno.test("changes", function () {
   assertEquals(3, db.changes);
 
   assertEquals(6, db.totalChanges);
-});
-
-Deno.test("outputToObjectArray", function () {
-  const db = new DB();
-
-  const expectedName = "John Doe";
-
-  // Create table and insert value
-  db.query(`CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)`);
-
-  // Insert data to table
-  for (let i = 0; i < 2; i++) {
-    db.query("INSERT INTO users (name) VALUES ('John Doe')");
-  }
-
-  const res = [...db.query("SELECT * FROM users").asObjects()];
-
-  assert(
-    res.length === 2,
-    "Result is not an array or does not have the correct length",
-  );
-
-  for (const row of res) {
-    assert(typeof row === "object", "Row is not an object");
-    assert(
-      row.hasOwnProperty("id") && row.hasOwnProperty("name"),
-      "Row does not have the correct properties",
-    );
-    assert(row.name === expectedName, "Name is incorrect");
-    assert(typeof row.id === "number", "ID is incorrect");
-  }
-});
-
-Deno.test("outputToObjectArrayEmpty", function () {
-  const db = new DB();
-
-  // Create table and insert value
-  db.query(`CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)`);
-
-  // All collected row ids must be the same as in the database
-  const res = [...db.query("SELECT * FROM users").asObjects()];
-
-  assert(
-    res.length === 0,
-    "Result is not an array or does not have the correct length",
-  );
 });
 
 Deno.test("jsonFunctions", function () {
@@ -822,14 +740,10 @@ Deno.test({
   },
 });
 
-Deno.test("emptyConstantIsIterable", function () {
-  assertEquals([], [...Empty]);
-});
-
-Deno.test("emptyQueryReturnsEmpty", function () {
+Deno.test("emptyQueryReturnsEmptyArray", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
-  assertEquals(Empty, db.query("SELECT * FROM test"));
+  assertEquals([], db.query("SELECT * FROM test"));
   db.close();
 });
 
@@ -838,11 +752,11 @@ Deno.test("prepareQueryCanBeReused", function () {
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
 
   const query = db.prepareQuery("INSERT INTO test (id) VALUES (?)");
-  query([1]);
-  query([2]);
-  query([3]);
+  query.execute([1]);
+  query.execute([2]);
+  query.execute([3]);
 
-  assertEquals([[1], [2], [3]], [...db.query("SELECT id FROM test")]);
+  assertEquals([[1], [2], [3]], db.query("SELECT id FROM test"));
 
   query.finalize();
   db.close();
@@ -853,32 +767,33 @@ Deno.test("prepareQueryClearsBindingsBeforeReused", function () {
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY, value INTEGER)");
 
   const query = db.prepareQuery("INSERT INTO test (value) VALUES (?)");
-  query([1]);
-  query();
+  query.execute([1]);
+  query.execute();
 
-  assertEquals([[1], [null]], [...db.query("SELECT value FROM test")]);
-
-  query.finalize();
-  db.close();
-});
-
-Deno.test("prepareQueryMarksOldRowsAsDoneWhenReused", function () {
-  const db = new DB();
-  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
-  db.query("INSERT INTO test (id) VALUES (?), (?), (?)", [1, 2, 3]);
-
-  const query = db.prepareQuery("SELECT id FROM test");
-
-  const a = query();
-  assertEquals({ done: false, value: [1] }, a.next());
-
-  const b = query();
-  assertEquals([], [...a]);
-  assertEquals([[1], [2], [3]], [...b]);
+  assertEquals([[1], [null]], db.query("SELECT value FROM test"));
 
   query.finalize();
   db.close();
 });
+
+// TODO(dyedgreen): Should it?
+// Deno.test("prepareQueryMarksOldRowsAsDoneWhenReused", function () {
+//   const db = new DB();
+//   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
+//   db.query("INSERT INTO test (id) VALUES (?), (?), (?)", [1, 2, 3]);
+//
+//   const query = db.prepareQuery("SELECT id FROM test");
+//
+//   const a = query.query();
+//   assertEquals({ done: false, value: [1] }, a.next());
+//
+//   const b = query();
+//   assertEquals([], [...a]);
+//   assertEquals([[1], [2], [3]], [...b]);
+//
+//   query.finalize();
+//   db.close();
+// });
 
 Deno.test("bigIntegersBindCorrectly", function () {
   const db = new DB();
@@ -902,7 +817,7 @@ Deno.test("bigIntegersBindCorrectly", function () {
 
   const query = db.prepareQuery("INSERT INTO test (val) VALUES (?)");
   for (const val of goodValues) {
-    query([val]);
+    query.execute([val]);
   }
 
   const dbValues = [...db.query("SELECT val FROM test ORDER BY id")].map((
@@ -912,7 +827,7 @@ Deno.test("bigIntegersBindCorrectly", function () {
 
   for (const bigVal of overflowValues) {
     assertThrows(() => {
-      query([bigVal]);
+      query.execute([bigVal]);
     });
   }
 
@@ -926,7 +841,7 @@ Deno.test("queryFinalizedPreparedQueryFails", function () {
   const query = db.prepareQuery("INSERT INTO test (name) VALUES (?)");
   query.finalize();
 
-  assertThrows(() => query(["test"]));
+  assertThrows(() => query.execute(["test"]));
   db.close();
 });
 
@@ -937,17 +852,13 @@ Deno.test("rowsOnPreparedQuery", function () {
   );
   db.query("INSERT INTO test (name, age) VALUES (?, ?)", ["Peter Parker", 21]);
 
-  const rows = db.query("SELECT * FROM test");
-  const columnsFromRows = rows.columns();
-  rows.return();
-
   const query = db.prepareQuery("SELECT * FROM test");
   const columnsFromPreparedQuery = query.columns();
   query.finalize();
 
   const queryEmpty = db.prepareQuery("SELECT * FROM test WHERE 1 = 0");
   const columnsFromPreparedQueryWithEmptyQuery = queryEmpty.columns();
-  assertEquals(queryEmpty(), Empty);
+  assertEquals(queryEmpty.queryAll(), []);
   query.finalize();
 
   assertEquals(
@@ -958,7 +869,6 @@ Deno.test("rowsOnPreparedQuery", function () {
     }, { name: "age", originName: "age", tableName: "test" }],
     columnsFromPreparedQuery,
   );
-  assertEquals(columnsFromRows, columnsFromPreparedQuery);
   assertEquals(
     columnsFromPreparedQueryWithEmptyQuery,
     columnsFromPreparedQuery,

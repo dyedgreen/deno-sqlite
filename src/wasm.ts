@@ -3,11 +3,11 @@ import { Wasm } from "../build/sqlite.js";
 import SqliteError from "./error.ts";
 
 // Move string to C
-export function setStr(
+export function setStr<T>(
   wasm: Wasm,
   str: string,
-  closure: (ptr: number) => void,
-) {
+  closure: (ptr: number) => T,
+): T {
   const bytes = new TextEncoder().encode(str);
   const ptr = wasm.malloc(bytes.length + 1);
   if (ptr === 0) {
@@ -17,8 +17,9 @@ export function setStr(
   mem.set(bytes);
   mem[bytes.length] = 0; // \0 terminator
   try {
-    closure(ptr);
+    const result = closure(ptr);
     wasm.free(ptr);
+    return result;
   } catch (error) {
     wasm.free(ptr);
     throw error;
@@ -26,11 +27,11 @@ export function setStr(
 }
 
 // Move Uint8Array to C
-export function setArr(
+export function setArr<T>(
   wasm: Wasm,
   arr: Uint8Array,
-  closure: (ptr: number) => void,
-) {
+  closure: (ptr: number) => T,
+): T {
   const ptr = wasm.malloc(arr.length);
   if (ptr === 0) {
     throw new SqliteError("Out of memory.");
@@ -38,8 +39,9 @@ export function setArr(
   const mem = new Uint8Array(wasm.memory.buffer, ptr, arr.length);
   mem.set(arr);
   try {
-    closure(ptr);
+    const result = closure(ptr);
     wasm.free(ptr);
+    return result;
   } catch (error) {
     wasm.free(ptr);
     throw error;

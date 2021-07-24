@@ -1,31 +1,17 @@
 // @deno-types="../build/sqlite.d.ts"
 import instantiate, { StatementPtr, Wasm } from "../build/sqlite.js";
-import { setArr, setStr } from "./wasm.ts";
+import { setStr } from "./wasm.ts";
 import { OpenFlags, Status, Values } from "./constants.ts";
 import SqliteError from "./error.ts";
-import { ColumnName, Empty, Rows } from "./rows.ts";
+import { PreparedQuery, QueryParameterSet, Row } from "./query.ts";
 
-// Possible parameters to be bound to a query
-export type QueryParam =
-  | boolean
-  | number
-  | bigint
-  | string
-  | null
-  | undefined
-  | Date
-  | Uint8Array;
-
-export interface SqliteOptions {
+/**
+ * Options for opening a database.
+ */
+export interface SQLiteOptions {
   mode?: "read" | "write" | "create";
   memory?: boolean;
   uri?: boolean;
-}
-
-export interface PreparedQuery {
-  (values?: Record<string, QueryParam> | QueryParam[]): Rows;
-  finalize: () => void;
-  columns: () => ColumnName[];
 }
 
 export class DB {
@@ -34,16 +20,16 @@ export class DB {
   private _statements: Set<StatementPtr>;
 
   /**
-   * DB
+   * Create a new database. The file at the
+   * given path will be opened with the
+   * mode specified in options. The default
+   * mode is `create`.
    *
-   * Create a new database. The passed
-   * path will be opened with read/ write
-   * permissions and created if it does not
-   * already exist.
-   *
-   * The default opens an in-memory database.
+   * If no path is given, or if the `memory`
+   * option is set, the database is opened in
+   * memory.
    */
-  constructor(path: string = ":memory:", options: SqliteOptions = {}) {
+  constructor(path: string = ":memory:", options: SQLiteOptions = {}) {
     this._wasm = instantiate().exports;
     this._open = false;
     this._statements = new Set();
@@ -80,306 +66,44 @@ export class DB {
     this._open = true;
   }
 
-  /**
-   * DB.query
-   *
-   * Run a query against the database. The query
-   * can contain placeholder parameters, which
-   * are bound to the values passed in 'values'.
-   *
-   *     db.query("SELECT name, email FROM users WHERE subscribed = ? AND list LIKE ?", [true, listName]);
-   *
-   * This supports positional and named parameters.
-   * Positional parameters can be set by passing an
-   * array for values. Named parameters can be set
-   * by passing an object for values.
-   *
-   * While they can be mixed in principle, this is
-   * not recommended.
-   *
-   * | Parameter     | Values                  |
-   * |---------------|-------------------------|
-   * | `?NNN` or `?` | NNN-th value in array   |
-   * | `:AAAA`       | value `AAAA` or `:AAAA` |
-   * | `@AAAA`       | value `@AAAA`           |
-   * | `$AAAA`       | value `$AAAA`           |
-   *
-   * (see https://www.sqlite.org/lang_expr.html)
-   *
-   * Values may only be of the following
-   * types and are converted as follows:
-   *
-   * | JS in      | SQL type        | JS out           |
-   * |------------|-----------------|------------------|
-   * | number     | INTEGER or REAL | number or bigint |
-   * | bigint     | INTEGER         | number or bigint |
-   * | boolean    | INTEGER         | number           |
-   * | string     | TEXT            | string           |
-   * | Date       | TEXT            | string           |
-   * | Uint8Array | BLOB            | Uint8Array       |
-   * | null       | NULL            | null             |
-   * | undefined  | NULL            | null             |
-   *
-   * If no value is provided to a given parameter,
-   * SQLite will default to NULL.
-   *
-   * If a `bigint` is bound, it is converted to a
-   * signed 64 big integer, which may not be lossless.
-   * If an integer value is read from the database, which
-   * is too big to safely be contained in a `number`, it
-   * is automatically returned as a `bigint`.
-   *
-   * If a `Date` is bound, it will be converted to
-   * an ISO 8601 string: `YYYY-MM-DDTHH:MM:SS.SSSZ`.
-   * This format is understood by built-in SQLite
-   * date-time functions. Also see
-   * https://sqlite.org/lang_datefunc.html.
-   *
-   * This always returns an iterable Rows object.
-   * As a special case, if the query has no rows
-   * to return this returns the Empty row (which
-   * is also iterable, but has zero entries).
-   *
-   * !> Any returned Rows object needs to be fully
-   * iterated over or discarded by calling
-   * `.return()` or closing the iterator.
-   *
-   * !> To prevent SQL injections, sql queries should
-   * never be obtained via string interpolation. Instead,
-   * dynamic parameters should be bound using query parameters:
-   *
-   *     db.query("SELECT name FROM users WHERE id = ?", [id]); // GOOD
-   *     db.query(`SELECT name FROM users WHERE id = ${id}`); // BAD: Potential SQL injection!
-   */
-  query(sql: string, values?: Record<string, QueryParam> | QueryParam[]): Rows {
-    const stmt: StatementPtr = this.prepareStmt(sql);
-    if (values != null) {
-      try {
-        this.bindStmt(stmt, values);
-      } catch (err) {
-        this._wasm.finalize(stmt);
-        throw err;
-      }
-    }
-
-    // Step once to handle case where result is empty
-    const status = this._wasm.step(stmt);
-    switch (status) {
-      case Status.SqliteDone:
-        this._wasm.finalize(stmt);
-        return Empty;
-      case Status.SqliteRow:
-        this._statements.add(stmt);
-        return new Rows(this._wasm, stmt, this._statements);
-      default:
-        this._wasm.finalize(stmt);
-        throw new SqliteError(this._wasm, status);
+  query(sql: string, params?: QueryParameterSet): Array<Row> {
+    const query = this.prepareQuery(sql);
+    try {
+      const rows = query.queryAll(params);
+      query.finalize();
+      return rows;
+    } catch (err) {
+      query.finalize();
+      throw err;
     }
   }
 
-  /**
-   * DB.prepareQuery
-   *
-   * This is similar to `query()`, with the difference
-   * that the returned function can be called multiple
-   * times (with different values to bind each time).
-   *
-   * Using a prepared query instead of `query()` will
-   * improve performance if the query is issued a lot,
-   * e.g. when writing a web server, the queries used
-   * by the server could be prepared once and then used
-   * through it's runtime.
-   *
-   * A prepared query must be finalized when it is no
-   * longer in used by calling `query.finalize()`. So
-   * the complete lifetime of a query would look like
-   * this:
-   *
-   *     // once
-   *     const query = db.prepareQuery("INSERT INTO messages (message, author) VALUES (?, ?)");
-   *     // many times
-   *     query([messageValueOne, authorValueOne]);
-   *     query([messageValueTwo, authorValueTwo]);
-   *     // ...
-   *     // once
-   *     query.finalize();
-   */
   prepareQuery(sql: string): PreparedQuery {
-    const stmt: StatementPtr = this.prepareStmt(sql);
-    let lastRows: Rows | null = null;
-
-    let finalized = false;
-    this._statements.add(stmt);
-
-    const query = (
-      values?: Record<string, QueryParam> | QueryParam[],
-    ): Rows => {
-      if (finalized) {
-        throw new SqliteError("Query already finalized.");
-      }
-
-      // Mark previous rows object as done, such that
-      // they won't intermingle and produce wired
-      // results.
-      if (lastRows != null) {
-        lastRows.return();
-        lastRows = null;
-      }
-
-      this._wasm.reset(stmt);
-      this._wasm.clear_bindings(stmt);
-      if (values != null) {
-        this.bindStmt(stmt, values);
-      }
-
-      // Step once to handle case where result is empty
-      const status = this._wasm.step(stmt);
-      switch (status) {
-        case Status.SqliteDone:
-          return Empty;
-        case Status.SqliteRow:
-          lastRows = new Rows(this._wasm, stmt); // don't pass statement set for cleanup
-          return lastRows;
-        default:
-          throw new SqliteError(this._wasm, status);
-      }
-    };
-
-    query.finalize = () => {
-      if (!finalized) {
-        finalized = true;
-        this._wasm.finalize(stmt);
-        this._statements.delete(stmt);
-      }
-    };
-
-    query.columns = () => {
-      if (finalized) {
-        throw new SqliteError(
-          "Unable to return column names of finalized query.",
-        );
-      }
-      // TODO(dyedgreen): This is a bit of a hack, but moving everything
-      // into a Statement class also doesn't feel quite right...
-      return (new Rows(this._wasm, stmt)).columns();
-    };
-
-    return query;
-  }
-
-  private prepareStmt(sql: string): StatementPtr {
     if (!this._open) {
       throw new SqliteError("Database was closed.");
     }
 
-    let stmt: StatementPtr = Values.Null;
-    setStr(this._wasm, sql, (ptr) => {
-      stmt = this._wasm.prepare(ptr);
-    });
-
+    const stmt: StatementPtr = setStr(
+      this._wasm,
+      sql,
+      (ptr) => this._wasm.prepare(ptr),
+    );
     if (stmt === Values.Null) {
       throw new SqliteError(this._wasm);
     }
 
-    return stmt;
-  }
-
-  private bindStmt(
-    stmt: StatementPtr,
-    values: Record<string, QueryParam> | QueryParam[],
-  ) {
-    // Prepare parameter array
-    let parameters = [];
-    if (Array.isArray(values)) {
-      parameters = values;
-    } else if (typeof values === "object") {
-      // Resolve parameter index for named values
-      for (const key of Object.keys(values)) {
-        let idx = Values.Error;
-        // Prepend ':' to name, if it does not have a special starting character
-        let name = key;
-        if (name[0] !== ":" && name[0] !== "@" && name[0] !== "$") {
-          name = `:${name}`;
-        }
-        setStr(this._wasm, name, (ptr) => {
-          idx = this._wasm.bind_parameter_index(stmt, ptr);
-        });
-        if (idx === Values.Error) {
-          throw new SqliteError(`No parameter named '${name}'.`);
-        }
-        parameters[idx - 1] = values[key];
-      }
-    }
-
-    // Bind parameters
-    for (let i = 0; i < parameters.length; i++) {
-      let value = parameters[i];
-      let status;
-      switch (typeof value) {
-        case "boolean":
-          value = value ? 1 : 0;
-        // fall through
-        case "number":
-          if (Number.isSafeInteger(value)) {
-            status = this._wasm.bind_int(stmt, i + 1, value);
-          } else {
-            status = this._wasm.bind_double(stmt, i + 1, value);
-          }
-          break;
-        case "bigint":
-          // bigint is bound as two 32bit integers and reassembled on the C side
-          if (value > 9223372036854775807n || value < -9223372036854775808n) {
-            throw new SqliteError(
-              `BigInt value ${value} overflows 64 bit integer.`,
-            );
-          } else {
-            const posVal = value >= 0n ? value : -value;
-            const sign = value >= 0n ? 1 : -1;
-            const upper = Number(BigInt.asUintN(32, posVal >> 32n));
-            const lower = Number(BigInt.asUintN(32, posVal));
-            status = this._wasm.bind_big_int(stmt, i + 1, sign, upper, lower);
-          }
-          break;
-        case "string":
-          setStr(this._wasm, value, (ptr) => {
-            status = this._wasm.bind_text(stmt, i + 1, ptr);
-          });
-          break;
-        default:
-          if (value instanceof Date) {
-            // Dates are allowed and bound to TEXT, formatted `YYYY-MM-DDTHH:MM:SS.SSSZ`
-            setStr(this._wasm, value.toISOString(), (ptr) => {
-              status = this._wasm.bind_text(stmt, i + 1, ptr);
-            });
-          } else if (value instanceof Uint8Array) {
-            // Uint8Arrays are allowed and bound to BLOB
-            const size = value.length;
-            setArr(this._wasm, value, (ptr) => {
-              status = this._wasm.bind_blob(stmt, i + 1, ptr, size);
-            });
-          } else if (value === null || value === undefined) {
-            // Both null and undefined result in a NULL entry
-            status = this._wasm.bind_null(stmt, i + 1);
-          } else {
-            throw new SqliteError(`Can not bind ${typeof value}.`);
-          }
-          break;
-      }
-      if (status !== Status.SqliteOk) {
-        throw new SqliteError(this._wasm, status);
-      }
-    }
+    this._statements.add(stmt);
+    return new PreparedQuery(this._wasm, stmt, this._statements);
   }
 
   /**
-   * DB.close
+   * Close the database. This must be called if
+   * the database is no longer used to avoid leaking
+   * open file descriptors.
    *
-   * Close database handle. This must be called if
-   * DB is no longer used, to avoid leaking file
-   * resources.
-   *
-   * If force is specified, any on-going transactions
-   * will be closed.
+   * If force is specified, any active `PreparedQuery`s
+   * will be finalized. Otherwise, this throws if there
+   * are active queries.
    */
   close(force = false) {
     if (!this._open) {
@@ -399,8 +123,6 @@ export class DB {
   }
 
   /**
-   * DB.lastInsertRowId
-   *
    * Get last inserted row id. This corresponds to
    * the SQLite function `sqlite3_last_insert_rowid`.
    *
@@ -412,8 +134,6 @@ export class DB {
   }
 
   /**
-   * DB.changes
-   *
    * Return the number of rows modified, inserted or
    * deleted by the most recently completed query.
    * This corresponds to the SQLite function
@@ -424,8 +144,6 @@ export class DB {
   }
 
   /**
-   * DB.totalChanges
-   *
    * Return the number of rows modified, inserted or
    * deleted since the database was opened.
    * This corresponds to the SQLite function
