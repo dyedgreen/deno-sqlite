@@ -63,10 +63,7 @@ export type QueryParameter =
  * a query method either as an array of
  * parameters (in positional order), or
  * as an object which maps parameter names
- * to their values.
- *
- * SQL parameters are mapped to the values
- * in a parameter set as follows:
+ * to their values:
  *
  * | SQL Parameter | QueryParameterSet       |
  * |---------------|-------------------------|
@@ -76,7 +73,7 @@ export type QueryParameter =
  * | `$AAAA`       | value `$AAAA`           |
  *
  * See `QueryParameter` for documentation on
- * how values are converted from and to SQL
+ * how values are converted between SQL
  * and JavaScript types.
  */
 export type QueryParameterSet =
@@ -298,8 +295,8 @@ export class PreparedQuery {
    * }
    * ```
    *
-   * Calling `query` invalidates any iterators returned
-   * previously. Using an invalidated iterator is a bug.
+   * Calling `query` invalidates any iterators previously returned
+   * by this prepared query. Using an invalidated iterator is a bug.
    *
    * To avoid SQL injection, user-provided values
    * should always be passed to the database through
