@@ -292,7 +292,7 @@ export class PreparedQuery<R = Row> {
    *
    * Example:
    * ```typescript
-   * const prepared = db.prepareQuery("SELECT id, name FROM people");
+   * const prepared = db.prepareQuery<[number, string]>("SELECT id, name FROM people");
    * for (const [id, name] of prepared.query()) {
    *   // ...
    * }
