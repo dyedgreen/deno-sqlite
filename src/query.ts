@@ -4,6 +4,9 @@ import { getStr, setArr, setStr } from "./wasm.ts";
 import { Status, Types, Values } from "./constants.ts";
 import { SqliteError } from "./error.ts";
 
+/**
+ * The default type for returned rows.
+ */
 // deno-lint-ignore no-explicit-any
 export type Row = Array<any>;
 
@@ -89,12 +92,12 @@ export interface ColumnName {
   tableName: string;
 }
 
-interface RowsIterator {
-  next: () => IteratorResult<Row>;
-  [Symbol.iterator]: () => RowsIterator;
+interface RowsIterator<R> {
+  next: () => IteratorResult<R>;
+  [Symbol.iterator]: () => RowsIterator<R>;
 }
 
-export class PreparedQuery {
+export class PreparedQuery<R = Row> {
   private _wasm: Wasm;
   private _stmt: StatementPtr;
   private _openStatements: Set<StatementPtr>;
@@ -228,7 +231,7 @@ export class PreparedQuery {
     }
   }
 
-  private getQueryRow(): Row {
+  private getQueryRow(): R {
     if (this._finalized) {
       throw new SqliteError("Query is finalized.");
     }
@@ -276,7 +279,7 @@ export class PreparedQuery {
           break;
       }
     }
-    return row;
+    return (row as unknown) as R;
   }
 
   /**
@@ -308,7 +311,7 @@ export class PreparedQuery {
    * See `QueryParameter` for documentation on how
    * values are returned from the database.
    */
-  query(params?: QueryParameterSet): RowsIterator {
+  query(params?: QueryParameterSet): RowsIterator<R> {
     this.startQuery(params);
     this._status = this._wasm.step(this._stmt);
     if (
@@ -325,7 +328,7 @@ export class PreparedQuery {
    * Implements the iterable protocol. It is
    * a bug to call this method directly.
    */
-  [Symbol.iterator](): RowsIterator {
+  [Symbol.iterator](): RowsIterator<R> {
     return this;
   }
 
@@ -335,7 +338,7 @@ export class PreparedQuery {
    * Implements the iterator protocol. It is
    * a bug to call this method directly.
    */
-  next(): IteratorResult<Row> {
+  next(): IteratorResult<R> {
     if (this._status === Status.SqliteRow) {
       const value = this.getQueryRow();
       this._status = this._wasm.step(this._stmt);
@@ -366,9 +369,9 @@ export class PreparedQuery {
    * See `QueryParameter` for documentation on how
    * values are returned from the database.
    */
-  queryAll(params?: QueryParameterSet): Array<Row> {
+  queryAll(params?: QueryParameterSet): Array<R> {
     this.startQuery(params);
-    const rows: Array<Row> = [];
+    const rows: Array<R> = [];
     this._status = this._wasm.step(this._stmt);
     while (this._status === Status.SqliteRow) {
       rows.push(this.getQueryRow());
@@ -401,7 +404,7 @@ export class PreparedQuery {
    * See `QueryParameter` for documentation on how
    * values are returned from the database.
    */
-  queryOne(params?: QueryParameterSet): Row {
+  queryOne(params?: QueryParameterSet): R {
     this.startQuery(params);
 
     // Get first row

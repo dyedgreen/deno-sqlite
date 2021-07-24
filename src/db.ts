@@ -75,6 +75,11 @@ export class DB {
    * a prepared query which is then immediately
    * finalized.
    *
+   * The type parameter `R` may be supplied by
+   * the user to indicated the type for the rows returned
+   * by the query. Notice that the user is responsible
+   * for ensuring the correctness of the supplied type.
+   *
    * To avoid SQL injection, user-provided values
    * should always be passed to the database through
    * a query parameter.
@@ -85,8 +90,8 @@ export class DB {
    * See `QueryParameter` for documentation on how
    * values are returned from the database.
    */
-  query(sql: string, params?: QueryParameterSet): Array<Row> {
-    const query = this.prepareQuery(sql);
+  query<R = Row>(sql: string, params?: QueryParameterSet): Array<R> {
+    const query = this.prepareQuery<R>(sql);
     try {
       const rows = query.queryAll(params);
       query.finalize();
@@ -111,8 +116,13 @@ export class DB {
    * The returned `PreparedQuery` object must be
    * finalized by calling its `finalize` method
    * once it is no longer needed.
+   *
+   * The type parameter `R` may be supplied by
+   * the user to indicated the type for the rows returned
+   * by the query. Notice that the user is responsible
+   * for ensuring the correctness of the supplied type.
    */
-  prepareQuery(sql: string): PreparedQuery {
+  prepareQuery<R = Row>(sql: string): PreparedQuery<R> {
     if (!this._open) {
       throw new SqliteError("Database was closed.");
     }
@@ -127,7 +137,7 @@ export class DB {
     }
 
     this._statements.add(stmt);
-    return new PreparedQuery(this._wasm, stmt, this._statements);
+    return new PreparedQuery<R>(this._wasm, stmt, this._statements);
   }
 
   /**
