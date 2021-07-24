@@ -2,13 +2,13 @@
 import instantiate, { StatementPtr, Wasm } from "../build/sqlite.js";
 import { setStr } from "./wasm.ts";
 import { OpenFlags, Status, Values } from "./constants.ts";
-import SqliteError from "./error.ts";
+import { SqliteError } from "./error.ts";
 import { PreparedQuery, QueryParameterSet, Row } from "./query.ts";
 
 /**
  * Options for opening a database.
  */
-export interface SQLiteOptions {
+export interface SqliteOptions {
   mode?: "read" | "write" | "create";
   memory?: boolean;
   uri?: boolean;
@@ -29,7 +29,7 @@ export class DB {
    * option is set, the database is opened in
    * memory.
    */
-  constructor(path: string = ":memory:", options: SQLiteOptions = {}) {
+  constructor(path: string = ":memory:", options: SqliteOptions = {}) {
     this._wasm = instantiate().exports;
     this._open = false;
     this._statements = new Set();

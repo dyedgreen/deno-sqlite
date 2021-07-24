@@ -3,7 +3,7 @@ import { Wasm } from "../build/sqlite.js";
 import { getStr } from "./wasm.ts";
 import { Status } from "./constants.ts";
 
-export default class SqliteError extends Error {
+export class SqliteError extends Error {
   /**
    * SqliteError
    *
