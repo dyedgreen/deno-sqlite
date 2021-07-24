@@ -67,6 +67,24 @@ export class DB {
     this._open = true;
   }
 
+  /**
+   * Query the database and return all matching
+   * rows.
+   *
+   * This is equivalent to calling `queryAll` on
+   * a prepared query which is then immediately
+   * finalized.
+   *
+   * To avoid SQL injection, user-provided values
+   * should always be passed to the database through
+   * a query parameter.
+   *
+   * See `QueryParameterSet` for documentation on
+   * how values can be bound to SQL statements.
+   *
+   * See `QueryParameterSet` for documentation on how
+   * values are returned from the database.
+   */
   query(sql: string, params?: QueryParameterSet): Array<Row> {
     const query = this.prepareQuery(sql);
     try {
@@ -79,6 +97,21 @@ export class DB {
     }
   }
 
+  /**
+   * Prepares the given SQL query, so that it
+   * can be run multiple times and potentially
+   * with different parameters.
+   *
+   * If a query will be issued a lot, this is more
+   * efficient than using `query`. A prepared
+   * query also provides more control over how
+   * the query is run, as well as access to meta-data
+   * about the issued query.
+   *
+   * The returned `PreparedQuery` object must be
+   * finalized by calling its `finalize` method
+   * once it is no longer needed.
+   */
   prepareQuery(sql: string): PreparedQuery {
     if (!this._open) {
       throw new SqliteError("Database was closed.");
@@ -102,9 +135,12 @@ export class DB {
    * the database is no longer used to avoid leaking
    * open file descriptors.
    *
-   * If force is specified, any active `PreparedQuery`s
+   * If force is specified, any active `PreparedQuery`
    * will be finalized. Otherwise, this throws if there
    * are active queries.
+   *
+   * `close` may safely be called multiple
+   * times.
    */
   close(force = false) {
     if (!this._open) {
@@ -127,8 +163,8 @@ export class DB {
    * Get last inserted row id. This corresponds to
    * the SQLite function `sqlite3_last_insert_rowid`.
    *
-   * By default, it will return 0 if there is no row
-   * inserted yet.
+   * Before a row is inserted for the first time (since
+   * the database was opened), this returns `0`.
    */
   get lastInsertRowId(): number {
     return this._wasm.last_insert_rowid();

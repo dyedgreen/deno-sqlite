@@ -9,6 +9,37 @@ export type Row = Array<any>;
 
 /**
  * Possible parameter values to be bound to a query.
+ *
+ * When values are bound to a query, they are
+ * converted between JavaScript and SQLite types
+ * in the following way:
+ *
+ * | JS type in | SQL type        | JS type out      |
+ * |------------|-----------------|------------------|
+ * | number     | INTEGER or REAL | number or bigint |
+ * | bigint     | INTEGER         | number or bigint |
+ * | boolean    | INTEGER         | number           |
+ * | string     | TEXT            | string           |
+ * | Date       | TEXT            | string           |
+ * | Uint8Array | BLOB            | Uint8Array       |
+ * | null       | NULL            | null             |
+ * | undefined  | NULL            | null             |
+ *
+ * If no value is provided for a given parameter,
+ * SQLite will default to NULL.
+ *
+ * If a `bigint` is bound, it is converted to a
+ * signed 64 bit integer, which may overflow.
+ *
+ * If an integer value is read from the database, which
+ * is too big to safely be contained in a `number`, it
+ * is automatically returned as a `bigint`.
+ *
+ * If a `Date` is bound, it will be converted to
+ * an ISO 8601 string: `YYYY-MM-DDTHH:MM:SS.SSSZ`.
+ * This format is understood by built-in SQLite
+ * date-time functions. (Also see
+ * https://sqlite.org/lang_datefunc.html)
  */
 export type QueryParameter =
   | boolean
@@ -22,14 +53,38 @@ export type QueryParameter =
 
 /**
  * A set of query parameters.
+ *
+ * When a query is constructed, it can contain
+ * either positional or named parameters. (For
+ * more information see
+ * https://www.sqlite.org/lang_expr.html#parameters)
+ *
+ * A set of parameters can be passed to
+ * a query method either as an array of
+ * parameters (in positional order), or
+ * as an object which maps parameter names
+ * to their values.
+ *
+ * SQL parameters are mapped to the values
+ * in a parameter set as follows:
+ *
+ * | SQL Parameter | QueryParameterSet       |
+ * |---------------|-------------------------|
+ * | `?NNN` or `?` | NNN-th value in array   |
+ * | `:AAAA`       | value `AAAA` or `:AAAA` |
+ * | `@AAAA`       | value `@AAAA`           |
+ * | `$AAAA`       | value `$AAAA`           |
+ *
+ * See `QueryParameter` for documentation on
+ * how values are converted from and to SQL
+ * and JavaScript types.
  */
 export type QueryParameterSet =
   | Record<string, QueryParameter>
   | Array<QueryParameter>;
 
 /**
- * Name of a column in
- * a database query.
+ * Name of a column in a database query.
  */
 export interface ColumnName {
   name: string;
@@ -51,7 +106,7 @@ export class PreparedQuery {
   private _finalized: boolean;
 
   /**
-   * A prepared query can be executed many
+   * A prepared query which can be executed many
    * times.
    *
    * The constructor should never be used directly.
@@ -227,6 +282,35 @@ export class PreparedQuery {
     return row;
   }
 
+  /**
+   * Binds the given parameters to the query
+   * and returns an iterator over rows.
+   *
+   * Using an iterator avoids loading all returned
+   * rows into memory and hence allows to process a large
+   * number of rows.
+   *
+   * Example:
+   * ```typescript
+   * const prepared = db.prepareQuery("SELECT * FROM people");
+   * for (const [id, name] of prepared.query()) {
+   *   // ...
+   * }
+   * ```
+   *
+   * Calling `query` invalidates any iterators returned
+   * previously. Using an invalidated iterator is a bug.
+   *
+   * To avoid SQL injection, user-provided values
+   * should always be passed to the database through
+   * a query parameter.
+   *
+   * See `QueryParameterSet` for documentation on
+   * how values can be bound to SQL statements.
+   *
+   * See `QueryParameterSet` for documentation on how
+   * values are returned from the database.
+   */
   query(params?: QueryParameterSet): RowsIterator {
     this.startQuery(params);
     this._status = this._wasm.step(this._stmt);
@@ -239,14 +323,20 @@ export class PreparedQuery {
   }
 
   /**
-   * Implements the iterable protocol.
+   * @ignore
+   *
+   * Implements the iterable protocol. It is
+   * a bug to call this method directly.
    */
   [Symbol.iterator](): RowsIterator {
     return this;
   }
 
   /**
-   * Implements the iterable protocol.
+   * @ignore
+   *
+   * Implements the iterator protocol. It is
+   * a bug to call this method directly.
    */
   next(): IteratorResult<Row> {
     if (this._status === Status.SqliteRow) {
@@ -260,6 +350,25 @@ export class PreparedQuery {
     }
   }
 
+  /**
+   * Binds the given parameters to the query
+   * and returns an array containing all resulting
+   * rows.
+   *
+   * Calling `queryAll` invalidates any iterators
+   * previously returned by calls to `query`.
+   * Using an invalidated iterator is a bug.
+   *
+   * To avoid SQL injection, user-provided values
+   * should always be passed to the database through
+   * a query parameter.
+   *
+   * See `QueryParameterSet` for documentation on
+   * how values can be bound to SQL statements.
+   *
+   * See `QueryParameterSet` for documentation on how
+   * values are returned from the database.
+   */
   queryAll(params?: QueryParameterSet): Array<Row> {
     this.startQuery(params);
     const rows: Array<Row> = [];
@@ -274,6 +383,27 @@ export class PreparedQuery {
     return rows;
   }
 
+  /**
+   * Binds the given parameters to the query and
+   * returns exactly one row.
+   *
+   * If the query does not return exactly one row,
+   * this throws an error.
+   *
+   * Calling `queryOne` invalidates any iterators
+   * previously returned by calls to `query`.
+   * Using an invalidated iterator is a bug.
+   *
+   * To avoid SQL injection, user-provided values
+   * should always be passed to the database through
+   * a query parameter.
+   *
+   * See `QueryParameterSet` for documentation on
+   * how values can be bound to SQL statements.
+   *
+   * See `QueryParameterSet` for documentation on how
+   * values are returned from the database.
+   */
   queryOne(params?: QueryParameterSet): Row {
     this.startQuery(params);
 
@@ -301,6 +431,26 @@ export class PreparedQuery {
     return row;
   }
 
+  /**
+   * Binds the given parameters to the query and
+   * executes the query, ignoring any rows which
+   * might be returned.
+   *
+   * Using this method is more efficient when the
+   * rows returned by a query are not needed or
+   * the query does not return any rows.
+   *
+   * Calling `execute` invalidates any iterators
+   * previously returned by calls to `query`.
+   * Using an invalidated iterator is a bug.
+   *
+   * To avoid SQL injection, user-provided values
+   * should always be passed to the database through
+   * a query parameter.
+   *
+   * See `QueryParameterSet` for documentation on
+   * how values can be bound to SQL statements.
+   */
   execute(params?: QueryParameterSet) {
     this.startQuery(params);
     this._status = this._wasm.step(this._stmt);
@@ -316,6 +466,15 @@ export class PreparedQuery {
    * Closes the prepared query. This must be
    * called once the query is no longer needed
    * to avoid leaking resources.
+   *
+   * After a prepared query has been finalized,
+   * trying to call `query`, `queryAll`, `queryOne`,
+   * `execute`, or `columns`, or using iterators which where
+   * previously obtained from the finalized query
+   * is a bug.
+   *
+   * `finalize` may safely be called multiple
+   * times.
    */
   finalize() {
     if (!this._finalized) {
