@@ -1,5 +1,4 @@
 import {
-  assert,
   assertEquals,
   assertMatch,
   assertThrows,
@@ -313,6 +312,65 @@ Deno.test("bindNamedParameters", function () {
     vals,
     ["value", "value other", "@value", "$value", "this-is-it"],
   );
+
+  db.close();
+});
+
+Deno.test("preparedQueryQueryMethod", function () {
+  const db = new DB();
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
+  db.query("INSERT INTO test (id) VALUES (1), (2), (3)");
+
+  const res = [];
+  const select = db.prepareQuery("SELECT id FROM test");
+  for (const [id] of select.query()) {
+    res.push(id);
+  }
+  assertEquals(res, [1, 2, 3]);
+
+  select.finalize();
+  db.close();
+});
+
+Deno.test("preparedQueryQueryAllMethod", function () {
+  const db = new DB();
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
+  const select = db.prepareQuery("SELECT id FROM test");
+
+  assertEquals(select.queryAll(), []);
+  db.query("INSERT INTO test (id) VALUES (1), (2), (3)");
+  assertEquals(select.queryAll(), [[1], [2], [3]]);
+
+  select.finalize();
+  db.close();
+});
+
+Deno.test("preparedQueryQueryOneMethod", function () {
+  const db = new DB();
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
+  db.query("INSERT INTO test (id) VALUES (1), (2), (3)");
+
+  const selectOne = db.prepareQuery("SELECT id FROM test WHERE id = ?");
+  assertEquals(selectOne.queryOne([2]), [2]);
+  selectOne.finalize();
+
+  const selectAll = db.prepareQuery("SELECT id FROM test");
+  assertThrows(() => selectAll.queryOne());
+  selectAll.finalize();
+
+  db.close();
+});
+
+Deno.test("preparedQueryExecuteMethod", function () {
+  const db = new DB();
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
+
+  const insert = db.prepareQuery("INSERT INTO test (id) VALUES (:id)");
+  for (const id of [1, 2, 3]) {
+    insert.execute({ id });
+  }
+  insert.finalize();
+  assertEquals(db.query("SELECT id FROM test"), [[1], [2], [3]]);
 
   db.close();
 });
