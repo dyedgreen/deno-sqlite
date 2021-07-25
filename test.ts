@@ -82,7 +82,7 @@ Deno.test("old README example", function () {
     const [
       name,
       email,
-    ] of db.query(
+    ] of db.query<[string, string]>(
       "SELECT name, email FROM users WHERE subscribed = ? LIMIT 100",
       [true],
     )
@@ -170,7 +170,7 @@ Deno.test("bind values", function () {
   for (const val of vals) {
     db.query("INSERT INTO dates (date) VALUES (?)", [val]);
   }
-  rows = [...db.query("SELECT date FROM dates")].map(([d]) => new Date(d));
+  rows = db.query<[string]>("SELECT date FROM dates").map(([d]) => new Date(d));
   assertEquals(rows, vals);
 
   // blob
@@ -322,26 +322,26 @@ Deno.test("query from prepared query", function () {
   db.query("INSERT INTO test (id) VALUES (1), (2), (3)");
 
   const res = [];
-  const select = db.prepareQuery("SELECT id FROM test");
-  for (const [id] of select.query()) {
+  const query = db.prepareQuery<[number]>("SELECT id FROM test");
+  for (const [id] of query.iter()) {
     res.push(id);
   }
   assertEquals(res, [1, 2, 3]);
 
-  select.finalize();
+  query.finalize();
   db.close();
 });
 
 Deno.test("query all from prepared query", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
-  const select = db.prepareQuery("SELECT id FROM test");
+  const query = db.prepareQuery("SELECT id FROM test");
 
-  assertEquals(select.queryAll(), []);
+  assertEquals(query.all(), []);
   db.query("INSERT INTO test (id) VALUES (1), (2), (3)");
-  assertEquals(select.queryAll(), [[1], [2], [3]]);
+  assertEquals(query.all(), [[1], [2], [3]]);
 
-  select.finalize();
+  query.finalize();
   db.close();
 });
 
@@ -350,13 +350,15 @@ Deno.test("query one from prepared query", function () {
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
   db.query("INSERT INTO test (id) VALUES (1), (2), (3)");
 
-  const selectOne = db.prepareQuery("SELECT id FROM test WHERE id = ?");
-  assertEquals(selectOne.queryOne([2]), [2]);
-  selectOne.finalize();
+  const queryOne = db.prepareQuery<[number]>(
+    "SELECT id FROM test WHERE id = ?",
+  );
+  assertEquals(queryOne.one([2]), [2]);
+  queryOne.finalize();
 
-  const selectAll = db.prepareQuery("SELECT id FROM test");
-  assertThrows(() => selectAll.queryOne());
-  selectAll.finalize();
+  const queryAll = db.prepareQuery("SELECT id FROM test");
+  assertThrows(() => queryAll.one());
+  queryAll.finalize();
 
   db.close();
 });
@@ -384,8 +386,8 @@ Deno.test("blobs are copies", function () {
   const data = new Uint8Array([1, 2, 3, 4, 5]);
   db.query("INSERT INTO test (val) VALUES (?)", [data]);
 
-  const [[a]] = [...db.query("SELECT val FROM test")];
-  const [[b]] = [...db.query("SELECT val FROM test")];
+  const [[a]] = db.query<[Uint8Array]>("SELECT val FROM test");
+  const [[b]] = db.query<[Uint8Array]>("SELECT val FROM test");
 
   assertEquals(data, a);
   assertEquals(data, b);
@@ -397,7 +399,7 @@ Deno.test("blobs are copies", function () {
   assertEquals(data[0], 1);
 
   data[0] = 5;
-  const [[c]] = [...db.query("SELECT val FROM test")];
+  const [[c]] = db.query<[Uint8Array]>("SELECT val FROM test");
   assertEquals(c[0], 1);
 
   db.close();
@@ -429,7 +431,7 @@ Deno.test({
 
     // Read db and check the data is restored
     const db2 = await new DB(testDbFile);
-    for (const [id, val] of db2.query("SELECT * FROM test")) {
+    for (const [id, val] of db2.query<[number, string]>("SELECT * FROM test")) {
       assertEquals(data[id - 1], val);
     }
 
@@ -462,7 +464,7 @@ Deno.test({
     }
 
     // Read db and check the data is restored
-    for (const [id, val] of db.query("SELECT * FROM test")) {
+    for (const [id, val] of db.query<[number, string]>("SELECT * FROM test")) {
       assertEquals(data[id - 1], val);
     }
 
@@ -490,7 +492,7 @@ Deno.test("foreign key constraints enabled", function () {
   );
 
   db.query("INSERT INTO users (id) VALUES (1)");
-  const [[id]] = [...db.query("SELECT id FROM users")];
+  const [[id]] = db.query<[number]>("SELECT id FROM users");
 
   // User must exist
   assertThrows(() => {
@@ -629,7 +631,7 @@ Deno.test("get columns from returning query", function () {
     { name: "name", originName: "", tableName: "" },
   ]);
 
-  assertEquals(query.queryAll(["name"]), [[1, "name"]]);
+  assertEquals(query.all(["name"]), [[1, "name"]]);
 });
 
 Deno.test("get columns with renamed column", function () {
@@ -858,7 +860,9 @@ Deno.test("big integers bind correctly", function () {
     query.execute([val]);
   }
 
-  const dbValues = [...db.query("SELECT val FROM test ORDER BY id")].map((
+  const dbValues = db.query<[number | bigint]>(
+    "SELECT val FROM test ORDER BY id",
+  ).map((
     [id],
   ) => BigInt(id));
   assertEquals(goodValues, dbValues);
@@ -896,7 +900,7 @@ Deno.test("columns can be obtained from empty prepared query", function () {
 
   const queryEmpty = db.prepareQuery("SELECT * FROM test WHERE 1 = 0");
   const columnsFromPreparedQueryWithEmptyQuery = queryEmpty.columns();
-  assertEquals(queryEmpty.queryAll(), []);
+  assertEquals(queryEmpty.all(), []);
   query.finalize();
 
   assertEquals(

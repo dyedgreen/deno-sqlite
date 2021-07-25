@@ -93,7 +93,7 @@ export class DB {
   query<R = Row>(sql: string, params?: QueryParameterSet): Array<R> {
     const query = this.prepareQuery<R>(sql);
     try {
-      const rows = query.queryAll(params);
+      const rows = query.all(params);
       query.finalize();
       return rows;
     } catch (err) {

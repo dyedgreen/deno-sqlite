@@ -7,8 +7,7 @@ import { SqliteError } from "./error.ts";
 /**
  * The default type for returned rows.
  */
-// deno-lint-ignore no-explicit-any
-export type Row = Array<any>;
+export type Row = Array<unknown>;
 
 /**
  * Possible parameter values to be bound to a query.
@@ -292,8 +291,8 @@ export class PreparedQuery<R = Row> {
    *
    * Example:
    * ```typescript
-   * const prepared = db.prepareQuery<[number, string]>("SELECT id, name FROM people");
-   * for (const [id, name] of prepared.query()) {
+   * const query = db.prepareQuery<[number, string]>("SELECT id, name FROM people");
+   * for (const [id, name] of query.iter()) {
    *   // ...
    * }
    * ```
@@ -311,7 +310,7 @@ export class PreparedQuery<R = Row> {
    * See `QueryParameter` for documentation on how
    * values are returned from the database.
    */
-  query(params?: QueryParameterSet): RowsIterator<R> {
+  iter(params?: QueryParameterSet): RowsIterator<R> {
     this.startQuery(params);
     this._status = this._wasm.step(this._stmt);
     if (
@@ -355,8 +354,8 @@ export class PreparedQuery<R = Row> {
    * and returns an array containing all resulting
    * rows.
    *
-   * Calling `queryAll` invalidates any iterators
-   * previously returned by calls to `query`.
+   * Calling `all` invalidates any iterators
+   * previously returned by calls to `iter`.
    * Using an invalidated iterator is a bug.
    *
    * To avoid SQL injection, user-provided values
@@ -369,7 +368,7 @@ export class PreparedQuery<R = Row> {
    * See `QueryParameter` for documentation on how
    * values are returned from the database.
    */
-  queryAll(params?: QueryParameterSet): Array<R> {
+  all(params?: QueryParameterSet): Array<R> {
     this.startQuery(params);
     const rows: Array<R> = [];
     this._status = this._wasm.step(this._stmt);
@@ -390,8 +389,8 @@ export class PreparedQuery<R = Row> {
    * If the query does not return exactly one row,
    * this throws an error.
    *
-   * Calling `queryOne` invalidates any iterators
-   * previously returned by calls to `query`.
+   * Calling `one` invalidates any iterators
+   * previously returned by calls to `iter`.
    * Using an invalidated iterator is a bug.
    *
    * To avoid SQL injection, user-provided values
@@ -404,7 +403,7 @@ export class PreparedQuery<R = Row> {
    * See `QueryParameter` for documentation on how
    * values are returned from the database.
    */
-  queryOne(params?: QueryParameterSet): R {
+  one(params?: QueryParameterSet): R {
     this.startQuery(params);
 
     // Get first row
@@ -441,7 +440,7 @@ export class PreparedQuery<R = Row> {
    * the query does not return any rows.
    *
    * Calling `execute` invalidates any iterators
-   * previously returned by calls to `query`.
+   * previously returned by calls to `iter`.
    * Using an invalidated iterator is a bug.
    *
    * To avoid SQL injection, user-provided values
@@ -468,7 +467,7 @@ export class PreparedQuery<R = Row> {
    * to avoid leaking resources.
    *
    * After a prepared query has been finalized,
-   * trying to call `query`, `queryAll`, `queryOne`,
+   * trying to call `iter`, `all`, `one`,
    * `execute`, or `columns`, or using iterators which where
    * previously obtained from the finalized query
    * is a bug.
