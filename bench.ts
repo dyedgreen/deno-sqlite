@@ -75,11 +75,11 @@ bench({
   runs: 100,
   func: (b): void => {
     b.start();
-    const select = db.prepareQuery(
+    const query = db.prepareQuery(
       "SELECT name, balance FROM users WHERE id = ?",
     );
     for (let id = 1; id <= 10_000; id++) {
-      select.queryOne([id]);
+      query.one([id]);
     }
     b.stop();
   },

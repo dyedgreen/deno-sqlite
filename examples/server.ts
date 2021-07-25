@@ -11,21 +11,21 @@ db.query(`
   )
 `);
 
-const addVisit = db.prepareQuery<[]>(
+const addVisitQuery = db.prepareQuery<[]>(
   "INSERT INTO visits (url, visited_at) VALUES (:url, :time)",
 );
-const countVisits = db.prepareQuery<[number]>(
+const countVisitsQuery = db.prepareQuery<[number]>(
   "SELECT COUNT(*) FROM visits WHERE url = :url",
 );
 
 console.log("Running server on localhost:8080");
 const server = serve({ port: 8080 });
 for await (const req of server) {
-  addVisit.execute({
+  addVisitQuery.execute({
     url: req.url,
     time: new Date(),
   });
 
-  const [count] = countVisits.queryOne({ url: req.url });
+  const [count] = countVisitsQuery.one({ url: req.url });
   req.respond({ body: `You are the ${count} visitor on this page!` });
 }
