@@ -56,7 +56,7 @@ for await (const cmd of readLines(Deno.stdin)) {
   } else {
     try {
       const query = db.prepareQuery(cmd);
-      const rows = query.queryAll();
+      const rows = query.all();
       const cols = query.columns();
       query.finalize();
 
