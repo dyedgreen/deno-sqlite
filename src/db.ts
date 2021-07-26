@@ -71,7 +71,7 @@ export class DB {
    * Query the database and return all matching
    * rows.
    *
-   * This is equivalent to calling `queryAll` on
+   * This is equivalent to calling `all` on
    * a prepared query which is then immediately
    * finalized.
    *
