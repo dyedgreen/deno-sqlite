@@ -297,8 +297,8 @@ export class PreparedQuery<R = Row> {
    * }
    * ```
    *
-   * Calling `query` invalidates any iterators previously returned
-   * by this prepared query. Using an invalidated iterator is a bug.
+   * Calling `iter` invalidates any iterators previously returned
+   * from this prepared query. Using an invalidated iterator is a bug.
    *
    * To avoid SQL injection, user-provided values
    * should always be passed to the database through
