@@ -23,13 +23,13 @@ async function prompt() {
   await print("sqlite> ");
 }
 
+const tablesQuery = db.prepareQuery<[string]>(
+  "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
+);
+
 const commands: Record<string, () => Promise<void>> = {
   "tables": async () => {
-    for (
-      const [name] of db.query(
-        "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
-      )
-    ) {
+    for (const [name] of tablesQuery.iter()) {
       await print(`${name}\n`);
     }
   },

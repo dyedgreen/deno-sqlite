@@ -1,4 +1,3 @@
-// @deno-types="../build/sqlite.d.ts"
 import { StatementPtr, Wasm } from "../build/sqlite.js";
 import { getStr, setArr, setStr } from "./wasm.ts";
 import { Status, Types, Values } from "./constants.ts";
@@ -40,8 +39,7 @@ export type Row = Array<unknown>;
  * If a `Date` is bound, it will be converted to
  * an ISO 8601 string: `YYYY-MM-DDTHH:MM:SS.SSSZ`.
  * This format is understood by built-in SQLite
- * date-time functions. (Also see
- * https://sqlite.org/lang_datefunc.html)
+ * date-time functions. Also see https://sqlite.org/lang_datefunc.html.
  */
 export type QueryParameter =
   | boolean
@@ -57,9 +55,8 @@ export type QueryParameter =
  * A set of query parameters.
  *
  * When a query is constructed, it can contain
- * either positional or named parameters. (For
- * more information see
- * https://www.sqlite.org/lang_expr.html#parameters)
+ * either positional or named parameters. For
+ * more information see https://www.sqlite.org/lang_expr.html#parameters.
  *
  * A set of parameters can be passed to
  * a query method either as an array of
