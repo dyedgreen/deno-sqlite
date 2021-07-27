@@ -1,4 +1,3 @@
-// @deno-types="../build/sqlite.d.ts"
 import instantiate, { StatementPtr, Wasm } from "../build/sqlite.js";
 import { setStr } from "./wasm.ts";
 import { OpenFlags, Status, Values } from "./constants.ts";
@@ -7,6 +6,19 @@ import { PreparedQuery, QueryParameterSet, Row } from "./query.ts";
 
 /**
  * Options for opening a database.
+ *
+ * The `mode` can be set to control
+ * how the database file will be
+ * opened.
+ *
+ * If `memory` is set to true, the
+ * database will be opened as an in
+ * memory database.
+ *
+ * If `uri` is set to true, the file
+ * name accepts a URI. See https://sqlite.org/uri.html
+ * for more information on the URI
+ * format.
  */
 export interface SqliteOptions {
   mode?: "read" | "write" | "create";

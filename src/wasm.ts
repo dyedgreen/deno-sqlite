@@ -1,4 +1,3 @@
-// @deno-types="../build/sqlite.d.ts"
 import { Wasm } from "../build/sqlite.js";
 import { SqliteError } from "./error.ts";
 

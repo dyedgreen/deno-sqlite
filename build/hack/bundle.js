@@ -13,7 +13,9 @@ function encode(bytes) {
 await Deno.writeFile(
   dest,
   new TextEncoder().encode(
-    `import env from "./vfs.js";
+    `/// <reference types="./sqlite.d.ts" />
+
+import env from "./vfs.js";
 
 const wasm =
   "${encode(wasm)}";

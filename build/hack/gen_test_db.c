@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <sqlite3.h>
 
+#define TRUE 1
+#define FALSE 0
+
 #define TEST_DB_FILE "2GB_test.db"
 
 #define SQL_CREATE_TBL "CREATE TABLE test (id INTEGER PRIMARY KEY, value TEXT)"
@@ -17,6 +20,20 @@ void rand_str(char *dest, size_t length) {
     *dest++ = charset[index];
   }
   *dest = '\0';
+}
+
+int execute_query(sqlite3* db, char* query) {
+  sqlite3_stmt* stmt_create;
+  if (sqlite3_prepare_v2(db, query, -1, &stmt_create, NULL) != SQLITE_OK) {
+    printf("Failed to prepare query statement: %s\n", sqlite3_errmsg(db));
+    return FALSE;
+  }
+  if (sqlite3_step(stmt_create) != SQLITE_DONE) {
+    printf("Failed to run query statement: %s\n", sqlite3_errmsg(db));
+    return FALSE;
+  }
+  sqlite3_finalize(stmt_create);
+  return TRUE;
 }
 
 int main(int argc, char* argv[]) {
@@ -45,6 +62,11 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  // begin transaction
+  if (!execute_query(db, "begin")) {
+    return 1;
+  }
+
   char* buffer = malloc(VAL_LEN + 1);
   for (int64_t i = 0; i < VAL_NUM; i++) {
     rand_str(buffer, VAL_LEN);
@@ -61,6 +83,12 @@ int main(int argc, char* argv[]) {
       return 1;
     }
   }
+
+  // end transaction
+  if (!execute_query(db, "commit")) {
+    return 1;
+  }
+
   sqlite3_finalize(stmt_insert);
   sqlite3_close(db);
 

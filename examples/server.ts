@@ -1,3 +1,14 @@
+/**
+ * server.ts
+ *
+ * A server which returns the number
+ * of hits to any given path since
+ * the server started running.
+ *
+ * This is an example, meant to illustrate using
+ * the API provided by deno-sqlite.
+ */
+
 import { serve } from "https://deno.land/std@0.102.0/http/mod.ts";
 import { DB } from "../mod.ts";
 
@@ -11,7 +22,7 @@ db.query(`
   )
 `);
 
-const addVisitQuery = db.prepareQuery<[]>(
+const addVisitQuery = db.prepareQuery(
   "INSERT INTO visits (url, visited_at) VALUES (:url, :time)",
 );
 const countVisitsQuery = db.prepareQuery<[number]>(
