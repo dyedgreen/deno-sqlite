@@ -2,25 +2,6 @@
  * Status codes which can be returned
  * by SQLite.
  *
- * | JS name          | code | JS name (cont.)  | code |
- * |------------------|------|------------------|------|
- * | SqliteOk         | 0    | SqliteEmpty      | 16   |
- * | SqliteError      | 1    | SqliteSchema     | 17   |
- * | SqliteInternal   | 2    | SqliteTooBig     | 18   |
- * | SqlitePerm       | 3    | SqliteConstraint | 19   |
- * | SqliteAbort      | 4    | SqliteMismatch   | 20   |
- * | SqliteBusy       | 5    | SqliteMisuse     | 21   |
- * | SqliteLocked     | 6    | SqliteNoLFS      | 22   |
- * | SqliteNoMem      | 7    | SqliteAuth       | 23   |
- * | SqliteReadOnly   | 8    | SqliteFormat     | 24   |
- * | SqliteInterrupt  | 9    | SqliteRange      | 25   |
- * | SqliteIOErr      | 10   | SqliteNotADB     | 26   |
- * | SqliteCorrupt    | 11   | SqliteNotice     | 27   |
- * | SqliteNotFound   | 12   | SqliteWarning    | 28   |
- * | SqliteFull       | 13   | SqliteRow        | 100  |
- * | SqliteCantOpen   | 14   | SqliteDone       | 101  |
- * | SqliteProtocol   | 15   | Unknown          | -1   |
- *
  * Also see https://www.sqlite.org/rescode.html.
  */
 export enum Status {
