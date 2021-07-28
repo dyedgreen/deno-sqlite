@@ -102,7 +102,10 @@ export class DB {
    * See `QueryParameter` for documentation on how
    * values are returned from the database.
    */
-  query<R = Row>(sql: string, params?: QueryParameterSet): Array<R> {
+  query<R extends Row = Row>(
+    sql: string,
+    params?: QueryParameterSet,
+  ): Array<R> {
     const query = this.prepareQuery<R>(sql);
     try {
       const rows = query.all(params);
@@ -134,7 +137,7 @@ export class DB {
    * by the query. Notice that the user is responsible
    * for ensuring the correctness of the supplied type.
    */
-  prepareQuery<R = Row>(sql: string): PreparedQuery<R> {
+  prepareQuery<R extends Row = Row>(sql: string): PreparedQuery<R> {
     if (!this._open) {
       throw new SqliteError("Database was closed.");
     }

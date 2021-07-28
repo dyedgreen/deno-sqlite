@@ -88,12 +88,12 @@ export interface ColumnName {
   tableName: string;
 }
 
-interface RowsIterator<R> {
+interface RowsIterator<R extends Row> {
   next: () => IteratorResult<R>;
   [Symbol.iterator]: () => RowsIterator<R>;
 }
 
-export class PreparedQuery<R = Row> {
+export class PreparedQuery<R extends Row = Row> {
   private _wasm: Wasm;
   private _stmt: StatementPtr;
   private _openStatements: Set<StatementPtr>;
