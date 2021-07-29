@@ -1,6 +1,6 @@
 # Contribute to SQLite for Deno
 
-?> This is a draft.
+> Note: this is a draft
 
 Thank you for considering to contribute to the SQLite for Deno module! Below are
 a few guidelines on how to contribute.
@@ -36,12 +36,10 @@ For testing purposes, Deno standard library modules may be used.
 ## Documentation
 
 Any user-facing interfaces should be documented. To document such interfaces,
-include a **documenting comment**, which must be formatted as follows:
+include a **JSDoc comment**, which should be formatted as follows:
 
 ```javascript
 /**
- * ClassName.functionName
- *
  * A short but complete description, formatted
  * as markdown.
  */
@@ -50,31 +48,27 @@ functionName(arg1, arg2) {
 }
 ```
 
-Comments with this format will be automatically parsed by a CI script and added
-to the documentation at [`api.md`](./api.md). The first line of the comment
-identifies the class and function, which helps the script format the comment
-correctly.
+Comments with this format will be automatically parsed by `deno doc`.
 
 These comments should not include examples unless they are essential to
-illustrating an important point. Examples (cook-book style code snippets) should
-be added to [`examples.md`](./examples.md).
+illustrating an important point.
 
 ## Tests and Benchmarks
 
 Any important functionality should be tested. Tests are in the `test.ts` file.
-Changes will not be merged unless all tests are passed.
+Changes will not be merged unless all tests pass.
 
 Benchmarks are in the `bench.ts` file.
 
-# Technical Direction
+## Technical Direction
 
-The goal of this module is to provide a simple and predictable interface to
+The goal of this module is to provide a **simple and predictable** interface to
 SQLite. The interface should feel like a JavaScript library, but also
 immediately make sense to someone who knows the SQLite C/C++ interface. Features
 and interfaces should generally be orthogonal.
 
 This is a low-level library, which provides access to running SQL queries and
-retriving the results of these queries. This library will only wrap SQLite C api
+retrieving the results of these queries. This library will only wrap SQLite C API
 functions, but never try to provide a higher level interface to the database
 than plain SQL. It is meant to serve as a building block for constructing higher
 level interfaces, or for people who need an easy way to execute SQL queries on
@@ -82,7 +76,8 @@ their SQLite database.
 
 The library should be easy to use and behave as any regular JavaScript library
 would in Deno. This means, it should only need the required permissions (e.g. if
-only in-memory databases are used, no permissions should be necessary).
+only in-memory databases are used, no permissions should be necessary. If a database
+is opened in read-only mode, `--allow-read` should be sufficient).
 
 ## License
 
