@@ -1,24 +1,23 @@
 # Deno SQLite Module
 
 [![test status](https://github.com/dyedgreen/deno-sqlite/workflows/tests/badge.svg?branch=master)](https://github.com/dyedgreen/deno-sqlite/actions)
-[![docs status](https://github.com/dyedgreen/deno-sqlite/workflows/docs/badge.svg?branch=master)][docs-web]
-[![deno doc](https://doc.deno.land/badge.svg)][docs-deno]
+[![deno doc](https://doc.deno.land/badge.svg)](https://deno.land/x/sqlite)
 
-[docs-deno]: https://deno.land/x/sqlite
-[docs-web]: https://dyedgreen.github.io/deno-sqlite/
-
-This is an SQLite module for JavaScript. The wrapper is targeted at
-[Deno](https://deno.land) and uses a version of SQLite3 compiled to WebAssembly
-(WASM). This module focuses on ease of use and performance.
+This is an SQLite module for JavaScript and TypeScript. The wrapper is targeted
+at [Deno](https://deno.land) and uses a version of SQLite3 compiled to
+WebAssembly (WASM). This module focuses on correctness, ease of use and
+performance.
 
 This module guarantees API compatibility according to
 [semantic versioning](https://semver.org). Please report any issues you
-encounter.
+encounter. Note that the `master` branch might contain new or breaking features.
+The versioning guarantee applies only to
+[tagged releases](https://github.com/dyedgreen/deno-sqlite/releases).
 
 ## Documentation
 
-Documentation is available as a [website][docs-web], on [Deno Docs][docs-deno],
-or in the [`docs`](./docs/README.md) folder.
+Documentation is available [Deno Docs](https://deno.land/x/sqlite). There is
+also a list of examples in the [`examples`](./examples) folder.
 
 ## Example
 
@@ -27,9 +26,12 @@ import { DB } from "https://deno.land/x/sqlite/mod.ts";
 
 // Open a database
 const db = new DB("test.db");
-db.query(
-  "CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)",
-);
+db.query(`
+  CREATE TABLE IF NOT EXISTS people (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT
+  )
+`);
 
 const names = ["Peter Parker", "Clark Kent", "Bruce Wayne"];
 
@@ -51,8 +53,7 @@ db.close();
 
 ### TL;DR
 
-If you want something that just works (and is fast) in the majority of cases,
-use this library.
+If you want something that just works (and is fast), use this library.
 
 Depending on your specific needs, there is also
 [deno_sqlite_plugin](https://github.com/crabmusket/deno_sqlite_plugin), however
@@ -77,11 +78,12 @@ this module seems to no longer be actively maintained.
 
 ## Users
 
-_(In alphabetical order)_
-
 - [cotton](https://github.com/rahmanfadhil/cotton)
 - [deno-nessie](https://github.com/halvardssm/deno-nessie)
 - [denodb](https://github.com/eveningkid/denodb)
 - [denolib/typeorm](https://github.com/denolib/typeorm)
 - [dexecutor](https://github.com/denjucks/dexecutor)
 - [small-orm-sqlite](https://github.com/enimatek-nl/small-orm-sqlite)
+
+_(listed in alphabetical order, please submit a PR if you are using this library
+and are not included)_
