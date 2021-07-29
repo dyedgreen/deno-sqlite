@@ -85,4 +85,5 @@ this module seems to no longer be actively maintained.
 - [dexecutor](https://github.com/denjucks/dexecutor)
 - [small-orm-sqlite](https://github.com/enimatek-nl/small-orm-sqlite)
 
-_(listed in alphabetical order)_
+_(listed in alphabetical order, please submit a PR if you are using this
+library and are not included)_
