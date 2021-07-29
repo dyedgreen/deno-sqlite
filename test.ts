@@ -933,6 +933,40 @@ Deno.test("SQL localtime reflects system locale", function () {
   assertEquals(timeDb, timeJs);
 });
 
+Deno.test("object query functions work correctly", function () {
+  const db = new DB();
+  db.query(
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, height REAL)",
+  );
+
+  const rowsOrig = [
+    { id: 1, name: "Peter Parker", height: 1.5 },
+    { id: 2, name: "Clark Kent", height: 1.9 },
+    { id: 3, name: "Robert Paar", height: 2.1 },
+  ];
+
+  const insertQuery = db.prepareQuery(
+    "INSERT INTO test (id, name, height) VALUES (:id, :name, :height)",
+  );
+  for (const row of rowsOrig) {
+    insertQuery.execute(row);
+  }
+  insertQuery.finalize();
+
+  const query = db.prepareQuery("SELECT * FROM test LIMIT ?");
+  assertEquals(rowsOrig, query.kvAll([rowsOrig.length]));
+  assertEquals(rowsOrig[0], query.kvOne([1]));
+  const rowsIter = [];
+  for (const row of query.kvIter([rowsOrig.length])) {
+    rowsIter.push(row);
+  }
+  assertEquals(rowsOrig, rowsIter);
+  assertEquals(rowsOrig, db.kvQuery("SELECT * FROM test"));
+
+  query.finalize();
+  db.close();
+});
+
 // Tests which drop the permission from read + write to read only
 // and should run after any other test.
 

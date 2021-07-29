@@ -9,6 +9,12 @@ import { SqliteError } from "./error.ts";
 export type Row = Array<unknown>;
 
 /**
+ * The default type for row returned
+ * as objects.
+ */
+export type RowObject = Record<string, unknown>;
+
+/**
  * Possible parameter values to be bound to a query.
  *
  * When values are bound to a query, they are
@@ -88,17 +94,22 @@ export interface ColumnName {
   tableName: string;
 }
 
-interface RowsIterator<R extends Row> {
+interface RowsIterator<R> {
   next: () => IteratorResult<R>;
   [Symbol.iterator]: () => RowsIterator<R>;
 }
 
-export class PreparedQuery<R extends Row = Row> {
+export class PreparedQuery<
+  R extends Row = Row,
+  O extends RowObject = RowObject,
+> {
   private _wasm: Wasm;
   private _stmt: StatementPtr;
   private _openStatements: Set<StatementPtr>;
 
   private _status: number;
+  private _iterKv: boolean;
+  private _rowKeys?: Array<string>;
   private _finalized: boolean;
 
   /**
@@ -119,6 +130,7 @@ export class PreparedQuery<R extends Row = Row> {
     this._openStatements = openStatements;
 
     this._status = Status.Unknown;
+    this._iterKv = false;
     this._finalized = false;
   }
 
@@ -278,6 +290,24 @@ export class PreparedQuery<R extends Row = Row> {
     return (row as unknown) as R;
   }
 
+  private makeRowObject(row: Row): O {
+    if (this._rowKeys == null) {
+      const rowCount = this._wasm.column_count(this._stmt);
+      this._rowKeys = [];
+      for (let i = 0; i < rowCount; i++) {
+        this._rowKeys.push(
+          getStr(this._wasm, this._wasm.column_name(this._stmt, i)),
+        );
+      }
+    }
+
+    const obj = row.reduce<RowObject>((obj, val, idx) => {
+      obj[this._rowKeys![idx]] = val;
+      return obj;
+    }, {});
+    return obj as O;
+  }
+
   /**
    * Binds the given parameters to the query
    * and returns an iterator over rows.
@@ -315,7 +345,14 @@ export class PreparedQuery<R extends Row = Row> {
     ) {
       throw new SqliteError(this._wasm, this._status);
     }
-    return this;
+    this._iterKv = false;
+    return this as RowsIterator<R>;
+  }
+
+  kvIter(params?: QueryParameterSet): RowsIterator<O> {
+    this.iter(params);
+    this._iterKv = true;
+    return this as RowsIterator<O>;
   }
 
   /**
@@ -324,7 +361,7 @@ export class PreparedQuery<R extends Row = Row> {
    * Implements the iterable protocol. It is
    * a bug to call this method directly.
    */
-  [Symbol.iterator](): RowsIterator<R> {
+  [Symbol.iterator](): RowsIterator<R | O> {
     return this;
   }
 
@@ -334,11 +371,15 @@ export class PreparedQuery<R extends Row = Row> {
    * Implements the iterator protocol. It is
    * a bug to call this method directly.
    */
-  next(): IteratorResult<R> {
+  next(): IteratorResult<R | O> {
     if (this._status === Status.SqliteRow) {
       const value = this.getQueryRow();
       this._status = this._wasm.step(this._stmt);
-      return { value, done: false };
+      if (this._iterKv) {
+        return { value: this.makeRowObject(value), done: false };
+      } else {
+        return { value, done: false };
+      }
     } else if (this._status === Status.SqliteDone) {
       return { value: null, done: true };
     } else {
@@ -377,6 +418,10 @@ export class PreparedQuery<R extends Row = Row> {
       throw new SqliteError(this._wasm, this._status);
     }
     return rows;
+  }
+
+  kvAll(params?: QueryParameterSet): Array<O> {
+    return this.all(params).map((row) => this.makeRowObject(row));
   }
 
   /**
@@ -425,6 +470,10 @@ export class PreparedQuery<R extends Row = Row> {
     }
 
     return row;
+  }
+
+  kvOne(params?: QueryParameterSet): O {
+    return this.makeRowObject(this.one(params));
   }
 
   /**
