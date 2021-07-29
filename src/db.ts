@@ -117,6 +117,10 @@ export class DB {
     }
   }
 
+  /**
+   * Like `query` except each row is returned
+   * as an object containing key-value pairs.
+   */
   kvQuery<O extends RowObject = RowObject>(
     sql: string,
     params?: QueryParameterSet,
