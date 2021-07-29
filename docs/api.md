@@ -9,51 +9,161 @@ source file and rerun the generator, to avoid loosing the changes.
 ## How to import
 
 ```javascript
-import { DB, Empty, Status } from "https://deno.land/x/sqlite/mod.ts";
+import { DB, Status } from "https://deno.land/x/sqlite/mod.ts";
 ```
 
 The above statement lists all the available imports.
 
-## DB
+## Status codes which can be returned
+
+Also see https://www.sqlite.org/rescode.html.
+
+## Options for opening a database
+
+undefined
+
+### Options for opening a database.
+
+The `mode` can be set to control how the database file will be opened.
+
+If `memory` is set to true, the database will be opened as an in memory
+database.
+
+If `uri` is set to true, the file name accepts a URI. See
+https://sqlite.org/uri.html for more information on the URI format.
+
+## Create a new database
+
+undefined
+
+### Create a new database. The file at the
 
 ```javascript
-new DB(path = ":memory:", options = {});
+new Create a new database(path = ":memory:", options = {})
 ```
 
-Create a new database. The passed path will be opened with read/ write
-permissions and created if it does not already exist.
+mode specified in options. The default mode is `create`.
 
-The default opens an in-memory database.
+If no path is given, or if the `memory` option is set, the database is opened in
+memory.
 
-### DB.query
+## Query the database and return all matching
+
+This is equivalent to calling `all` on a prepared query which is then
+immediately finalized.
+
+The type parameter `R` may be supplied by the user to indicated the type for the
+rows returned by the query. Notice that the user is responsible for ensuring the
+correctness of the supplied type.
+
+To avoid SQL injection, user-provided values should always be passed to the
+database through a query parameter.
+
+See `QueryParameterSet` for documentation on how values can be bound to SQL
+statements.
+
+See `QueryParameter` for documentation on how values are returned from the
+database.
+
+## Prepares the given SQL query, so that it
+
+with different parameters.
+
+If a query will be issued a lot, this is more efficient than using `query`. A
+prepared query also provides more control over how the query is run, as well as
+access to meta-data about the issued query.
+
+The returned `PreparedQuery` object must be finalized by calling its `finalize`
+method once it is no longer needed.
+
+The type parameter `R` may be supplied by the user to indicated the type for the
+rows returned by the query. Notice that the user is responsible for ensuring the
+correctness of the supplied type.
+
+## Close the database
+
+undefined
+
+### Close the database. This must be called if
 
 ```javascript
-query(sql, values, QueryParam> | QueryParam[])
+close(force = false);
 ```
 
-Run a query against the database. The query can contain placeholder parameters,
-which are bound to the values passed in 'values'.
+open file descriptors.
 
-    db.query("SELECT name, email FROM users WHERE subscribed = ? AND list LIKE ?", [true, listName]);
+If force is specified, any active `PreparedQuery` will be finalized. Otherwise,
+this throws if there are active queries.
 
-This supports positional and named parameters. Positional parameters can be set
-by passing an array for values. Named parameters can be set by passing an object
-for values.
+`close` may safely be called multiple times.
 
-While they can be mixed in principle, this is not recommended.
+## Get last inserted row id
 
-| Parameter     | Values                  |
-| ------------- | ----------------------- |
-| `?NNN` or `?` | NNN-th value in array   |
-| `:AAAA`       | value `AAAA` or `:AAAA` |
-| `@AAAA`       | value `@AAAA`           |
-| `$AAAA`       | value `$AAAA`           |
+undefined
 
-(see https://www.sqlite.org/lang_expr.html)
+### Get last inserted row id. This corresponds to
 
-Values may only be of the following types and are converted as follows:
+```javascript
+get lastInsertRowId()
+```
 
-| JS in      | SQL type        | JS out           |
+Before a row is inserted for the first time (since the database was opened),
+this returns `0`.
+
+## Return the number of rows modified, inserted or
+
+```javascript
+get totalChanges()
+```
+
+This corresponds to the SQLite function `sqlite3_total_changes`.
+
+## Extension over the standard JS Error object
+
+```javascript
+new Extension over the standard JS Error object(context, code)
+```
+
+and error code name.
+
+Instances of this class should not be constructed directly and should only be
+obtained from exceptions raised in this module.
+
+## The SQLite status code which caused this error
+
+undefined
+
+### The SQLite status code which caused this error.
+
+Errors that originate in the JavaScript part of the library will not have an
+associated status code. For these errors, the code will be `Status.Unknown`.
+
+These codes are accessible via the exported `Status` object.
+
+## Key of code in exported `status`
+
+```javascript
+get codeName()
+```
+
+E.g. if `code` is `19`, `codeName` would be `SqliteConstraint`.
+
+## The default type for returned rows
+
+undefined
+
+### The default type for returned rows.
+
+## Possible parameter values to be bound to a query
+
+undefined
+
+### Possible parameter values to be bound to a query.
+
+When values are bound to a query, they are converted between JavaScript and
+SQLite types in the following way:
+
+| JS type in | SQL type        | JS type out      |
 | ---------- | --------------- | ---------------- |
 | number     | INTEGER or REAL | number or bigint |
 | bigint     | INTEGER         | number or bigint |
@@ -64,226 +174,132 @@ Values may only be of the following types and are converted as follows:
 | null       | NULL            | null             |
 | undefined  | NULL            | null             |
 
-If no value is provided to a given parameter, SQLite will default to NULL.
+If no value is provided for a given parameter, SQLite will default to NULL.
 
-If a `bigint` is bound, it is converted to a signed 64 big integer, which may
-not be lossless. If an integer value is read from the database, which is too big
-to safely be contained in a `number`, it is automatically returned as a
-`bigint`.
+If a `bigint` is bound, it is converted to a signed 64 bit integer, which may
+overflow.
+
+If an integer value is read from the database, which is too big to safely be
+contained in a `number`, it is automatically returned as a `bigint`.
 
 If a `Date` is bound, it will be converted to an ISO 8601 string:
 `YYYY-MM-DDTHH:MM:SS.SSSZ`. This format is understood by built-in SQLite
 date-time functions. Also see https://sqlite.org/lang_datefunc.html.
 
-This always returns an iterable Rows object. As a special case, if the query has
-no rows to return this returns the Empty row (which is also iterable, but has
-zero entries).
+## A set of query parameters
 
-!> Any returned Rows object needs to be fully iterated over or discarded by
-calling `.return()` or closing the iterator.
+undefined
 
-!> To prevent SQL injections, sql queries should never be obtained via string
-interpolation. Instead, dynamic parameters should be bound using query
-parameters:
+### A set of query parameters.
 
-    db.query("SELECT name FROM users WHERE id = ?", [id]); // GOOD
-    db.query(`SELECT name FROM users WHERE id = ${id}`); // BAD: Potential SQL injection!
+When a query is constructed, it can contain either positional or named
+parameters. For more information see
+https://www.sqlite.org/lang_expr.html#parameters.
 
-### DB.prepareQuery
+A set of parameters can be passed to a query method either as an array of
+parameters (in positional order), or as an object which maps parameter names to
+their values:
 
-```javascript
-prepareQuery(sql);
-```
+| SQL Parameter | QueryParameterSet       |
+| ------------- | ----------------------- |
+| `?NNN` or `?` | NNN-th value in array   |
+| `:AAAA`       | value `AAAA` or `:AAAA` |
+| `@AAAA`       | value `@AAAA`           |
+| `$AAAA`       | value `$AAAA`           |
 
-This is similar to `query()`, with the difference that the returned function can
-be called multiple times (with different values to bind each time).
+See `QueryParameter` for documentation on how values are converted between SQL
+and JavaScript types.
 
-Using a prepared query instead of `query()` will improve performance if the
-query is issued a lot, e.g. when writing a web server, the queries used by the
-server could be prepared once and then used through it's runtime.
+## Name of a column in a database query
 
-A prepared query must be finalized when it is no longer in used by calling
-`query.finalize()`. So the complete lifetime of a query would look like this:
+undefined
 
-    // once
-    const query = db.prepareQuery("INSERT INTO messages (message, author) VALUES (?, ?)");
-    // many times
-    query([messageValueOne, authorValueOne]);
-    query([messageValueTwo, authorValueTwo]);
-    // ...
-    // once
-    query.finalize();
+### Name of a column in a database query.
 
-### DB.close
+## A prepared query which can be executed many
 
 ```javascript
-close(force = false);
+new A prepared query which can be executed many(
+    wasm,
+    stmt,
+    openStatements,
+  )
 ```
 
-Close database handle. This must be called if DB is no longer used, to avoid
-leaking file resources.
+The constructor should never be used directly. Instead a prepared query can be
+obtained by calling `DB.prepareQuery`.
 
-If force is specified, any on-going transactions will be closed.
-
-### DB.lastInsertRowId
+## Binds the given parameters to the query
 
 ```javascript
-get lastInsertRowId()
+all(params);
 ```
 
-Get last inserted row id. This corresponds to the SQLite function
-`sqlite3_last_insert_rowid`.
+rows.
 
-By default, it will return 0 if there is no row inserted yet.
+Calling `all` invalidates any iterators previously returned by calls to `iter`.
+Using an invalidated iterator is a bug.
 
-### DB.changes
+To avoid SQL injection, user-provided values should always be passed to the
+database through a query parameter.
 
-```javascript
-get changes()
-```
+See `QueryParameterSet` for documentation on how values can be bound to SQL
+statements.
 
-Return the number of rows modified, inserted or deleted by the most recently
-completed query. This corresponds to the SQLite function `sqlite3_changes`.
+See `QueryParameter` for documentation on how values are returned from the
+database.
 
-### DB.totalChanges
-
-```javascript
-get totalChanges()
-```
-
-Return the number of rows modified, inserted or deleted since the database was
-opened. This corresponds to the SQLite function `sqlite3_total_changes`.
-
-## SqliteError
-
-```javascript
-new SqliteError(context, code);
-```
-
-Extension over the standard JS Error object to also contain class members for
-error code and error code name.
-
-This class is not exported by the module and should only be obtained from
-exceptions raised in this module.
-
-### SqliteError.code
-
-The SQLite result status code, see the SQLite docs for more information about
-each code.
-
-https://www.sqlite.org/rescode.html
-
-Beyond the SQLite status codes, this member can also contain custom status codes
-specific to this library (starting from 1000).
-
-Errors that originate in the JavaScript part of the library will not have an
-associated status code. For these errors, the code will be `Status.Unknown`.
-
-| JS name         | code | JS name (cont.)  | code |
-| --------------- | ---- | ---------------- | ---- |
-| SqliteOk        | 0    | SqliteEmpty      | 16   |
-| SqliteError     | 1    | SqliteSchema     | 17   |
-| SqliteInternal  | 2    | SqliteTooBig     | 18   |
-| SqlitePerm      | 3    | SqliteConstraint | 19   |
-| SqliteAbort     | 4    | SqliteMismatch   | 20   |
-| SqliteBusy      | 5    | SqliteMisuse     | 21   |
-| SqliteLocked    | 6    | SqliteNoLFS      | 22   |
-| SqliteNoMem     | 7    | SqliteAuth       | 23   |
-| SqliteReadOnly  | 8    | SqliteFormat     | 24   |
-| SqliteInterrupt | 9    | SqliteRange      | 25   |
-| SqliteIOErr     | 10   | SqliteNotADB     | 26   |
-| SqliteCorrupt   | 11   | SqliteNotice     | 27   |
-| SqliteNotFound  | 12   | SqliteWarning    | 28   |
-| SqliteFull      | 13   | SqliteRow        | 100  |
-| SqliteCantOpen  | 14   | SqliteDone       | 101  |
-| SqliteProtocol  | 15   | Unknown          | -1   |
-
-These codes are accessible via the exported `Status` object.
-
-### SqliteError.codeName
-
-```javascript
-get codeName()
-```
-
-Key of code in exported `status` object.
-
-E.g. if `code` is `19`, `codeName` would be `SqliteConstraint`.
-
-## RowObjects
-
-```javascript
-new RowObjects(rows);
-```
-
-RowObjects represent a set of results from a query in the form of an object.
-They are iterable and yield objects.
-
-This class is not exported from the module and the only correct way to obtain a
-`RowObjects` object is by making a database query and using the `asObject()`
-method on the `Rows` result.
-
-### RowObjects.return
-
-```javascript
-return()
-```
-
-Implements the closing iterator protocol. See also:
-https://exploringjs.com/es6/ch_iteration.html#sec_closing-iterators
-
-### RowObjects.next
+## @ignore
 
 ```javascript
 next();
 ```
 
-Implements the iterator protocol.
+Implements the iterator protocol. It is a bug to call this method directly.
 
-## Rows
-
-```javascript
-new Rows(wasm, stmt, cleanup);
-```
-
-Rows represent a set of results from a query. They are iterable and yield arrays
-with the data from the selected columns.
-
-This class is not exported from the module and the only correct way to obtain a
-`Rows` object is by making a database query.
-
-### Rows.return
+## Binds the given parameters to the query and
 
 ```javascript
-return()
+execute(params);
 ```
 
-Implements the closing iterator protocol. See also:
-https://exploringjs.com/es6/ch_iteration.html#sec_closing-iterators
+might be returned.
 
-### Rows.done
+Using this method is more efficient when the rows returned by a query are not
+needed or the query does not return any rows.
+
+Calling `execute` invalidates any iterators previously returned by calls to
+`iter`. Using an invalidated iterator is a bug.
+
+To avoid SQL injection, user-provided values should always be passed to the
+database through a query parameter.
+
+See `QueryParameterSet` for documentation on how values can be bound to SQL
+statements.
+
+## Closes the prepared query
+
+undefined
+
+### Closes the prepared query. This must be
 
 ```javascript
-done();
+finalize();
 ```
 
-Deprecated, prefer `Rows.return`.
+to avoid leaking resources.
 
-### Rows.next
+After a prepared query has been finalized, trying to call `iter`, `all`, `one`,
+`execute`, or `columns`, or using iterators which where previously obtained from
+the finalized query is a bug.
 
-```javascript
-next();
-```
+`finalize` may safely be called multiple times.
 
-Implements the iterator protocol.
-
-### Rows.columns
+## Returns the column names for the query
 
 ```javascript
 columns();
 ```
-
-Call this if you need column names from the result of a select query.
 
 This method returns an array of objects, where each object has the following
 properties:
@@ -293,20 +309,3 @@ properties:
 | `name`       | the result of `sqlite3_column_name`        |
 | `originName` | the result of `sqlite3_column_origin_name` |
 | `tableName`  | the result of `sqlite3_column_table_name`  |
-
-### Rows.asObjects
-
-```javascript
-asObjects();
-```
-
-Call this if you need to ouput the rows as objects.
-
-    const rows = [...db.query("SELECT name FROM users;").asObjects()];
-
-## Empty
-
-A special constant. This is a `Rows` object which has no results. It is still
-iterable, however it won't yield any results.
-
-`Empty` is returned from queries which return no data.
