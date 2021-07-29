@@ -68,16 +68,16 @@ immediately make sense to someone who knows the SQLite C/C++ interface. Features
 and interfaces should generally be orthogonal.
 
 This is a low-level library, which provides access to running SQL queries and
-retrieving the results of these queries. This library will only wrap SQLite C API
-functions, but never try to provide a higher level interface to the database
+retrieving the results of these queries. This library will only wrap SQLite C
+API functions, but never try to provide a higher level interface to the database
 than plain SQL. It is meant to serve as a building block for constructing higher
 level interfaces, or for people who need an easy way to execute SQL queries on
 their SQLite database.
 
 The library should be easy to use and behave as any regular JavaScript library
 would in Deno. This means, it should only need the required permissions (e.g. if
-only in-memory databases are used, no permissions should be necessary. If a database
-is opened in read-only mode, `--allow-read` should be sufficient).
+only in-memory databases are used, no permissions should be necessary. If a
+database is opened in read-only mode, `--allow-read` should be sufficient).
 
 ## License
 
