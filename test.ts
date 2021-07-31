@@ -954,14 +954,14 @@ Deno.test("object query functions work correctly", function () {
   insertQuery.finalize();
 
   const query = db.prepareQuery("SELECT * FROM test LIMIT ?");
-  assertEquals(rowsOrig, query.kvAll([rowsOrig.length]));
-  assertEquals(rowsOrig[0], query.kvOne([1]));
+  assertEquals(rowsOrig, query.allEntries([rowsOrig.length]));
+  assertEquals(rowsOrig[0], query.oneEntry([1]));
   const rowsIter = [];
-  for (const row of query.kvIter([rowsOrig.length])) {
+  for (const row of query.iterEntries([rowsOrig.length])) {
     rowsIter.push(row);
   }
   assertEquals(rowsOrig, rowsIter);
-  assertEquals(rowsOrig, db.kvQuery("SELECT * FROM test"));
+  assertEquals(rowsOrig, db.queryEntries("SELECT * FROM test"));
 
   query.finalize();
   db.close();

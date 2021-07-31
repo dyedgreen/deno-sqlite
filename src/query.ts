@@ -353,7 +353,7 @@ export class PreparedQuery<
    * Like `iter` except each row is returned
    * as an object containing key-value pairs.
    */
-  kvIter(params?: QueryParameterSet): RowsIterator<O> {
+  iterEntries(params?: QueryParameterSet): RowsIterator<O> {
     this.iter(params);
     this._iterKv = true;
     return this as RowsIterator<O>;
@@ -428,7 +428,7 @@ export class PreparedQuery<
    * Like `all` except each row is returned
    * as an object containing key-value pairs.
    */
-  kvAll(params?: QueryParameterSet): Array<O> {
+  allEntries(params?: QueryParameterSet): Array<O> {
     return this.all(params).map((row) => this.makeRowObject(row));
   }
 
@@ -484,7 +484,7 @@ export class PreparedQuery<
    * Like `one` except the row is returned
    * as an object containing key-value pairs.
    */
-  kvOne(params?: QueryParameterSet): O {
+  oneEntry(params?: QueryParameterSet): O {
     return this.makeRowObject(this.one(params));
   }
 

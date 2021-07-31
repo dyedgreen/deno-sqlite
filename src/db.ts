@@ -121,13 +121,13 @@ export class DB {
    * Like `query` except each row is returned
    * as an object containing key-value pairs.
    */
-  kvQuery<O extends RowObject = RowObject>(
+  queryEntries<O extends RowObject = RowObject>(
     sql: string,
     params?: QueryParameterSet,
   ): Array<O> {
     const query = this.prepareQuery<Row, O>(sql);
     try {
-      const rows = query.kvAll(params);
+      const rows = query.allEntries(params);
       query.finalize();
       return rows;
     } catch (err) {
