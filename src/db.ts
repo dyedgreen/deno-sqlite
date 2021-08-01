@@ -2,7 +2,7 @@ import instantiate, { StatementPtr, Wasm } from "../build/sqlite.js";
 import { setStr } from "./wasm.ts";
 import { OpenFlags, Status, Values } from "./constants.ts";
 import { SqliteError } from "./error.ts";
-import { PreparedQuery, QueryParameterSet, Row } from "./query.ts";
+import { PreparedQuery, QueryParameterSet, Row, RowObject } from "./query.ts";
 
 /**
  * Options for opening a database.
@@ -118,6 +118,25 @@ export class DB {
   }
 
   /**
+   * Like `query` except each row is returned
+   * as an object containing key-value pairs.
+   */
+  queryEntries<O extends RowObject = RowObject>(
+    sql: string,
+    params?: QueryParameterSet,
+  ): Array<O> {
+    const query = this.prepareQuery<Row, O>(sql);
+    try {
+      const rows = query.allEntries(params);
+      query.finalize();
+      return rows;
+    } catch (err) {
+      query.finalize();
+      throw err;
+    }
+  }
+
+  /**
    * Prepares the given SQL query, so that it
    * can be run multiple times and potentially
    * with different parameters.
@@ -137,7 +156,9 @@ export class DB {
    * by the query. Notice that the user is responsible
    * for ensuring the correctness of the supplied type.
    */
-  prepareQuery<R extends Row = Row>(sql: string): PreparedQuery<R> {
+  prepareQuery<R extends Row = Row, O extends RowObject = RowObject>(
+    sql: string,
+  ): PreparedQuery<R, O> {
     if (!this._open) {
       throw new SqliteError("Database was closed.");
     }
@@ -152,7 +173,7 @@ export class DB {
     }
 
     this._statements.add(stmt);
-    return new PreparedQuery<R>(this._wasm, stmt, this._statements);
+    return new PreparedQuery<R, O>(this._wasm, stmt, this._statements);
   }
 
   /**
