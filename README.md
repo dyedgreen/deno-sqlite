@@ -64,8 +64,8 @@ this module seems to no longer be actively maintained.
 - Security: benefit from Denos security settings, without the need to trust a
   third party
 - Portability: runs everywhere Deno runs and can even run in the browser
-- Ease of Use: takes full advantage of Denos module cache and does not require any
-  network access after initial download
+- Ease of Use: takes full advantage of Denos module cache and does not require
+  any network access after initial download
 - Speed: thanks to WASM, the database performance is comparable to native
   bindings in most situations and the API is carefully designed to provide
   optimal performance
