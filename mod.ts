@@ -8,5 +8,6 @@ export type {
   QueryParameter,
   QueryParameterSet,
   Row,
+  RowObject,
 } from "./src/query.ts";
 export type { SqliteError } from "./src/error.ts";
