@@ -102,6 +102,7 @@ interface RowsIterator<R> {
 export class PreparedQuery<
   R extends Row = Row,
   O extends RowObject = RowObject,
+  P extends QueryParameterSet = QueryParameterSet,
 > {
   private _wasm: Wasm;
   private _stmt: StatementPtr;
@@ -134,7 +135,7 @@ export class PreparedQuery<
     this._finalized = false;
   }
 
-  private startQuery(params?: QueryParameterSet) {
+  private startQuery(params?: P) {
     if (this._finalized) {
       throw new SqliteError("Query is finalized.");
     }
@@ -287,7 +288,7 @@ export class PreparedQuery<
           break;
       }
     }
-    return (row as unknown) as R;
+    return row as R;
   }
 
   private makeRowObject(row: Row): O {
@@ -337,7 +338,7 @@ export class PreparedQuery<
    * See `QueryParameter` for documentation on how
    * values are returned from the database.
    */
-  iter(params?: QueryParameterSet): RowsIterator<R> {
+  iter(params?: P): RowsIterator<R> {
     this.startQuery(params);
     this._status = this._wasm.step(this._stmt);
     if (
@@ -353,7 +354,7 @@ export class PreparedQuery<
    * Like `iter` except each row is returned
    * as an object containing key-value pairs.
    */
-  iterEntries(params?: QueryParameterSet): RowsIterator<O> {
+  iterEntries(params?: P): RowsIterator<O> {
     this.iter(params);
     this._iterKv = true;
     return this as RowsIterator<O>;
@@ -410,7 +411,7 @@ export class PreparedQuery<
    * See `QueryParameter` for documentation on how
    * values are returned from the database.
    */
-  all(params?: QueryParameterSet): Array<R> {
+  all(params?: P): Array<R> {
     this.startQuery(params);
     const rows: Array<R> = [];
     this._status = this._wasm.step(this._stmt);
@@ -428,7 +429,7 @@ export class PreparedQuery<
    * Like `all` except each row is returned
    * as an object containing key-value pairs.
    */
-  allEntries(params?: QueryParameterSet): Array<O> {
+  allEntries(params?: P): Array<O> {
     return this.all(params).map((row) => this.makeRowObject(row));
   }
 
@@ -453,7 +454,7 @@ export class PreparedQuery<
    * See `QueryParameter` for documentation on how
    * values are returned from the database.
    */
-  one(params?: QueryParameterSet): R {
+  one(params?: P): R {
     this.startQuery(params);
 
     // Get first row
@@ -484,7 +485,7 @@ export class PreparedQuery<
    * Like `one` except the row is returned
    * as an object containing key-value pairs.
    */
-  oneEntry(params?: QueryParameterSet): O {
+  oneEntry(params?: P): O {
     return this.makeRowObject(this.one(params));
   }
 
@@ -508,7 +509,7 @@ export class PreparedQuery<
    * See `QueryParameterSet` for documentation on
    * how values can be bound to SQL statements.
    */
-  execute(params?: QueryParameterSet) {
+  execute(params?: P) {
     this.startQuery(params);
     this._status = this._wasm.step(this._stmt);
     while (this._status === Status.SqliteRow) {

@@ -151,14 +151,32 @@ export class DB {
    * finalized by calling its `finalize` method
    * once it is no longer needed.
    *
-   * The type parameter `R` may be supplied by
-   * the user to indicated the type for the rows returned
-   * by the query. Notice that the user is responsible
-   * for ensuring the correctness of the supplied type.
+   * ## Typing Queries
+   *
+   * Prepared query objects accept three type parameters
+   * to specify precise types for returned data and
+   * query parameters.
+   *
+   * The first type parameter `R` indicates the tuple type
+   * for rows returned by the query.
+   *
+   * The second type parameter `O` indicates the record type
+   * for rows returned as entries (mappings from column names
+   * to values).
+   *
+   * The third type parameter `P` indicates the type this query
+   * accepts as parameters.
+   *
+   * Note, that the correctness of those types must
+   * be guaranteed by the caller of this function.
    */
-  prepareQuery<R extends Row = Row, O extends RowObject = RowObject>(
+  prepareQuery<
+    R extends Row = Row,
+    O extends RowObject = RowObject,
+    P extends QueryParameterSet = QueryParameterSet,
+  >(
     sql: string,
-  ): PreparedQuery<R, O> {
+  ): PreparedQuery<R, O, P> {
     if (!this._open) {
       throw new SqliteError("Database was closed.");
     }
@@ -173,7 +191,7 @@ export class DB {
     }
 
     this._statements.add(stmt);
-    return new PreparedQuery<R, O>(this._wasm, stmt, this._statements);
+    return new PreparedQuery<R, O, P>(this._wasm, stmt, this._statements);
   }
 
   /**
