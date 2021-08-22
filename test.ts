@@ -627,8 +627,8 @@ Deno.test("get columns from returning query", function () {
   );
 
   assertEquals(query.columns(), [
-    { name: "id", originName: "", tableName: "" },
-    { name: "name", originName: "", tableName: "" },
+    { name: "id", originName: "id", tableName: "test" },
+    { name: "name", originName: "name", tableName: "test" },
   ]);
 
   assertEquals(query.all(["name"]), [[1, "name"]]);
