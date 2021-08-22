@@ -6,8 +6,8 @@ OUT_WA = "sqlite.wasm"
 OUT_BN = "sqlite.js"
 OUT_TY = "sqlite.d.ts"
 
-SQLITE_DLD = "https://sqlite.org/2021/sqlite-src-3350000.zip"
-SQLITE_DIR = "sqlite-src-3350000"
+SQLITE_DLD = "https://sqlite.org/2021/sqlite-src-3360000.zip"
+SQLITE_DIR = "sqlite-src-3360000"
 
 WASI_DLD = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-11/wasi-sdk-11.0-linux.tar.gz"
 WASI_TAR = wasi_dl_linux.tar.gz
