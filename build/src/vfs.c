@@ -101,17 +101,42 @@ static int denoFileSize(sqlite3_file *pFile, sqlite_int64 *pSize) {
   return SQLITE_OK;
 }
 
-// Deno does not support file locks.
+// File locking
 static int denoLock(sqlite3_file *pFile, int eLock) {
-  debug_printf("no-op call to lock");
+  DenoFile *p = (DenoFile*)pFile;
+  switch (eLock) {
+    case SQLITE_LOCK_NONE:
+      // no op
+      break;
+    case SQLITE_LOCK_SHARED:
+    case SQLITE_LOCK_RESERVED: // one WASM process <-> one open database
+      js_lock(p->rid, 0);
+      break;
+    case SQLITE_LOCK_PENDING:
+    case SQLITE_LOCK_EXCLUSIVE:
+      js_lock(p->rid, 1);
+      break;
+  }
   return SQLITE_OK;
 }
+
 static int denoUnlock(sqlite3_file *pFile, int eLock) {
-  debug_printf("no-op call to unlock");
+    DenoFile *p = (DenoFile*)pFile;
+  switch (eLock) {
+    case SQLITE_LOCK_NONE:
+      // no op
+      break;
+    case SQLITE_LOCK_SHARED:
+    case SQLITE_LOCK_RESERVED:
+    case SQLITE_LOCK_PENDING:
+    case SQLITE_LOCK_EXCLUSIVE:
+      js_unlock(p->rid);
+      break;
+  }
   return SQLITE_OK;
 }
+
 static int denoCheckReservedLock(sqlite3_file *pFile, int *pResOut) {
-  debug_printf("no-op call to check reserved lock");
   *pResOut = 0;
   return SQLITE_OK;
 }
