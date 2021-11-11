@@ -33,5 +33,7 @@ jobs:
         make clean
     - name: Run tests
       run: /home/runner/.deno/bin/deno test --allow-read --allow-write test.ts
+    - name: Run tests (unstable)
+      run: /home/runner/.deno/bin/deno test --unstable --allow-read --allow-write test.ts
     - name: Run benchmarks
       run: /home/runner/.deno/bin/deno run bench.ts
