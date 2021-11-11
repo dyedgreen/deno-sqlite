@@ -12,6 +12,8 @@ extern int    js_write(int, const char*, double, int);
 extern void   js_truncate(int, double);
 extern void   js_sync(int);
 extern double js_size(int);
+extern void   js_lock(int, int);
+extern void   js_unlock(int);
 extern double js_time();
 extern int    js_timezone();
 extern int    js_exists(const char*);

@@ -7,6 +7,8 @@ js_write
 js_truncate
 js_sync
 js_size
+js_lock
+js_unlock
 js_time
 js_timezone
 js_exists

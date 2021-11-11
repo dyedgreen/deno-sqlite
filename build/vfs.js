@@ -68,6 +68,16 @@ export default function env(inst) {
     js_size: (rid) => {
       return Deno.fstatSync(rid).size;
     },
+    // Acquire a SHARED or EXCLUSIVE file lock
+    js_lock: (rid, exclusive) => {
+      // this is unstable ...
+      if (Deno.flockSync) Deno.flockSync(rid, exclusive !== 0);
+    },
+    // Release a file lock
+    js_unlock: (rid) => {
+      // this is unstable ...
+      if (Deno.funlockSync) Deno.funlockSync(rid);
+    },
     // Return current time in ms since UNIX epoch
     js_time: () => {
       return Date.now();
