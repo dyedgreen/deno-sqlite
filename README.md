@@ -1,7 +1,7 @@
 # Deno SQLite Module
 
 [![test status](https://github.com/dyedgreen/deno-sqlite/workflows/tests/badge.svg?branch=master)](https://github.com/dyedgreen/deno-sqlite/actions)
-[![deno doc](https://doc.deno.land/badge.svg)](https://deno.land/x/sqlite)
+[![deno doc](https://doc.deno.land/badge.svg)](https://doc.deno.land/https://deno.land/x/sqlite/mod.ts)
 
 This is an SQLite module for JavaScript and TypeScript. The wrapper is targeted
 at [Deno](https://deno.land) and uses a version of SQLite3 compiled to
