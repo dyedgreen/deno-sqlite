@@ -196,6 +196,15 @@ export class DB {
     return new PreparedQuery<R, O, P>(this._wasm, stmt, this._statements);
   }
 
+  /**
+   * Run a function within the context of a database
+   * transaction. If the function throws an error,
+   * the transaction is rolled back. Otherwise, the
+   * transaction is committed when the function returns.
+   *
+   * Calls to `transaction` may be nested. Nested transactions
+   * behave like SQLite save points.
+   */
   transaction<V>(closure: () => V): V {
     this._transactionDepth += 1;
     this.query(`SAVEPOINT _deno_sqlite_sp_${this._transactionDepth}`);
