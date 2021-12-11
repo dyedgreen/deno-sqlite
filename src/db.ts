@@ -30,6 +30,7 @@ export class DB {
   private _wasm: Wasm;
   private _open: boolean;
   private _statements: Set<StatementPtr>;
+  private _transactionDepth: number;
 
   /**
    * Create a new database. The file at the
@@ -45,6 +46,7 @@ export class DB {
     this._wasm = instantiate().exports;
     this._open = false;
     this._statements = new Set();
+    this._transactionDepth = 0;
 
     // Configure flags
     let flags = 0;
@@ -192,6 +194,22 @@ export class DB {
 
     this._statements.add(stmt);
     return new PreparedQuery<R, O, P>(this._wasm, stmt, this._statements);
+  }
+
+  transaction<V>(closure: () => V): V {
+    this._transactionDepth += 1;
+    this.query(`SAVEPOINT _deno_sqlite_sp_${this._transactionDepth}`);
+    let value;
+    try {
+      value = closure();
+    } catch (err) {
+      this.query(`ROLLBACK TO _deno_sqlite_sp_${this._transactionDepth}`);
+      this._transactionDepth -= 1;
+      throw err;
+    }
+    this.query(`RELEASE _deno_sqlite_sp_${this._transactionDepth}`);
+    this._transactionDepth -= 1;
+    return value;
   }
 
   /**

@@ -967,6 +967,49 @@ Deno.test("object query functions work correctly", function () {
   db.close();
 });
 
+Deno.test("transaction rolls back on throw", function () {
+  const db = new DB();
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
+
+  assertThrows(() => {
+    db.transaction(() => {
+      db.query("INSERT INTO test (id) VALUES (1)");
+      throw new Error("boom!");
+    });
+  });
+
+  assertEquals([], db.query("SELECT * FROM test"));
+});
+
+Deno.test("transactions can be nested", function () {
+  const db = new DB();
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
+
+  db.transaction(() => {
+    db.query("INSERT INTO test (id) VALUES (1)");
+    try {
+      db.transaction(() => {
+        db.query("INSERT INTO test (id) VALUES (2)");
+        throw new Error("boom!");
+      });
+    } catch (_) { /* ignore */ }
+  });
+
+  assertEquals([{ id: 1 }], db.queryEntries("SELECT * FROM test"));
+});
+
+Deno.test("transactions commit when closure exists", function () {
+  const db = new DB();
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
+
+  db.transaction(() => {
+    db.query("INSERT INTO test (id) VALUES (1)");
+  });
+  assertThrows(() => db.query("ROLLBACK"));
+
+  assertEquals([{ id: 1 }], db.queryEntries("SELECT * FROM test"));
+});
+
 // Tests which drop the permission from read + write to read only
 // and should run after any other test.
 
