@@ -5,8 +5,7 @@
 debug.js
 
 # Misc
-hack.js
-hack.ts
+hack.*
 *.br
 *.db
 *.db-journal
