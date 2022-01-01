@@ -88,6 +88,7 @@ export async function loadFile(fileName) {
   });
   const buffer = new Buffer(file?.data);
   LOADED_FILES.set(fileName, buffer);
+  return buffer;
 }
 
 export async function writeFile(fileName, data) {
