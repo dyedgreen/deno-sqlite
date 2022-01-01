@@ -10,6 +10,6 @@ export async function open(file: string): Promise<DB> {
 }
 
 export async function read(file: string): Promise<Uint8Array> {
-  await 0;
-  throw new Error("TODO: " + file);
+  const buffer = await loadFile(file);
+  return buffer.toUint8Array().slice();
 }
