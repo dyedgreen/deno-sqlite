@@ -9,6 +9,8 @@ hack.*
 *.br
 *.db
 *.db-journal
+*.sqlite
+*.sqlite-journal
 *.gz
 build/sqlite-src
 build/wasi-sdk

@@ -76,6 +76,24 @@ this module seems to no longer be actively maintained.
   SQLite can't acquire file locks or memory map files (e.g. this module does not
   support WAL mode)
 
+## Browser Version (Experimental)
+
+There is **experimental** support for web browser support. You can generate a
+browser compatible module by running:
+
+```bash
+deno bundle --import-map browser/import_map.json browser/mod.ts [output_bundle_path]
+```
+
+The modules documentation can be seen by running
+
+```bash
+deno doc browser/mod.ts
+```
+
+Databases created in the browser are persisted using
+[indexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API).
+
 ## Users
 
 - [cotton](https://github.com/rahmanfadhil/cotton)
