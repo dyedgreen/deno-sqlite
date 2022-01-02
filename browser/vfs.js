@@ -42,11 +42,14 @@ class Buffer {
 
   reserve(capacity) {
     if (this._data.length >= capacity) return;
+    const neededBytes = capacity - this._data.length;
     const growBy = Math.min(
-      Math.max(MAX_GROW_BYTES, capacity - this._data.length),
+      MAX_GROW_BYTES,
       Math.max(MIN_GROW_BYTES, this._data.length),
     );
-    const newArray = new Uint8Array(this._data.length + growBy);
+    const newArray = new Uint8Array(
+      this._data.length + Math.max(growBy, neededBytes),
+    );
     newArray.set(this._data);
     this._data = newArray;
   }
@@ -71,11 +74,12 @@ const indexedDB = window.indexedDB || window.mozIndexedDB ||
   window.webkitIndexedDB || window.msIndexedDB || window.shimIndexedDB;
 
 // Web browser indexedDB database
-const database = new Promise((resolve) => {
+const database = new Promise((resolve, reject) => {
   const request = indexedDB.open(DB_NAME, 1);
   request.onupgradeneeded = () =>
     request.result.createObjectStore("files", { keyPath: "name" });
-  request.onsucess = () => resolve(request.result);
+  request.onsuccess = () => resolve(request.result);
+  request.onerror = () => reject(request.error);
 });
 
 export async function loadFile(fileName) {
@@ -86,12 +90,16 @@ export async function loadFile(fileName) {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-  const buffer = new Buffer(file?.data);
-  LOADED_FILES.set(fileName, buffer);
-  return buffer;
+  if (file != null && !LOADED_FILES.has(fileName)) {
+    const buffer = new Buffer(file.data);
+    LOADED_FILES.set(fileName, buffer);
+    return buffer;
+  } else {
+    return null;
+  }
 }
 
-export async function writeFile(fileName, data) {
+async function syncFile(fileName, data) {
   const db = await database;
   await new Promise((resolve, reject) => {
     const store = db.transaction("files", "readwrite").objectStore("files");
@@ -99,6 +107,25 @@ export async function writeFile(fileName, data) {
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
+}
+
+async function deleteFile(fileName) {
+  const db = await database;
+  await new Promise((resolve, reject) => {
+    const store = db.transaction("files", "readwrite").objectStore("files");
+    const request = store.delete(fileName);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+export async function writeFile(fileName, data) {
+  await syncFile(fileName, data);
+  if (LOADED_FILES.has(fileName)) {
+    const buffer = LOADED_FILES.get(fileName).buffer;
+    buffer.truncate(0);
+    buffer.write(0, data);
+  }
 }
 
 // Closure to return an environment that links
@@ -130,6 +157,7 @@ export default function env(inst) {
     js_delete: (path_ptr) => {
       const path = getStr(inst.exports, path_ptr);
       LOADED_FILES.delete(path);
+      deleteFile(path);
     },
     js_read: (rid, buffer_ptr, offset, amount) => {
       const buffer = new Uint8Array(
@@ -154,10 +182,10 @@ export default function env(inst) {
     },
     js_sync: (rid) => {
       const file = getOpenFile(rid);
-      writeFile(file.path, file.buffer.toUint8Array());
+      if (file.path != null) syncFile(file.path, file.buffer.toUint8Array());
     },
     js_size: (rid) => {
-      getOpenFile(rid).buffer.size;
+      return getOpenFile(rid).buffer.size;
     },
     js_lock: (_rid, _exclusive) => {},
     js_unlock: (_rid) => {},
