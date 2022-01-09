@@ -11,3 +11,6 @@ export type {
   Row,
   RowObject,
 } from "./src/query.ts";
+
+import { compile } from "./build/sqlite.js";
+await compile();
