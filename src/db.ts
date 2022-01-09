@@ -1,4 +1,4 @@
-import instantiate, { StatementPtr, Wasm } from "../build/sqlite.js";
+import { instantiate, StatementPtr, Wasm } from "../build/sqlite.js";
 import { setStr } from "./wasm.ts";
 import { OpenFlags, Status, Values } from "./constants.ts";
 import { SqliteError } from "./error.ts";

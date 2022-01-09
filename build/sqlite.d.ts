@@ -53,4 +53,5 @@ export interface Wasm {
   total_changes: () => number;
 }
 
-export default function instantiate(): { exports: Wasm };
+export function compile(): Promise<void>;
+export function instantiate(): { exports: Wasm };

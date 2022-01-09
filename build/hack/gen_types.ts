@@ -148,7 +148,8 @@ export interface Wasm {
   ${items.map(generateDecl).join(";\n  ")};
 }
 
-export default function instantiate(): { exports: Wasm };
+export function compile(): Promise<void>;
+export function instantiate(): { exports: Wasm };
 `;
 
 await Deno.writeTextFile(dest, typeDeclaration);
