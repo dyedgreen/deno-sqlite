@@ -1,17 +1,11 @@
 import { DB } from "../src/db.ts";
 import { loadFile, writeFile } from "./vfs.js";
-import { compile } from "../build/sqlite.js";
+import { compile, instantiateBrowser } from "../build/sqlite.js";
 
 export { SqliteError } from "../src/error.ts";
 export { Status } from "../src/constants.ts";
 
-/**
- * It is a bug to use the other functions before the
- * promise returned by this resolves.
- */
-export async function init(): Promise<void> {
-  await compile();
-}
+const hasCompiled = compile();
 
 /**
  * Opens a database with the given name. If `file` is
@@ -21,6 +15,8 @@ export async function init(): Promise<void> {
  */
 export async function open(file?: string): Promise<DB> {
   if (file != null && file !== ":memory:") await loadFile(file);
+  await hasCompiled;
+  await instantiateBrowser();
   return new DB(file);
 }
 
