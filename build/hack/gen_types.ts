@@ -149,6 +149,7 @@ export interface Wasm {
 }
 
 export function compile(): Promise<void>;
+export function instantiateBrowser(): Promise<void>;
 export function instantiate(): { exports: Wasm };
 `;
 
