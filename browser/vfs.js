@@ -94,6 +94,8 @@ export async function loadFile(fileName) {
     const buffer = new Buffer(file.data);
     LOADED_FILES.set(fileName, buffer);
     return buffer;
+  } else if (LOADED_FILES.has(fileName)) {
+    return LOADED_FILES.get(fileName);
   } else {
     return null;
   }

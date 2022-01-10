@@ -78,8 +78,8 @@ this module seems to no longer be actively maintained.
 
 ## Browser Version (Experimental)
 
-There is **experimental** support for web browser support. You can generate a
-browser compatible module by running:
+There is **experimental** support for using `deno-sqlite` in the browser. You
+can generate a browser compatible module by running:
 
 ```bash
 deno bundle --import-map browser/import_map.json browser/mod.ts [output_bundle_path]

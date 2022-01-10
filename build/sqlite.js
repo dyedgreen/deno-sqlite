@@ -15,20 +15,36 @@ function decode(base64) {
   return bytes;
 }
 
-let sqliteWasmModule = null;
+const moduleOrInstance = {
+  module: null,
+  instances: [],
+};
 
-// Compile WASM module for later reuse
 export async function compile() {
-  if (sqliteWasmModule == null) {
-    sqliteWasmModule = await WebAssembly.compile(decode(wasm));
-  }
+  moduleOrInstance.module = await WebAssembly.compile(decode(wasm));
 }
 
-// Create WASM instance and seed random number generator
-export function instantiate() {
+export async function instantiateBrowser() {
   const placeholder = { exports: null };
-  const instance = new WebAssembly.Instance(sqliteWasmModule, env(placeholder));
+  const instance = await WebAssembly.instantiate(
+    moduleOrInstance.module,
+    env(placeholder),
+  );
   placeholder.exports = instance.exports;
-  instance.exports.seed_rng(Date.now());
-  return instance;
+  moduleOrInstance.instances.push(instance);
+}
+
+export function instantiate() {
+  if (moduleOrInstance.instances.length) {
+    return moduleOrInstance.instances.pop();
+  } else {
+    const placeholder = { exports: null };
+    const instance = new WebAssembly.Instance(
+      moduleOrInstance.module,
+      env(placeholder),
+    );
+    placeholder.exports = instance.exports;
+    instance.exports.seed_rng(Date.now());
+    return instance;
+  }
 }
