@@ -43,6 +43,7 @@ export async function instantiateBrowser() {
   const placeholder = { exports: null };
   const instance = await WebAssembly.instantiate(moduleOrInstance.module, env(placeholder));
   placeholder.exports = instance.exports;
+  instance.exports.seed_rng(Date.now());
   moduleOrInstance.instances.push(instance);
 }
 

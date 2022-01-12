@@ -31,6 +31,7 @@ export async function instantiateBrowser() {
     env(placeholder),
   );
   placeholder.exports = instance.exports;
+  instance.exports.seed_rng(Date.now());
   moduleOrInstance.instances.push(instance);
 }
 
