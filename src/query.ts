@@ -99,6 +99,10 @@ interface RowsIterator<R> {
   [Symbol.iterator]: () => RowsIterator<R>;
 }
 
+/**
+ * A prepared query which can be executed many
+ * times.
+ */
 export class PreparedQuery<
   R extends Row = Row,
   O extends RowObject = RowObject,
@@ -317,7 +321,7 @@ export class PreparedQuery<
    * rows into memory and hence allows to process a large
    * number of rows.
    *
-   * Example:
+   * # Example:
    * ```typescript
    * const query = db.prepareQuery<[number, string]>("SELECT id, name FROM people");
    * for (const [id, name] of query.iter()) {
