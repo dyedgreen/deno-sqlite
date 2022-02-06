@@ -2,6 +2,10 @@ import { Wasm } from "../build/sqlite.js";
 import { getStr } from "./wasm.ts";
 import { Status } from "./constants.ts";
 
+/**
+ * Errors which can be thrown while interacting with
+ * a database.
+ */
 export class SqliteError extends Error {
   /**
    * Extension over the standard JS Error object

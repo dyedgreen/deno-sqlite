@@ -6,26 +6,41 @@ import { PreparedQuery, QueryParameterSet, Row, RowObject } from "./query.ts";
 
 /**
  * Options for opening a database.
- *
- * The `mode` can be set to control
- * how the database file will be
- * opened.
- *
- * If `memory` is set to true, the
- * database will be opened as an in
- * memory database.
- *
- * If `uri` is set to true, the file
- * name accepts a URI. See https://sqlite.org/uri.html
- * for more information on the URI
- * format.
  */
 export interface SqliteOptions {
+  /**
+   * Mode in which to open the database.
+   *
+   * - `read`: read-only, throws an error if
+   *   the database file does not exists
+   * - `write`: read-write, throws an error
+   *   if the database file does not exists
+   * - `create`: read-write, create the database
+   *   if the file does not exist
+   *
+   * `create` is the default if no mode is
+   * specified.
+   */
   mode?: "read" | "write" | "create";
+  /**
+   * Force the database to be in-memory. When
+   * this option is set, the database is opened
+   * in memory, regardless of the specified
+   * filename.
+   */
   memory?: boolean;
+  /**
+   * Interpret the file name as a URI.
+   * See https://sqlite.org/uri.html
+   * for more information.
+   */
   uri?: boolean;
 }
 
+/**
+ * A database handle that can be used to run
+ * queries.
+ */
 export class DB {
   private _wasm: Wasm;
   private _open: boolean;
@@ -41,6 +56,23 @@ export class DB {
    * If no path is given, or if the `memory`
    * option is set, the database is opened in
    * memory.
+   *
+   * # Examples
+   *
+   * Create an in-memory database.
+   * ```typescript
+   * const db = new DB();
+   * ```
+   *
+   * Open a database backed by a file on disk.
+   * ```typescript
+   * const db = new DB("path/to/database.sqlite");
+   * ```
+   *
+   * Pass options to open a read-only database.
+   * ```typescript
+   * const db = new DB("path/to/database.sqlite", { mode: "read" });
+   * ```
    */
   constructor(path: string = ":memory:", options: SqliteOptions = {}) {
     this._wasm = instantiate().exports;
@@ -103,6 +135,13 @@ export class DB {
    *
    * See `QueryParameter` for documentation on how
    * values are returned from the database.
+   *
+   * # Examples
+   *
+   * ```typescript
+   * const rows = db.query<[string, number]>("SELECT name, age FROM people WHERE city = ?", [city]);
+   * // rows = [["Peter Parker", 21], ...]
+   * ```
    */
   query<R extends Row = Row>(
     sql: string,
@@ -122,6 +161,13 @@ export class DB {
   /**
    * Like `query` except each row is returned
    * as an object containing key-value pairs.
+   *
+   * # Examples
+   *
+   * ```typescript
+   * const rows = db.query<{ name: string, age: number }>("SELECT name, age FROM people");
+   * // rows = [{ name: "Peter Parker", age: 21 }, ...]
+   * ```
    */
   queryEntries<O extends RowObject = RowObject>(
     sql: string,
@@ -153,7 +199,7 @@ export class DB {
    * finalized by calling its `finalize` method
    * once it is no longer needed.
    *
-   * ## Typing Queries
+   * # Typing Queries
    *
    * Prepared query objects accept three type parameters
    * to specify precise types for returned data and
@@ -171,6 +217,18 @@ export class DB {
    *
    * Note, that the correctness of those types must
    * be guaranteed by the caller of this function.
+   *
+   * # Examples
+   *
+   * ```typescript
+   * const query = db.prepareQuery<
+   *   [string, number],
+   *   { name: string, age: number },
+   *   { city: string },
+   *  >("SELECT name, age FROM people WHERE city = :city");
+   * // use query ...
+   * query.finalize();
+   * ```
    */
   prepareQuery<
     R extends Row = Row,
@@ -226,7 +284,7 @@ export class DB {
    * the database is no longer used to avoid leaking
    * open file descriptors.
    *
-   * If force is specified, any active `PreparedQuery`
+   * If `force` is specified, any active `PreparedQuery`
    * will be finalized. Otherwise, this throws if there
    * are active queries.
    *
