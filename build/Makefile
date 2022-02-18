@@ -6,8 +6,6 @@ OUT_WA = "sqlite.wasm"
 OUT_BN = "sqlite.js"
 OUT_TY = "sqlite.d.ts"
 
-HOST_OS = linux
-
 SQLITE_DLD = "https://sqlite.org/2021/sqlite-src-3360000.zip"
 SQLITE_DIR = "sqlite-src-3360000"
 
@@ -17,6 +15,16 @@ endif
 
 ifeq ($(shell uname),Darwin)
 	HOST_OS = macos
+endif
+
+ifeq ($(shell uname),Linux)
+	HOST_OS = linux
+endif
+
+# Check if HOST_OS is not set
+ifeq ($(HOST_OS),)
+	echo "ERROR: OS not supported"
+	exit 1
 endif
 
 WASI_DLD = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-11/wasi-sdk-11.0-$(HOST_OS).tar.gz"
