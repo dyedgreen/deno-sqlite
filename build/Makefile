@@ -6,15 +6,21 @@ OUT_WA = "sqlite.wasm"
 OUT_BN = "sqlite.js"
 OUT_TY = "sqlite.d.ts"
 
+HOST_OS = linux
+
 SQLITE_DLD = "https://sqlite.org/2021/sqlite-src-3360000.zip"
 SQLITE_DIR = "sqlite-src-3360000"
 
-WASI_DLD = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-11/wasi-sdk-11.0-linux.tar.gz"
-WASI_TAR = wasi_dl_linux.tar.gz
-ifeq ($(shell uname), Darwin)
-	WASI_DLD = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-11/wasi-sdk-11.0-macos.tar.gz"
-	WASI_TAR = wasi_dl_darwin.tar.gz
+ifeq ($(OS),Windows_NT)
+	HOST_OS = mingw
 endif
+
+ifeq ($(shell uname),Darwin)
+	HOST_OS = macos
+endif
+
+WASI_DLD = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-11/wasi-sdk-11.0-$(HOST_OS).tar.gz"
+WASI_TAR = wasi_dl_$(HOST_OS).tar.gz
 
 CSRC  = ""
 CSRC += $(shell find ./src  -name "*.c")
