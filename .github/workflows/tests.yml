@@ -7,22 +7,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Install Deno
-      run: curl -fsSL https://deno.land/x/install/install.sh | sh
+      uses: denoland/setup-deno@1
+      with:
+        deno-version: 1.19
+
     - uses: actions/checkout@v1
     - name: Run the formatter
       run: |
         shopt -s globstar failglob
-        /home/runner/.deno/bin/deno fmt --check
+        deno fmt --check
     - name: Build SQLite
       id: build
       run: |
         export DENO_INSTALL="/home/runner/.deno"
         export PATH="$DENO_INSTALL/bin:$PATH"
+        # Need some other methods for this to work on MacOS and Windows
         sudo apt-get -y install --no-install-recommends tclsh gcc brotli
         cd build
         make setup amalgamation release
     - name: Set Timezone to Non-UTC
-      run: sudo timedatectl set-timezone America/New_York
+      uses: zcong1993/setup-timezone@1
+      with:
+        timezon: America/New_York
     - name: Generate Test Database
       run: |
         cd build
@@ -32,8 +38,8 @@ jobs:
         cd build
         make clean
     - name: Run tests
-      run: /home/runner/.deno/bin/deno test --allow-read --allow-write test.ts
+      run: deno test --allow-read --allow-write test.ts
     - name: Run tests (unstable)
-      run: /home/runner/.deno/bin/deno test --unstable --allow-read --allow-write test.ts
+      run: deno test --unstable --allow-read --allow-write test.ts
     - name: Run benchmarks
-      run: /home/runner/.deno/bin/deno run bench.ts
+      run: deno run bench.ts
