@@ -27,7 +27,7 @@ ifeq ($(HOST_OS),)
 	exit 1
 endif
 
-WASI_DLD = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-11/wasi-sdk-11.0-$(HOST_OS).tar.gz"
+WASI_DLD = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-14/wasi-sdk-14.0-$(HOST_OS).tar.gz"
 WASI_TAR = wasi_dl_$(HOST_OS).tar.gz
 
 CSRC  = ""
