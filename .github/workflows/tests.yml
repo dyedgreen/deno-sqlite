@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Install Deno
-      uses: denoland/setup-deno@1
+      uses: denoland/setup-deno@v1
       with:
         deno-version: 1.19
 
@@ -26,7 +26,7 @@ jobs:
         cd build
         make setup amalgamation release
     - name: Set Timezone to Non-UTC
-      uses: zcong1993/setup-timezone@1
+      uses: zcong1993/setup-timezone@v1
       with:
         timezon: America/New_York
     - name: Generate Test Database
