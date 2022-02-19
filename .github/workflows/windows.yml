@@ -20,9 +20,8 @@ jobs:
           deno-version: 1.19
 
       - name: Run the formatter
-        run: |
-          shopt -s globstar failglob
-          deno fmt --check
+        run: deno fmt --check
+        shell: pwsh
       - name: Build SQLite
         id: build
         run: |
@@ -45,7 +44,10 @@ jobs:
           make clean
       - name: Run tests
         run: deno test --allow-read --allow-write test.ts
+        shell: pwsh
       - name: Run tests (unstable)
         run: deno test --unstable --allow-read --allow-write test.ts
+        shell: pwsh
       - name: Run benchmarks
         run: deno run bench.ts
+        shell: pwsh
