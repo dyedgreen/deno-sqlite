@@ -114,7 +114,6 @@ amalgamation:
 
 dlsqlite:
 	curl "$(SQLITE_DLD)" -o "sqlite_dl.zip"
-	sed -n '/sqlite_dl.zip/p' ".checksums" | shasum -c -
 	rm -rf "sqlite-src"
 	unzip "sqlite_dl.zip"
 	mv $(SQLITE_DIR) "sqlite-src"
