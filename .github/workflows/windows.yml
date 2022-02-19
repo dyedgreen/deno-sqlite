@@ -32,7 +32,7 @@ jobs:
           cd build
           make setup amalgamation release
       - name: Set Timezone to Non-UTC
-        uses: zcong1993/setup-timezone@v1
+        uses: zcong1993/setup-timezone@master
         with:
           timezon: America/New_York
       - name: Generate Test Database
