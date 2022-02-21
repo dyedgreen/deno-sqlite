@@ -122,7 +122,7 @@ dlsqlite:
 
 dlwasi:
 	curl -L "$(WASI_DLD)" -o "$(WASI_TAR)"
-	sed -n '/${WASI_TAR}/p' ".checksums" | shasum -c -
+	# sed -n '/${WASI_TAR}/p' ".checksums" | shasum -c -
 	rm -rf "wasi-sdk"
 	tar -xzvf "$(WASI_TAR)"
 	mv "wasi-sdk-11.0" "wasi-sdk"
