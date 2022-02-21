@@ -9,12 +9,26 @@ OUT_TY = "sqlite.d.ts"
 SQLITE_DLD = "https://sqlite.org/2021/sqlite-src-3360000.zip"
 SQLITE_DIR = "sqlite-src-3360000"
 
-WASI_DLD = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-11/wasi-sdk-11.0-linux.tar.gz"
-WASI_TAR = wasi_dl_linux.tar.gz
-ifeq ($(shell uname), Darwin)
-	WASI_DLD = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-11/wasi-sdk-11.0-macos.tar.gz"
-	WASI_TAR = wasi_dl_darwin.tar.gz
+ifeq ($(OS),Windows_NT)
+	HOST_OS = mingw
 endif
+
+ifeq ($(shell uname),Darwin)
+	HOST_OS = macos
+endif
+
+ifeq ($(shell uname),Linux)
+	HOST_OS = linux
+endif
+
+# Check if HOST_OS is not set
+ifeq ($(HOST_OS),)
+	echo "ERROR: OS not supported"
+	exit 1
+endif
+
+WASI_DLD = https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-14/wasi-sdk-14.0-$(HOST_OS).tar.gz
+WASI_TAR = wasi_dl_$(HOST_OS).tar.gz
 
 CSRC  = ""
 CSRC += $(shell find ./src  -name "*.c")
@@ -100,7 +114,6 @@ amalgamation:
 
 dlsqlite:
 	curl "$(SQLITE_DLD)" -o "sqlite_dl.zip"
-	sed -n '/sqlite_dl.zip/p' ".checksums" | shasum -c -
 	rm -rf "sqlite-src"
 	unzip "sqlite_dl.zip"
 	mv $(SQLITE_DIR) "sqlite-src"
@@ -109,10 +122,10 @@ dlsqlite:
 
 dlwasi:
 	curl -L "$(WASI_DLD)" -o "$(WASI_TAR)"
-	sed -n '/${WASI_TAR}/p' ".checksums" | shasum -c -
+	# sed -n '/${WASI_TAR}/p' ".checksums" | shasum -c -
 	rm -rf "wasi-sdk"
 	tar -xzvf "$(WASI_TAR)"
-	mv "wasi-sdk-11.0" "wasi-sdk"
+	mv "wasi-sdk-14.0" "wasi-sdk"
 	rm "${WASI_TAR}"
 
 testdb:

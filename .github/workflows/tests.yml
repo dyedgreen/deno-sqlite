@@ -4,36 +4,69 @@ on: [push, pull_request]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macOS-latest]
+        deno-version: [1.19, 1.17, 1.15]
+
     steps:
     - name: Install Deno
-      run: curl -fsSL https://deno.land/x/install/install.sh | sh
+      uses: denoland/setup-deno@v1
+      with:
+        deno-version: ${{ matrix.deno-version }}
+
     - uses: actions/checkout@v1
     - name: Run the formatter
       run: |
-        shopt -s globstar failglob
-        /home/runner/.deno/bin/deno fmt --check
+        deno fmt --check
+
     - name: Build SQLite
       id: build
+      if: ${{ matrix.os != 'windows-latest' }}
       run: |
         export DENO_INSTALL="/home/runner/.deno"
         export PATH="$DENO_INSTALL/bin:$PATH"
-        sudo apt-get -y install --no-install-recommends tclsh gcc brotli
         cd build
         make setup amalgamation release
+
+    - name: Setup MinGW environment
+      if: ${{ matrix.os == 'windows-latest' }}
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: git gcc make mingw-w64-x86_64-cc
+
+    - name: Build SQLite (Windows)
+      id: build-windows
+      if: ${{ matrix.os == 'windows-latest' }}
+      run: |
+        export DENO_INSTALL="$USERPROFILE/.deno"
+        export PATH="$DENO_INSTALL/bin:$PATH"
+        cd build
+        make setup amalgamation release
+
     - name: Set Timezone to Non-UTC
-      run: sudo timedatectl set-timezone America/New_York
-    - name: Generate Test Database
+      uses: zcong1993/setup-timezone@master
+      with:
+        timezon: America/New_York
+
+    - name: Generate test DB
       run: |
         cd build
         make testdb
+
     - name: Remove any non tracked build artifacts
       run: |
         cd build
         make clean
+
     - name: Run tests
-      run: /home/runner/.deno/bin/deno test --allow-read --allow-write test.ts
+      run: deno test --allow-read --allow-write test.ts
+
     - name: Run tests (unstable)
-      run: /home/runner/.deno/bin/deno test --unstable --allow-read --allow-write test.ts
+      run: deno test --unstable --allow-read --allow-write test.ts
+
     - name: Run benchmarks
-      run: /home/runner/.deno/bin/deno run bench.ts
+      run: deno run bench.ts
