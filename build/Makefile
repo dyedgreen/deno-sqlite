@@ -125,7 +125,7 @@ dlwasi:
 	# sed -n '/${WASI_TAR}/p' ".checksums" | shasum -c -
 	rm -rf "wasi-sdk"
 	tar -xzvf "$(WASI_TAR)"
-	mv "wasi-sdk-11.0" "wasi-sdk"
+	mv "wasi-sdk-14.0" "wasi-sdk"
 	rm "${WASI_TAR}"
 
 testdb:
