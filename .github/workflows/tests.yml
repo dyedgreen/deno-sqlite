@@ -23,7 +23,7 @@ jobs:
 
     - name: Build SQLite
       id: build
-      if: ${{ matrix.os !== 'windows-latest' }}
+      if: ${{ matrix.os != 'windows-latest' }}
       run: |
         export DENO_INSTALL="/home/runner/.deno"
         export PATH="$DENO_INSTALL/bin:$PATH"
