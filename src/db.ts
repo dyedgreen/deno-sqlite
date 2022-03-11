@@ -255,6 +255,22 @@ export class DB {
   }
 
   /**
+   * Run multiple statements from a single string. Ignores any
+   * result rows.
+   */
+  runMultiple(sql: string) {
+    let status = setStr(
+      this._wasm,
+      sql,
+      (ptr) => this._wasm.run_multiple(ptr),
+    );
+
+    if (status !== Status.SqliteOk) {
+      throw new SqliteError(this._wasm, status);
+    }
+  }
+
+  /**
    * Run a function within the context of a database
    * transaction. If the function throws an error,
    * the transaction is rolled back. Otherwise, the
