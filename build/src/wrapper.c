@@ -105,6 +105,14 @@ int EXPORT(clear_bindings) (sqlite3_stmt* stmt) {
   return last_status;
 }
 
+// Execute multiple statements from a single string. This ignores any result
+// rows.
+int EXPORT(exec) (const char* sql) {
+  last_status = sqlite3_exec(database, sql, NULL, NULL, NULL);
+  debug_printf("ran exec (status %i)\n", last_status);
+  return last_status;
+}
+
 // Wrappers for bind statements, these return the status directly
 int EXPORT(bind_int) (sqlite3_stmt* stmt, int idx, double value) {
   // we use double to pass in the value, as JS does not support 64 bit integers,

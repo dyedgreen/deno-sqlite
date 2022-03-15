@@ -255,6 +255,40 @@ export class DB {
   }
 
   /**
+   * Run multiple semicolon-separated statements from a single
+   * string.
+   *
+   * This method cannot bind any query parameters, and any
+   * result rows are discarded. It is only for running a chunk
+   * of raw SQL; for example, to initialize a database.
+   *
+   * # Examples
+   *
+   * ```typescript
+   * db.execute(`
+   *   CREATE TABLE people (
+   *     id INTEGER PRIMARY KEY AUTOINCREMENT,
+   *     name TEXT,
+   *     age REAL,
+   *     city TEXT
+   *   );
+   *   INSERT INTO people (name, age, city) VALUES ("Peter Parker", 21, "nyc");
+   * `);
+   * ```
+   */
+  execute(sql: string) {
+    const status = setStr(
+      this._wasm,
+      sql,
+      (ptr) => this._wasm.exec(ptr),
+    );
+
+    if (status !== Status.SqliteOk) {
+      throw new SqliteError(this._wasm, status);
+    }
+  }
+
+  /**
    * Run a function within the context of a database
    * transaction. If the function throws an error,
    * the transaction is rolled back. Otherwise, the
