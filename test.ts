@@ -397,6 +397,9 @@ Deno.test("execute multiple statements", function () {
     `);
   });
 
+  // ...but table `test2` was created before the error
+  assertEquals(db.query("SELECT id FROM test2"), []);
+
   // Syntax error after first valid statement
   assertThrows(() => db.execute("SELECT id FROM test; NOT SQL ANYMORE"));
 
