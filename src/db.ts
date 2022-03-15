@@ -255,14 +255,32 @@ export class DB {
   }
 
   /**
-   * Run multiple statements from a single string. Ignores any
-   * result rows.
+   * Run multiple semicolon-separated statements from a single
+   * string.
+   *
+   * This method cannot bind any query parameters, and any
+   * result rows are discarded. It is only for running a chunk
+   * of raw SQL; for example, to initialize a database.
+   *
+   * # Examples
+   *
+   * ```typescript
+   * db.execute(`
+   *   CREATE TABLE people (
+   *     id INTEGER PRIMARY KEY AUTOINCREMENT,
+   *     name TEXT,
+   *     age REAL,
+   *     city TEXT
+   *   );
+   *   INSERT INTO people (name, age, city) VALUES ("Peter Parker", 21, "nyc");
+   * `);
+   * ```
    */
-  runMultiple(sql: string) {
-    let status = setStr(
+  execute(sql: string) {
+    const status = setStr(
       this._wasm,
       sql,
-      (ptr) => this._wasm.run_multiple(ptr),
+      (ptr) => this._wasm.exec(ptr),
     );
 
     if (status !== Status.SqliteOk) {

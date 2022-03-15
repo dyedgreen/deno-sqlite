@@ -107,9 +107,9 @@ int EXPORT(clear_bindings) (sqlite3_stmt* stmt) {
 
 // Execute multiple statements from a single string. This ignores any result
 // rows.
-int EXPORT(run_multiple) (const char* sql) {
+int EXPORT(exec) (const char* sql) {
   last_status = sqlite3_exec(database, sql, NULL, NULL, NULL);
-  debug_printf("ran multiple statements (status %i)\n", last_status);
+  debug_printf("ran exec (status %i)\n", last_status);
   return last_status;
 }
 

@@ -19,7 +19,7 @@ export interface Wasm {
   finalize: (stmt: StatementPtr) => number;
   reset: (stmt: StatementPtr) => number;
   clear_bindings: (stmt: StatementPtr) => number;
-  run_multiple: (sql: StringPtr) => number;
+  exec: (sql: StringPtr) => number;
   bind_int: (stmt: StatementPtr, idx: number, value: number) => number;
   bind_double: (stmt: StatementPtr, idx: number, value: number) => number;
   bind_text: (stmt: StatementPtr, idx: number, value: StringPtr) => number;

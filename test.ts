@@ -377,6 +377,32 @@ Deno.test("execute from prepared query", function () {
   db.close();
 });
 
+Deno.test("execute multiple statements", function () {
+  const db = new DB();
+
+  db.execute(`
+    CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT);
+
+    INSERT INTO test (id) VALUES (1);
+    INSERT INTO test (id) VALUES (2);
+    INSERT INTO test (id) VALUES (3);
+  `);
+  assertEquals(db.query("SELECT id FROM test"), [[1], [2], [3]]);
+
+  // Table `test` already exists
+  assertThrows(function () {
+    db.execute(`
+      CREATE TABLE test2 (id INTEGER);
+      CREATE TABLE test (id INTEGER);
+    `);
+  });
+
+  // Syntax error after first valid statement
+  assertThrows(() => db.execute("SELECT id FROM test; NOT SQL ANYMORE"));
+
+  db.close();
+});
+
 Deno.test("blobs are copies", function () {
   const db = new DB();
 
