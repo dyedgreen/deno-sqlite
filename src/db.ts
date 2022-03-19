@@ -165,7 +165,7 @@ export class DB {
    * # Examples
    *
    * ```typescript
-   * const rows = db.query<{ name: string, age: number }>("SELECT name, age FROM people");
+   * const rows = db.queryEntries<{ name: string, age: number }>("SELECT name, age FROM people");
    * // rows = [{ name: "Peter Parker", age: 21 }, ...]
    * ```
    */
