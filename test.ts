@@ -1,8 +1,9 @@
 import {
   assertEquals,
+  assertInstanceOf,
   assertMatch,
   assertThrows,
-} from "https://deno.land/std@0.53.0/testing/asserts.ts";
+} from "https://deno.land/std@0.134.0/testing/asserts.ts";
 import { DB, Status } from "./mod.ts";
 import { SqliteError } from "./src/error.ts";
 
@@ -573,28 +574,34 @@ Deno.test("constraint error code is correct", function () {
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
   db.query("INSERT INTO test (name) VALUES (?)", ["A"]);
 
-  const e = assertThrows(() =>
-    db.query("INSERT INTO test (name) VALUES (?)", ["A"])
-  ) as SqliteError;
-  assertEquals(e.code, Status.SqliteConstraint, "Got wrong error code");
-  assertEquals(
-    Status[e.codeName],
-    Status.SqliteConstraint,
-    "Got wrong error code name",
+  assertThrows(
+    () => db.query("INSERT INTO test (name) VALUES (?)", ["A"]),
+    (e: Error) => {
+      assertInstanceOf(e, SqliteError);
+      assertEquals(e.code, Status.SqliteConstraint, "Got wrong error code");
+      assertEquals(
+        Status[e.codeName],
+        Status.SqliteConstraint,
+        "Got wrong error code name",
+      );
+    }
   );
 });
 
 Deno.test("syntax error code is correct", function () {
   const db = new DB();
 
-  const e = assertThrows(() =>
-    db.query("CREATE TABLEX test (name TEXT PRIMARY KEY)")
-  ) as SqliteError;
-  assertEquals(e.code, Status.SqliteError, "Got wrong error code");
-  assertEquals(
-    Status[e.codeName],
-    Status.SqliteError,
-    "Got wrong error code name",
+  assertThrows(
+    () => db.query("CREATE TABLEX test (name TEXT PRIMARY KEY)"),
+    (e: Error) => {
+      assertInstanceOf(e, SqliteError);
+      assertEquals(e.code, Status.SqliteError, "Got wrong error code");
+      assertEquals(
+        Status[e.codeName],
+        Status.SqliteError,
+        "Got wrong error code name",
+      );
+    },
   );
 });
 
