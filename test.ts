@@ -3,7 +3,7 @@ import {
   assertInstanceOf,
   assertMatch,
   assertThrows,
-} from "./test_deps.ts";
+} from "./dev_deps.ts";
 import { DB, Status } from "./mod.ts";
 import { SqliteError } from "./src/error.ts";
 
