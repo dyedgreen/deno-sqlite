@@ -1,4 +1,5 @@
 import {
+  assertAlmostEquals,
   assertEquals,
   assertInstanceOf,
   assertMatch,
@@ -707,7 +708,11 @@ Deno.test("date time is correct", function () {
   const db = new DB();
   // the date/ time is passed from JS and should be current (note that it is GMT)
   const [[now]] = [...db.query("SELECT current_timestamp")];
-  assertEquals(new Date(now + "Z"), new Date());
+  const jsTime = new Date().getTime();
+  const dbTime = new Date(`${now}Z`).getTime();
+  // to account for runtime latency, up to one second difference is ok
+  const tolerance = 1000;
+  assertAlmostEquals(jsTime, dbTime, tolerance);
   db.close();
 });
 
