@@ -444,11 +444,11 @@ export class PreparedQuery<
   /**
    * Binds the given parameters to the query and returns exactly one row.
    * If the query does not return exactly one row, an error will be thrown.
-   * 
+   *
    * An options object can be provided as a second argument.
    * If an options object is provided and `options.allowNone` is set to `true`,
    * the behavior chnages:
-   * 
+   *
    * - If only one row is found, it will be returned.
    * - If more than one row is found, an error will be thrown.
    * - If no rows are found, `null` will be returned.
