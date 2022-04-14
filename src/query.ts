@@ -99,6 +99,10 @@ interface RowsIterator<R> {
   [Symbol.iterator]: () => RowsIterator<R>;
 }
 
+export interface SingleResultOptions {
+  allowNone?: boolean;
+}
+
 /**
  * A prepared query which can be executed many
  * times.
@@ -438,11 +442,16 @@ export class PreparedQuery<
   }
 
   /**
-   * Binds the given parameters to the query and
-   * returns exactly one row.
-   *
-   * If the query does not return exactly one row,
-   * this throws an error.
+   * Binds the given parameters to the query and returns exactly one row.
+   * If the query does not return exactly one row, an error will be thrown.
+   * 
+   * An options object can be provided as a second argument.
+   * If an options object is provided and `options.allowNone` is set to `true`,
+   * the behavior chnages:
+   * 
+   * - If only one row is found, it will be returned.
+   * - If more than one row is found, an error will be thrown.
+   * - If no rows are found, `null` will be returned.
    *
    * Calling `one` invalidates any iterators
    * previously returned by calls to `iter`.
@@ -458,13 +467,24 @@ export class PreparedQuery<
    * See `QueryParameter` for documentation on how
    * values are returned from the database.
    */
-  one(params?: P): R {
+  one(params?: P): R;
+  one(
+    params: P | undefined,
+    options: SingleResultOptions & { allowNone: true },
+  ): R | null;
+  one(
+    params: P | undefined,
+    options: SingleResultOptions & { allowNone: false },
+  ): R;
+  one(params?: P, options?: SingleResultOptions): R | null;
+  one(params?: P, options?: SingleResultOptions): R | null {
     this.startQuery(params);
 
     // Get first row
     this._status = this._wasm.step(this._stmt);
     if (this._status !== Status.SqliteRow) {
       if (this._status === Status.SqliteDone) {
+        if (options?.allowNone) return null;
         throw new SqliteError("The query did not return any rows.");
       } else {
         throw new SqliteError(this._wasm, this._status);
@@ -489,8 +509,20 @@ export class PreparedQuery<
    * Like `one` except the row is returned
    * as an object containing key-value pairs.
    */
-  oneEntry(params?: P): O {
-    return this.makeRowObject(this.one(params));
+  oneEntry(params?: P): O;
+  oneEntry(
+    params: P | undefined,
+    options: SingleResultOptions & { allowNone: true },
+  ): O | null;
+  oneEntry(
+    params: P | undefined,
+    options: SingleResultOptions & { allowNone: false },
+  ): O;
+  oneEntry(params?: P, options?: SingleResultOptions): O | null;
+  oneEntry(params?: P, options?: SingleResultOptions): O | null {
+    const row = this.one(params, options);
+    if (!row) return row;
+    return this.makeRowObject(row);
   }
 
   /**
