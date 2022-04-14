@@ -3,7 +3,7 @@ import {
   assertInstanceOf,
   assertMatch,
   assertThrows,
-} from "https://deno.land/std@0.134.0/testing/asserts.ts";
+} from "./test_deps.ts";
 import { DB, Status } from "./mod.ts";
 import { SqliteError } from "./src/error.ts";
 

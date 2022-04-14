@@ -1,7 +1,4 @@
-import {
-  bench,
-  runBenchmarks,
-} from "https://deno.land/std@0.134.0/testing/bench.ts";
+import { bench, runBenchmarks } from "./test_deps.ts";
 import { DB } from "./mod.ts";
 
 if (Deno.args[0]) {
