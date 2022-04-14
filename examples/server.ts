@@ -31,7 +31,7 @@ const countVisitsQuery = db.prepareQuery<[number]>(
 
 console.log("Running server on localhost:8080");
 
-await serve(req => {
+await serve((req) => {
   addVisitQuery.execute({
     url: req.url,
     time: new Date(),

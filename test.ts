@@ -584,7 +584,7 @@ Deno.test("constraint error code is correct", function () {
         Status.SqliteConstraint,
         "Got wrong error code name",
       );
-    }
+    },
   );
 });
 
