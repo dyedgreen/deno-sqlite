@@ -707,11 +707,11 @@ Deno.test("get columns from finalized query throws", function () {
 Deno.test("date time is correct", function () {
   const db = new DB();
   // the date/ time is passed from JS and should be current (note that it is GMT)
-  const [[now]] = [...db.query("SELECT current_timestamp")];
+  const [[now]] = [...db.query("SELECT STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')")];
   const jsTime = new Date().getTime();
   const dbTime = new Date(`${now}Z`).getTime();
   // to account for runtime latency, up to one second difference is ok
-  const tolerance = 1000;
+  const tolerance = 10;
   assertAlmostEquals(jsTime, dbTime, tolerance);
   db.close();
 });
