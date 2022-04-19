@@ -710,7 +710,7 @@ Deno.test("date time is correct", function () {
   const [[now]] = [...db.query("SELECT STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')")];
   const jsTime = new Date().getTime();
   const dbTime = new Date(`${now}Z`).getTime();
-  // to account for runtime latency, up to one second difference is ok
+  // to account for runtime latency, a small difference is ok
   const tolerance = 10;
   assertAlmostEquals(jsTime, dbTime, tolerance);
   db.close();
