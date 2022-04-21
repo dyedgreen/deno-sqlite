@@ -1,8 +1,10 @@
 import {
+  assertAlmostEquals,
   assertEquals,
+  assertInstanceOf,
   assertMatch,
   assertThrows,
-} from "https://deno.land/std@0.53.0/testing/asserts.ts";
+} from "./dev_deps.ts";
 import { DB, Status } from "./mod.ts";
 import { SqliteError } from "./src/error.ts";
 
@@ -573,28 +575,34 @@ Deno.test("constraint error code is correct", function () {
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
   db.query("INSERT INTO test (name) VALUES (?)", ["A"]);
 
-  const e = assertThrows(() =>
-    db.query("INSERT INTO test (name) VALUES (?)", ["A"])
-  ) as SqliteError;
-  assertEquals(e.code, Status.SqliteConstraint, "Got wrong error code");
-  assertEquals(
-    Status[e.codeName],
-    Status.SqliteConstraint,
-    "Got wrong error code name",
+  assertThrows(
+    () => db.query("INSERT INTO test (name) VALUES (?)", ["A"]),
+    (e: Error) => {
+      assertInstanceOf(e, SqliteError);
+      assertEquals(e.code, Status.SqliteConstraint, "Got wrong error code");
+      assertEquals(
+        Status[e.codeName],
+        Status.SqliteConstraint,
+        "Got wrong error code name",
+      );
+    },
   );
 });
 
 Deno.test("syntax error code is correct", function () {
   const db = new DB();
 
-  const e = assertThrows(() =>
-    db.query("CREATE TABLEX test (name TEXT PRIMARY KEY)")
-  ) as SqliteError;
-  assertEquals(e.code, Status.SqliteError, "Got wrong error code");
-  assertEquals(
-    Status[e.codeName],
-    Status.SqliteError,
-    "Got wrong error code name",
+  assertThrows(
+    () => db.query("CREATE TABLEX test (name TEXT PRIMARY KEY)"),
+    (e: Error) => {
+      assertInstanceOf(e, SqliteError);
+      assertEquals(e.code, Status.SqliteError, "Got wrong error code");
+      assertEquals(
+        Status[e.codeName],
+        Status.SqliteError,
+        "Got wrong error code name",
+      );
+    },
   );
 });
 
@@ -699,8 +707,12 @@ Deno.test("get columns from finalized query throws", function () {
 Deno.test("date time is correct", function () {
   const db = new DB();
   // the date/ time is passed from JS and should be current (note that it is GMT)
-  const [[now]] = [...db.query("SELECT current_timestamp")];
-  assertEquals(new Date(now + "Z"), new Date());
+  const [[now]] = [...db.query("SELECT STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')")];
+  const jsTime = new Date().getTime();
+  const dbTime = new Date(`${now}Z`).getTime();
+  // to account for runtime latency, a small difference is ok
+  const tolerance = 10;
+  assertAlmostEquals(jsTime, dbTime, tolerance);
   db.close();
 });
 

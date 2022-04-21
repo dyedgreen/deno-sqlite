@@ -8,7 +8,7 @@
  * the API provided by deno-sqlite.
  */
 
-import { readLines, writeAll } from "https://deno.land/std@0.102.0/io/mod.ts";
+import { readLines, writeAll } from "https://deno.land/std@0.134.0/io/mod.ts";
 import AsciiTable from "https://deno.land/x/ascii_table@v0.1.0/mod.ts";
 import { DB } from "../mod.ts";
 
