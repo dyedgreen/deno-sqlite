@@ -1,5 +1,7 @@
 import { getStr } from "../src/wasm.ts";
 
+const isWindows = Deno.build.os === "windows";
+
 // Closure to return an environment that links
 // the current wasm context
 export default function env(inst) {
@@ -70,13 +72,13 @@ export default function env(inst) {
     },
     // Acquire a SHARED or EXCLUSIVE file lock
     js_lock: (rid, exclusive) => {
-      // this is unstable ...
-      if (Deno.flockSync) Deno.flockSync(rid, exclusive !== 0);
+      // this is unstable and has issues on Windows ...
+      if (Deno.flockSync && !isWindows) Deno.flockSync(rid, exclusive !== 0);
     },
     // Release a file lock
     js_unlock: (rid) => {
-      // this is unstable ...
-      if (Deno.funlockSync) Deno.funlockSync(rid);
+      // this is unstable and has issues on Windows ...
+      if (Deno.funlockSync && !isWindows) Deno.funlockSync(rid);
     },
     // Return current time in ms since UNIX epoch
     js_time: () => {
