@@ -6,8 +6,8 @@ OUT_WA = "sqlite.wasm"
 OUT_BN = "sqlite.js"
 OUT_TY = "sqlite.d.ts"
 
-SQLITE_DLD = "https://sqlite.org/2021/sqlite-src-3360000.zip"
-SQLITE_DIR = "sqlite-src-3360000"
+SQLITE_DLD = "https://sqlite.org/2022/sqlite-src-3380300.zip"
+SQLITE_DIR = "sqlite-src-3380300"
 
 WASI_DLD = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-11/wasi-sdk-11.0-linux.tar.gz"
 WASI_TAR = wasi_dl_linux.tar.gz
@@ -36,7 +36,7 @@ SQLFLG = -DSQLITE_DQS=0 -DSQLITE_THREADSAFE=0 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS\
          -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_UTF16 -DSQLITE_OMIT_SHARED_CACHE\
          -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_PROGRESS_CALLBACK -DSQLITE_OMIT_TRACE\
          -DSQLITE_OS_OTHER=1 -DSQLITE_OMIT_COMPLETE -DSQLITE_OMIT_WAL\
-         -DNDEBUG=1 -DSQLITE_ENABLE_COLUMN_METADATA -DSQLITE_ENABLE_JSON1 -DHAVE_LOCALTIME_R\
+         -DNDEBUG=1 -DSQLITE_ENABLE_COLUMN_METADATA -DHAVE_LOCALTIME_R\
          -DSQLITE_OMIT_DESERIALIZE
 # Rational:
 # SQLITE_DQS -> we do not need to have backwards comp
@@ -55,7 +55,6 @@ SQLFLG = -DSQLITE_DQS=0 -DSQLITE_THREADSAFE=0 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS\
 # SQLITE_OMIT_WAL -> this is doggy, as we can not memory map files
 # DNDEBUG -> "use for maximum speed"
 # SQLITE_ENABLE_COLUMN_METADATA -> we depend on column metadata interfaces (`sqlite3_column_table_name` and `sqlite3_column_origin_name`)
-# SQLITE_ENABLE_JSON1 -> json data is common in javascript
 # SQLITE_OMIT_DESERIALIZE -> we don't use these interfaces
 
 all: release
@@ -127,5 +126,6 @@ setup: dlwasi
 clean:
 	rm -rf sqlite-src
 	rm -rf wasi-sdk
+	rm -f  2GB_test.db
 
 .PHONY: build amalgamation dlsqlite dlwasi setup clean
