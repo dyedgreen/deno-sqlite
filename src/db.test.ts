@@ -446,7 +446,8 @@ Deno.test(
     sanitizeResources: true,
   },
   function () {
-    const db = new DB(LARGE_TEST_DB); // can be generated with `cd build && make testdb`
+    // generated with `cd build && make testdb`
+    const db = new DB(LARGE_TEST_DB, { mode: "write" });
 
     db.query("INSERT INTO test (value) VALUES (?)", ["This is a test..."]);
 
