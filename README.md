@@ -57,7 +57,8 @@ If you want something that just works (and is fast), use this library.
 
 Depending on your specific needs, there is also
 [deno_sqlite](https://github.com/denodrivers/sqlite3), however
-this module requires the `--unstable` flag currently.
+using this module requires the `--allow-ffi` and `--unstable` flags, which
+means the database connection may bypass e.g. file access permissions.
 
 ### Advantages
 
