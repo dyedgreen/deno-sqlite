@@ -26,7 +26,7 @@ import { DB } from "https://deno.land/x/sqlite/mod.ts";
 
 // Open a database
 const db = new DB("test.db");
-db.query(`
+db.execute(`
   CREATE TABLE IF NOT EXISTS people (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT

@@ -27,13 +27,9 @@ jobs:
       run: |
         cd build
         make testdb
-    - name: Remove any non tracked build artifacts
-      run: |
-        cd build
-        make clean
     - name: Run tests
-      run: /home/runner/.deno/bin/deno test --allow-read --allow-write test.ts
+      run: /home/runner/.deno/bin/deno test --allow-read --allow-write
     - name: Run tests (unstable)
-      run: /home/runner/.deno/bin/deno test --unstable --allow-read --allow-write test.ts
+      run: /home/runner/.deno/bin/deno test --unstable --allow-read --allow-write
     - name: Run benchmarks
       run: /home/runner/.deno/bin/deno run bench.ts
