@@ -71,7 +71,7 @@ bench({
 
 /** Performance of select statements (select individually; 10_000). */
 bench({
-  name: "select 10 000 (select one)",
+  name: "select 10 000 (select first)",
   runs: 100,
   func: (b): void => {
     b.start();
@@ -79,7 +79,7 @@ bench({
       "SELECT name, balance FROM users WHERE id = ?",
     );
     for (let id = 1; id <= 10_000; id++) {
-      query.one([id]);
+      query.first([id]);
     }
     b.stop();
   },
