@@ -438,13 +438,12 @@ export class PreparedQuery<
   }
 
   /**
-   * Binds the given parameters to the query and
-   * returns exactly one row.
+   * Binds the given parameters to the query
+   * and returns the first resulting row or
+   * `undefined` when there are no rows returned
+   * by the query.
    *
-   * If the query does not return exactly one row,
-   * this throws an error.
-   *
-   * Calling `one` invalidates any iterators
+   * Calling `first` invalidates any iterators
    * previously returned by calls to `iter`.
    * Using an invalidated iterator is a bug.
    *
@@ -458,36 +457,51 @@ export class PreparedQuery<
    * See `QueryParameter` for documentation on how
    * values are returned from the database.
    */
-  one(params?: P): R {
+  first(params?: P): R | undefined {
     this.startQuery(params);
 
-    // Get first row
     this._status = this._wasm.step(this._stmt);
-    if (this._status !== Status.SqliteRow) {
-      if (this._status === Status.SqliteDone) {
-        throw new SqliteError("The query did not return any rows.");
-      } else {
-        throw new SqliteError(this._wasm, this._status);
-      }
+    let row = undefined;
+    if (this._status === Status.SqliteRow) {
+      row = this.getQueryRow();
     }
-    const row = this.getQueryRow();
 
-    // Ensure the query only returns one row
-    this._status = this._wasm.step(this._stmt);
+    while (this._status === Status.SqliteRow) {
+      this._status = this._wasm.step(this._stmt);
+    }
     if (this._status !== Status.SqliteDone) {
-      if (this._status === Status.SqliteRow) {
-        throw new SqliteError("The query returned more than one row.");
-      } else {
-        throw new SqliteError(this._wasm, this._status);
-      }
+      throw new SqliteError(this._wasm, this._status);
     }
 
     return row;
   }
 
   /**
-   * Like `one` except the row is returned
+   * Like `first` except the row is returned
    * as an object containing key-value pairs.
+   */
+  firstEntry(params?: P): O | undefined {
+    const row = this.first(params);
+    return row === undefined ? undefined : this.makeRowObject(row);
+  }
+
+  /**
+   * Deprecated, prefer `first`.
+   */
+  one(params?: P): R {
+    const rows = this.all(params);
+
+    if (rows.length === 0) {
+      throw new SqliteError("The query did not return any rows.");
+    } else if (rows.length > 1) {
+      throw new SqliteError("The query returned more than one row.");
+    } else {
+      return rows[0];
+    }
+  }
+
+  /**
+   * Deprecated, prefer `firstEntry`.
    */
   oneEntry(params?: P): O {
     return this.makeRowObject(this.one(params));

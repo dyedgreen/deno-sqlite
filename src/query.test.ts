@@ -105,13 +105,13 @@ Deno.test("omitting a value binds NULL", function () {
     "INSERT INTO test (datum) VALUES (?) RETURNING datum",
   );
 
-  assertEquals([null], insert.one());
-  assertEquals([null], insert.one([]));
-  assertEquals([null], insert.one({}));
+  assertEquals([null], insert.first());
+  assertEquals([null], insert.first([]));
+  assertEquals([null], insert.first({}));
 
   // previously bound values are cleared
   insert.execute(["this is not null"]);
-  assertEquals([null], insert.one());
+  assertEquals([null], insert.first());
 });
 
 Deno.test("prepared query clears bindings before reused", function () {
@@ -279,6 +279,23 @@ Deno.test("query all from prepared query", function () {
   db.close();
 });
 
+Deno.test("query first from prepared query", function () {
+  const db = new DB();
+  db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
+  db.query("INSERT INTO test (id) VALUES (1), (2), (3)");
+
+  const querySingle = db.prepareQuery("SELECT id FROM test WHERE id = ?");
+  assertEquals(querySingle.first([42]), undefined);
+  assertEquals(querySingle.first([2]), [2]);
+
+  const queryAll = db.prepareQuery("SELECT id FROM test ORDER BY id ASC");
+  assertEquals(queryAll.first(), [1]);
+
+  querySingle.finalize();
+  queryAll.finalize();
+  db.close();
+});
+
 Deno.test("query one from prepared query", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
@@ -287,13 +304,14 @@ Deno.test("query one from prepared query", function () {
   const queryOne = db.prepareQuery<[number]>(
     "SELECT id FROM test WHERE id = ?",
   );
+  assertThrows(() => queryOne.one([42]));
   assertEquals(queryOne.one([2]), [2]);
-  queryOne.finalize();
 
   const queryAll = db.prepareQuery("SELECT id FROM test");
   assertThrows(() => queryAll.one());
-  queryAll.finalize();
 
+  queryOne.finalize();
+  queryAll.finalize();
   db.close();
 });
 
@@ -338,14 +356,10 @@ Deno.test("query entries returns correct object shapes", function () {
   }
   insertQuery.finalize();
 
-  const query = db.prepareQuery("SELECT * FROM test LIMIT ?");
-  assertEquals(rowsOrig, query.allEntries([rowsOrig.length]));
-  assertEquals(rowsOrig[0], query.oneEntry([1]));
-  const rowsIter = [];
-  for (const row of query.iterEntries([rowsOrig.length])) {
-    rowsIter.push(row);
-  }
-  assertEquals(rowsOrig, rowsIter);
+  const query = db.prepareQuery("SELECT * FROM test");
+  assertEquals(rowsOrig, [...query.iterEntries()]);
+  assertEquals(rowsOrig, query.allEntries());
+  assertEquals(rowsOrig[0], query.firstEntry());
   assertEquals(rowsOrig, db.queryEntries("SELECT * FROM test"));
 
   query.finalize();
