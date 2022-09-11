@@ -284,13 +284,15 @@ Deno.test("query first from prepared query", function () {
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT)");
   db.query("INSERT INTO test (id) VALUES (1), (2), (3)");
 
-  const queryFirst = db.prepareQuery<[number]>(
-    "SELECT id FROM test WHERE id = ?",
-  );
-  assertEquals(queryFirst.first([42]), undefined);
-  assertEquals(queryFirst.first([2]), [2]);
+  const querySingle = db.prepareQuery("SELECT id FROM test WHERE id = ?");
+  assertEquals(querySingle.first([42]), undefined);
+  assertEquals(querySingle.first([2]), [2]);
 
-  queryFirst.finalize();
+  const queryAll = db.prepareQuery("SELECT id FROM test ORDER BY id ASC");
+  assertEquals(queryAll.first(), [1]);
+
+  querySingle.finalize();
+  queryAll.finalize();
   db.close();
 });
 
