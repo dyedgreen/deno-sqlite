@@ -89,8 +89,23 @@ export type QueryParameterSet =
  * Name of a column in a database query.
  */
 export interface ColumnName {
+  /**
+   * Name of the returned column.
+   */
   name: string;
+  /**
+   * Name of the database column that stores
+   * the data returned from this query.
+   *
+   * This might be different from `name` if a
+   * columns was renamed using e.g. as in
+   * `SELECT foo AS bar FROM table`.
+   */
   originName: string;
+  /**
+   * Name of the table that stores the data
+   * returned from this query.
+   */
   tableName: string;
 }
 
@@ -118,10 +133,7 @@ export class PreparedQuery<
   private _finalized: boolean;
 
   /**
-   * A prepared query which can be executed many
-   * times.
-   *
-   * The constructor should never be used directly.
+   * This constructor should never be used directly.
    * Instead a prepared query can be obtained by
    * calling `DB.prepareQuery`.
    */
@@ -321,7 +333,11 @@ export class PreparedQuery<
    * rows into memory and hence allows to process a large
    * number of rows.
    *
-   * # Example:
+   * Calling `iter`, `all`, or `first` invalidates any iterators
+   * previously returned from this prepared query.
+   *
+   * # Examples
+   *
    * ```typescript
    * const query = db.prepareQuery<[number, string]>("SELECT id, name FROM people");
    * for (const [id, name] of query.iter()) {
@@ -329,12 +345,19 @@ export class PreparedQuery<
    * }
    * ```
    *
-   * Calling `iter` invalidates any iterators previously returned
-   * from this prepared query. Using an invalidated iterator is a bug.
-   *
    * To avoid SQL injection, user-provided values
    * should always be passed to the database through
    * a query parameter.
+   *
+   * ```typescript
+   * const query = db.prepareQuery("SELECT id FROM people WHERE name = ?");
+   * preparedQuery.iter([name]);
+   * ```
+   *
+   * ```typescript
+   * const query = db.prepareQuery("SELECT id FROM people WHERE name = :name");
+   * preparedQuery.iter({ name });
+   * ```
    *
    * See `QueryParameterSet` for documentation on
    * how values can be bound to SQL statements.
@@ -357,6 +380,15 @@ export class PreparedQuery<
   /**
    * Like `iter` except each row is returned
    * as an object containing key-value pairs.
+   *
+   * # Examples
+   *
+   * ```typescript
+   * const query = db.prepareQuery<_, { id: number, name: string }>("SELECT id, name FROM people");
+   * for (const { id, name } of query.iter()) {
+   *   // ...
+   * }
+   * ```
    */
   iterEntries(params?: P): RowsIterator<O> {
     this.iter(params);
@@ -401,13 +433,27 @@ export class PreparedQuery<
    * and returns an array containing all resulting
    * rows.
    *
-   * Calling `all` invalidates any iterators
-   * previously returned by calls to `iter`.
-   * Using an invalidated iterator is a bug.
+   * # Examples
+   *
+   * ```typescript
+   * const query = db.prepareQuery<[number, string]>("SELECT id, name FROM people");
+   * const rows = query.all();
+   * // [[1, "Peter"], ...]
+   * ```
    *
    * To avoid SQL injection, user-provided values
    * should always be passed to the database through
    * a query parameter.
+   *
+   * ```typescript
+   * const query = db.prepareQuery("SELECT id FROM people WHERE name = ?");
+   * preparedQuery.all([name]);
+   * ```
+   *
+   * ```typescript
+   * const query = db.prepareQuery("SELECT id FROM people WHERE name = :name");
+   * preparedQuery.all({ name });
+   * ```
    *
    * See `QueryParameterSet` for documentation on
    * how values can be bound to SQL statements.
@@ -432,6 +478,14 @@ export class PreparedQuery<
   /**
    * Like `all` except each row is returned
    * as an object containing key-value pairs.
+   *
+   * # Examples
+   *
+   * ```typescript
+   * const query = db.prepareQuery<_, { id: number, name: string }>("SELECT id, name FROM people");
+   * const rows = query.all();
+   * // [{ id: 1, name: "Peter" }, ...]
+   * ```
    */
   allEntries(params?: P): Array<O> {
     return this.all(params).map((row) => this.makeRowObject(row));
@@ -443,13 +497,33 @@ export class PreparedQuery<
    * `undefined` when there are no rows returned
    * by the query.
    *
-   * Calling `first` invalidates any iterators
-   * previously returned by calls to `iter`.
-   * Using an invalidated iterator is a bug.
+   * # Examples
+   *
+   * ```typescript
+   * const query = db.prepareQuery<[number, string]>("SELECT id, name FROM people");
+   * const person = query.first();
+   * // [1, "Peter"]
+   * ```
+   *
+   * ```typescript
+   * const query = db.prepareQuery("SELECT id, name FROM people WHERE name = ?");
+   * const person = query.first(["not a name"]);
+   * // undefined
+   * ```
    *
    * To avoid SQL injection, user-provided values
    * should always be passed to the database through
    * a query parameter.
+   *
+   * ```typescript
+   * const query = db.prepareQuery("SELECT id FROM people WHERE name = ?");
+   * preparedQuery.first([name]);
+   * ```
+   *
+   * ```typescript
+   * const query = db.prepareQuery("SELECT id FROM people WHERE name = :name");
+   * preparedQuery.first({ name });
+   * ```
    *
    * See `QueryParameterSet` for documentation on
    * how values can be bound to SQL statements.
@@ -479,6 +553,14 @@ export class PreparedQuery<
   /**
    * Like `first` except the row is returned
    * as an object containing key-value pairs.
+   *
+   * # Examples
+   *
+   * ```typescript
+   * const query = db.prepareQuery<_, { id: number, name: string }>("SELECT id, name FROM people");
+   * const person = query.first();
+   * // { id: 1, name: "Peter" }
+   * ```
    */
   firstEntry(params?: P): O | undefined {
     const row = this.first(params);
@@ -486,7 +568,7 @@ export class PreparedQuery<
   }
 
   /**
-   * Deprecated, prefer `first`.
+   * **Deprecated:** prefer `first`.
    */
   one(params?: P): R {
     const rows = this.all(params);
@@ -501,7 +583,7 @@ export class PreparedQuery<
   }
 
   /**
-   * Deprecated, prefer `firstEntry`.
+   * **Deprecated:** prefer `firstEntry`.
    */
   oneEntry(params?: P): O {
     return this.makeRowObject(this.one(params));
@@ -516,16 +598,23 @@ export class PreparedQuery<
    * rows returned by a query are not needed or
    * the query does not return any rows.
    *
-   * Calling `execute` invalidates any iterators
-   * previously returned by calls to `iter`.
-   * Using an invalidated iterator is a bug.
+   * # Examples
    *
-   * To avoid SQL injection, user-provided values
-   * should always be passed to the database through
-   * a query parameter.
+   * ```typescript
+   * const query = db.prepareQuery<_, _, [string]>("INSERT INTO people (name) VALUES (?)");
+   * query.execute(["Peter"]);
+   * ```
+   *
+   * ```typescript
+   * const query = db.prepareQuery<_, _, { name: string }>("INSERT INTO people (name) VALUES (:name)");
+   * query.execute({ name: "Peter" });
+   * ```
    *
    * See `QueryParameterSet` for documentation on
    * how values can be bound to SQL statements.
+   *
+   * See `QueryParameter` for documentation on how
+   * values are returned from the database.
    */
   execute(params?: P) {
     this.startQuery(params);
@@ -544,10 +633,11 @@ export class PreparedQuery<
    * to avoid leaking resources.
    *
    * After a prepared query has been finalized,
-   * trying to call `iter`, `all`, `one`,
-   * `execute`, or `columns`, or using iterators which where
-   * previously obtained from the finalized query
-   * is a bug.
+   * calls to `iter`, `all`, `first`, `execute`,
+   * or `columns` will fail.
+   *
+   * Using iterators which were previously returned
+   * from the finalized query will fail.
    *
    * `finalize` may safely be called multiple
    * times.

@@ -142,6 +142,14 @@ export class DB {
    * const rows = db.query<[string, number]>("SELECT name, age FROM people WHERE city = ?", [city]);
    * // rows = [["Peter Parker", 21], ...]
    * ```
+   *
+   * ```typescript
+   * const rows = db.query<[string, number]>(
+   *   "SELECT name, age FROM people WHERE city = :city",
+   *   { city },
+   *  );
+   * // rows = [["Peter Parker", 21], ...]
+   * ```
    */
   query<R extends Row = Row>(
     sql: string,
@@ -166,6 +174,14 @@ export class DB {
    *
    * ```typescript
    * const rows = db.queryEntries<{ name: string, age: number }>("SELECT name, age FROM people");
+   * // rows = [{ name: "Peter Parker", age: 21 }, ...]
+   * ```
+   *
+   * ```typescript
+   * const rows = db.queryEntries<{ name: string, age: number }>(
+   *   "SELECT name, age FROM people WHERE age >= :minAge",
+   *   { minAge },
+   *  );
    * // rows = [{ name: "Peter Parker", age: 21 }, ...]
    * ```
    */
@@ -205,15 +221,15 @@ export class DB {
    * to specify precise types for returned data and
    * query parameters.
    *
-   * The first type parameter `R` indicates the tuple type
-   * for rows returned by the query.
+   * + The first type parameter `R` indicates the tuple type
+   *   for rows returned by the query.
    *
-   * The second type parameter `O` indicates the record type
-   * for rows returned as entries (mappings from column names
-   * to values).
+   * + The second type parameter `O` indicates the record type
+   *   for rows returned as entries (mappings from column names
+   *   to values).
    *
-   * The third type parameter `P` indicates the type this query
-   * accepts as parameters.
+   * + The third type parameter `P` indicates the type this query
+   *   accepts as parameters.
    *
    * Note, that the correctness of those types must
    * be guaranteed by the caller of this function.
@@ -226,7 +242,9 @@ export class DB {
    *   { name: string, age: number },
    *   { city: string },
    *  >("SELECT name, age FROM people WHERE city = :city");
+   *
    * // use query ...
+   *
    * query.finalize();
    * ```
    */
@@ -318,9 +336,9 @@ export class DB {
    * the database is no longer used to avoid leaking
    * open file descriptors.
    *
-   * If `force` is specified, any active `PreparedQuery`
-   * will be finalized. Otherwise, this throws if there
-   * are active queries.
+   * If `force = true` is passed, any non-finalized
+   * `PreparedQuery` objects will be finalized. Otherwise,
+   * this throws if there are active queries.
    *
    * `close` may safely be called multiple
    * times.
