@@ -3,7 +3,7 @@ import { getStr } from "./wasm.ts";
 import { Status } from "./constants.ts";
 
 /**
- * Errors which can be thrown while interacting with
+ * Errors which can occur while interacting with
  * a database.
  */
 export class SqliteError extends Error {
