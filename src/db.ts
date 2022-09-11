@@ -224,7 +224,7 @@ export class DB {
    * + The first type parameter `R` indicates the tuple type
    *   for rows returned by the query.
    *
-   * * The second type parameter `O` indicates the record type
+   * + The second type parameter `O` indicates the record type
    *   for rows returned as entries (mappings from column names
    *   to values).
    *
