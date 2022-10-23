@@ -599,4 +599,14 @@ export class PreparedQuery<
     }
     return columns;
   }
+
+  sql(params?: P): string {
+    if (params != null) this.startQuery(params);
+    const sqlPtr = params != null
+      ? this._wasm.expanded_sql(this._stmt)
+      : this._wasm.sql(this._stmt);
+    const sql = getStr(this._wasm, sqlPtr);
+    if (params != null) this._wasm.sqlite_free(sqlPtr);
+    return sql;
+  }
 }

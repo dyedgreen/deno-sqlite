@@ -12,6 +12,7 @@ export interface Wasm {
   str_len: (str: StringPtr) => number;
   seed_rng: (seed: number) => void;
   get_status: () => number;
+  sqlite_free: (ptr: VoidPtr) => void;
   open: (filename: StringPtr, flags: number) => number;
   close: () => number;
   get_sqlite_error_str: () => StringPtr;
@@ -49,6 +50,8 @@ export interface Wasm {
   column_name: (stmt: StatementPtr, col: number) => StringPtr;
   column_origin_name: (stmt: StatementPtr, col: number) => StringPtr;
   column_table_name: (stmt: StatementPtr, col: number) => StringPtr;
+  sql: (stmt: StatementPtr) => StringPtr;
+  expanded_sql: (stmt: StatementPtr) => StringPtr;
   last_insert_rowid: () => number;
   changes: () => number;
   total_changes: () => number;

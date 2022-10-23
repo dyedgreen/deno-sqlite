@@ -519,3 +519,22 @@ Deno.test("get columns from finalized query throws", function () {
     query.columns();
   });
 });
+
+Deno.test("introspect sql from query", function () {
+  const db = new DB();
+  db.query(
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, balance INTEGER)",
+  );
+
+  const sql = "INSERT INTO test (name, balance) VALUES (:name, :balance)";
+  const query = db.prepareQuery(sql);
+
+  assertEquals(query.sql(), sql);
+  assertEquals(
+    query.sql({ name: "Peter Parker", balance: 42 }),
+    "INSERT INTO test (name, balance) VALUES ('Peter Parker', 42)",
+  );
+
+  query.finalize();
+  db.close();
+});

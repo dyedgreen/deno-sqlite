@@ -33,6 +33,10 @@ int EXPORT(get_status) () {
   return last_status;
 }
 
+void EXPORT(sqlite_free) (void* ptr) {
+  sqlite3_free(ptr);
+}
+
 // Initialize the database and return the status.
 int EXPORT(open) (const char* filename, int flags) {
   // Return error is database is already open
@@ -222,6 +226,7 @@ int EXPORT(column_bytes) (sqlite3_stmt* stmt, int col) {
   return sqlite3_column_bytes(stmt, col);
 }
 
+// Statement introspection methods
 const char* EXPORT(column_name) (sqlite3_stmt* stmt, int col) {
   return sqlite3_column_name(stmt, col);
 }
@@ -232,6 +237,14 @@ const char* EXPORT(column_origin_name) (sqlite3_stmt* stmt, int col) {
 
 const char* EXPORT(column_table_name) (sqlite3_stmt* stmt, int col) {
   return sqlite3_column_table_name(stmt, col);
+}
+
+const char* EXPORT(sql) (sqlite3_stmt* stmt) {
+  return sqlite3_sql(stmt);
+}
+
+const char* EXPORT(expanded_sql) (sqlite3_stmt* stmt) {
+  return sqlite3_expanded_sql(stmt);
 }
 
 double EXPORT(last_insert_rowid) () {
