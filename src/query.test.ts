@@ -520,19 +520,30 @@ Deno.test("get columns from finalized query throws", function () {
   });
 });
 
-Deno.test("introspect sql from query", function () {
+Deno.test("introspect SQL for prepared queries", function () {
   const db = new DB();
   db.query(
-    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, balance INTEGER)",
+    "CREATE TABLE test (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, balance INTEGER)",
   );
 
-  const sql = "INSERT INTO test (name, balance) VALUES (:name, :balance)";
-  const query = db.prepareQuery(sql);
+  const query = db.prepareQuery(
+    "INSERT INTO test (name, balance) VALUES (:name, :balance)",
+  );
 
-  assertEquals(query.sql(), sql);
   assertEquals(
-    query.sql({ name: "Peter Parker", balance: 42 }),
+    query.expandSql(),
+    "INSERT INTO test (name, balance) VALUES (NULL, NULL)",
+  );
+  assertEquals(
+    query.expandSql({ name: "Peter Parker", balance: 42 }),
     "INSERT INTO test (name, balance) VALUES ('Peter Parker', 42)",
+  );
+  assertEquals(
+    query.expandSql({
+      name: new Uint8Array(2),
+      balance: new Date(0),
+    }),
+    "INSERT INTO test (name, balance) VALUES (x'0000', '1970-01-01T00:00:00.000Z')",
   );
 
   query.finalize();

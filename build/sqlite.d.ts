@@ -50,7 +50,6 @@ export interface Wasm {
   column_name: (stmt: StatementPtr, col: number) => StringPtr;
   column_origin_name: (stmt: StatementPtr, col: number) => StringPtr;
   column_table_name: (stmt: StatementPtr, col: number) => StringPtr;
-  sql: (stmt: StatementPtr) => StringPtr;
   expanded_sql: (stmt: StatementPtr) => StringPtr;
   last_insert_rowid: () => number;
   changes: () => number;

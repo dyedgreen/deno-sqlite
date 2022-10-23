@@ -17,9 +17,13 @@ sqlite3* database = NULL;
 
 // Return length of string pointed to by str.
 int EXPORT(str_len) (const char* str) {
-  int len;
-  for (len = 0; str[len] != '\0'; len ++);
-  return len;
+  if (str == NULL) {
+    return 0;
+  } else {
+    int len;
+    for (len = 0; str[len] != '\0'; len ++);
+    return len;
+  }
 }
 
 // Seed the random number generator. We pass a double, to
@@ -237,10 +241,6 @@ const char* EXPORT(column_origin_name) (sqlite3_stmt* stmt, int col) {
 
 const char* EXPORT(column_table_name) (sqlite3_stmt* stmt, int col) {
   return sqlite3_column_table_name(stmt, col);
-}
-
-const char* EXPORT(sql) (sqlite3_stmt* stmt) {
-  return sqlite3_sql(stmt);
 }
 
 const char* EXPORT(expanded_sql) (sqlite3_stmt* stmt) {

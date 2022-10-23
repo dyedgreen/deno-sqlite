@@ -23,7 +23,7 @@ export type RowObject = Record<string, unknown>;
  *
  * | JS type in | SQL type        | JS type out      |
  * |------------|-----------------|------------------|
- * | number     | INTEGER or REAL | number or bigint |
+ * | number     | INTEGER or REAL | number           |
  * | bigint     | INTEGER         | number or bigint |
  * | boolean    | INTEGER         | number           |
  * | string     | TEXT            | string           |
@@ -600,13 +600,22 @@ export class PreparedQuery<
     return columns;
   }
 
-  sql(params?: P): string {
-    if (params != null) this.startQuery(params);
-    const sqlPtr = params != null
-      ? this._wasm.expanded_sql(this._stmt)
-      : this._wasm.sql(this._stmt);
-    const sql = getStr(this._wasm, sqlPtr);
-    if (params != null) this._wasm.sqlite_free(sqlPtr);
+  /**
+   * Returns the SQL string used to construct this
+   * query, substituting placeholders (e.g. `?`) with
+   * the values supplied in `params`.
+   *
+   * Calling this function invalidates any iterators
+   * previously returned by calls to `iter`.
+   *
+   * See `QueryParameterSet` for documentation on
+   * how values can be bound to SQL statements.
+   */
+  expandSql(params?: P): string {
+    this.startQuery(params);
+    const ptr = this._wasm.expanded_sql(this._stmt);
+    const sql = getStr(this._wasm, ptr);
+    if (ptr != Values.Null) this._wasm.sqlite_free(ptr);
     return sql;
   }
 }
