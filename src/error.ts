@@ -5,15 +5,14 @@ import { Status } from "./constants.ts";
 /**
  * Errors which can occur while interacting with
  * a database.
+ *
+ * This is an extension over the standard JS Error
+ * object which provides additional details.
  */
 export class SqliteError extends Error {
   /**
-   * Extension over the standard JS Error object
-   * to also contain class members for error code
-   * and error code name.
-   *
    * Instances of this class should not be constructed
-   * directly and should only be obtained
+   * directly and only be obtained
    * from exceptions raised in this module.
    */
   constructor(context: Wasm | string, code?: Status) {

@@ -42,10 +42,10 @@ export interface SqliteOptions {
  * queries.
  */
 export class DB {
-  private _wasm: Wasm;
-  private _open: boolean;
-  private _statements: Set<StatementPtr>;
-  private _transactionDepth: number;
+  #wasm: Wasm;
+  #open: boolean;
+  #statements: Set<StatementPtr>;
+  #transactionDepth: number;
 
   /**
    * Create a new database. The file at the
@@ -75,10 +75,10 @@ export class DB {
    * ```
    */
   constructor(path: string = ":memory:", options: SqliteOptions = {}) {
-    this._wasm = instantiate().exports;
-    this._open = false;
-    this._statements = new Set();
-    this._transactionDepth = 0;
+    this.#wasm = instantiate().exports;
+    this.#open = false;
+    this.#statements = new Set();
+    this.#transactionDepth = 0;
 
     // Configure flags
     let flags = 0;
@@ -103,14 +103,14 @@ export class DB {
 
     // Try to open the database
     const status = setStr(
-      this._wasm,
+      this.#wasm,
       path,
-      (ptr) => this._wasm.open(ptr, flags),
+      (ptr) => this.#wasm.open(ptr, flags),
     );
     if (status !== Status.SqliteOk) {
-      throw new SqliteError(this._wasm, status);
+      throw new SqliteError(this.#wasm, status);
     }
-    this._open = true;
+    this.#open = true;
   }
 
   /**
@@ -221,20 +221,20 @@ export class DB {
    * to specify precise types for returned data and
    * query parameters.
    *
-   * + The first type parameter `R` indicates the tuple type
+   * - The first type parameter `R` indicates the tuple type
    *   for rows returned by the query.
    *
-   * + The second type parameter `O` indicates the record type
+   * - The second type parameter `O` indicates the record type
    *   for rows returned as entries (mappings from column names
    *   to values).
    *
-   * + The third type parameter `P` indicates the type this query
+   * - The third type parameter `P` indicates the type this query
    *   accepts as parameters.
    *
    * Note, that the correctness of those types must
    * be guaranteed by the caller of this function.
    *
-   * # Examples
+   * # Example
    *
    * ```typescript
    * const query = db.prepareQuery<
@@ -242,9 +242,7 @@ export class DB {
    *   { name: string, age: number },
    *   { city: string },
    *  >("SELECT name, age FROM people WHERE city = :city");
-   *
    * // use query ...
-   *
    * query.finalize();
    * ```
    */
@@ -255,21 +253,21 @@ export class DB {
   >(
     sql: string,
   ): PreparedQuery<R, O, P> {
-    if (!this._open) {
+    if (!this.#open) {
       throw new SqliteError("Database was closed.");
     }
 
     const stmt = setStr(
-      this._wasm,
+      this.#wasm,
       sql,
-      (ptr) => this._wasm.prepare(ptr),
+      (ptr) => this.#wasm.prepare(ptr),
     );
     if (stmt === Values.Null) {
-      throw new SqliteError(this._wasm);
+      throw new SqliteError(this.#wasm);
     }
 
-    this._statements.add(stmt);
-    return new PreparedQuery<R, O, P>(this._wasm, stmt, this._statements);
+    this.#statements.add(stmt);
+    return new PreparedQuery<R, O, P>(this.#wasm, stmt, this.#statements);
   }
 
   /**
@@ -280,7 +278,7 @@ export class DB {
    * result rows are discarded. It is only for running a chunk
    * of raw SQL; for example, to initialize a database.
    *
-   * # Examples
+   * # Example
    *
    * ```typescript
    * db.execute(`
@@ -296,13 +294,13 @@ export class DB {
    */
   execute(sql: string) {
     const status = setStr(
-      this._wasm,
+      this.#wasm,
       sql,
-      (ptr) => this._wasm.exec(ptr),
+      (ptr) => this.#wasm.exec(ptr),
     );
 
     if (status !== Status.SqliteOk) {
-      throw new SqliteError(this._wasm, status);
+      throw new SqliteError(this.#wasm, status);
     }
   }
 
@@ -314,20 +312,32 @@ export class DB {
    *
    * Calls to `transaction` may be nested. Nested transactions
    * behave like SQLite save points.
+   *
+   * # Example
+   *
+   * ```typescript
+   * db.transaction(() => {
+   *   // call db.query) ...
+   *   db.transaction(() => {
+   *     // nested transaction
+   *   });
+   *   // throw to roll back everything
+   * });
+   * ```
    */
   transaction<V>(closure: () => V): V {
-    this._transactionDepth += 1;
-    this.query(`SAVEPOINT _deno_sqlite_sp_${this._transactionDepth}`);
+    this.#transactionDepth += 1;
+    this.query(`SAVEPOINT _deno_sqlite_sp_${this.#transactionDepth}`);
     let value;
     try {
       value = closure();
     } catch (err) {
-      this.query(`ROLLBACK TO _deno_sqlite_sp_${this._transactionDepth}`);
-      this._transactionDepth -= 1;
+      this.query(`ROLLBACK TO _deno_sqlite_sp_${this.#transactionDepth}`);
+      this.#transactionDepth -= 1;
       throw err;
     }
-    this.query(`RELEASE _deno_sqlite_sp_${this._transactionDepth}`);
-    this._transactionDepth -= 1;
+    this.query(`RELEASE _deno_sqlite_sp_${this.#transactionDepth}`);
+    this.#transactionDepth -= 1;
     return value;
   }
 
@@ -336,7 +346,7 @@ export class DB {
    * the database is no longer used to avoid leaking
    * open file descriptors.
    *
-   * If `force = true` is passed, any non-finalized
+   * If called with `force = true`, any non-finalized
    * `PreparedQuery` objects will be finalized. Otherwise,
    * this throws if there are active queries.
    *
@@ -344,20 +354,20 @@ export class DB {
    * times.
    */
   close(force = false) {
-    if (!this._open) {
+    if (!this.#open) {
       return;
     }
     if (force) {
-      for (const stmt of this._statements) {
-        if (this._wasm.finalize(stmt) !== Status.SqliteOk) {
-          throw new SqliteError(this._wasm);
+      for (const stmt of this.#statements) {
+        if (this.#wasm.finalize(stmt) !== Status.SqliteOk) {
+          throw new SqliteError(this.#wasm);
         }
       }
     }
-    if (this._wasm.close() !== Status.SqliteOk) {
-      throw new SqliteError(this._wasm);
+    if (this.#wasm.close() !== Status.SqliteOk) {
+      throw new SqliteError(this.#wasm);
     }
-    this._open = false;
+    this.#open = false;
   }
 
   /**
@@ -368,7 +378,7 @@ export class DB {
    * the database was opened), this returns `0`.
    */
   get lastInsertRowId(): number {
-    return this._wasm.last_insert_rowid();
+    return this.#wasm.last_insert_rowid();
   }
 
   /**
@@ -378,7 +388,7 @@ export class DB {
    * `sqlite3_changes`.
    */
   get changes(): number {
-    return this._wasm.changes();
+    return this.#wasm.changes();
   }
 
   /**
@@ -388,6 +398,6 @@ export class DB {
    * `sqlite3_total_changes`.
    */
   get totalChanges(): number {
-    return this._wasm.total_changes();
+    return this.#wasm.total_changes();
   }
 }

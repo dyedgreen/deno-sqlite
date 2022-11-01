@@ -86,11 +86,14 @@ export type QueryParameterSet =
   | Array<QueryParameter>;
 
 /**
- * Name of a column in a database query.
+ * Name of a column returned in a database query.
  */
 export interface ColumnName {
   /**
    * Name of the returned column.
+   *
+   * Corresponds to the `sqlite3_column_name`
+   * function.
    */
   name: string;
   /**
@@ -100,11 +103,17 @@ export interface ColumnName {
    * This might be different from `name` if a
    * columns was renamed using e.g. as in
    * `SELECT foo AS bar FROM table`.
+   *
+   * Corresponds to the `sqlite3_column_origin_name`
+   * function.
    */
   originName: string;
   /**
    * Name of the table that stores the data
    * returned from this query.
+   *
+   * Corresponds to the `sqlite3_column_table_name`
+   * function.
    */
   tableName: string;
 }
@@ -123,14 +132,14 @@ export class PreparedQuery<
   O extends RowObject = RowObject,
   P extends QueryParameterSet = QueryParameterSet,
 > {
-  private _wasm: Wasm;
-  private _stmt: StatementPtr;
-  private _openStatements: Set<StatementPtr>;
+  #wasm: Wasm;
+  #stmt: StatementPtr;
+  #openStatements: Set<StatementPtr>;
 
-  private _status: number;
-  private _iterKv: boolean;
-  private _rowKeys?: Array<string>;
-  private _finalized: boolean;
+  #status: number;
+  #iterKv: boolean;
+  #rowKeys?: Array<string>;
+  #finalized: boolean;
 
   /**
    * This constructor should never be used directly.
@@ -142,23 +151,23 @@ export class PreparedQuery<
     stmt: StatementPtr,
     openStatements: Set<StatementPtr>,
   ) {
-    this._wasm = wasm;
-    this._stmt = stmt;
-    this._openStatements = openStatements;
+    this.#wasm = wasm;
+    this.#stmt = stmt;
+    this.#openStatements = openStatements;
 
-    this._status = Status.Unknown;
-    this._iterKv = false;
-    this._finalized = false;
+    this.#status = Status.Unknown;
+    this.#iterKv = false;
+    this.#finalized = false;
   }
 
-  private startQuery(params?: P) {
-    if (this._finalized) {
+  #startQuery(params?: P) {
+    if (this.#finalized) {
       throw new SqliteError("Query is finalized.");
     }
 
     // Reset query
-    this._wasm.reset(this._stmt);
-    this._wasm.clear_bindings(this._stmt);
+    this.#wasm.reset(this.#stmt);
+    this.#wasm.clear_bindings(this.#stmt);
 
     // Prepare parameter array
     let parameters = [];
@@ -173,9 +182,9 @@ export class PreparedQuery<
           name = `:${name}`;
         }
         const idx = setStr(
-          this._wasm,
+          this.#wasm,
           name,
-          (ptr) => this._wasm.bind_parameter_index(this._stmt, ptr),
+          (ptr) => this.#wasm.bind_parameter_index(this.#stmt, ptr),
         );
         if (idx === Values.Error) {
           throw new SqliteError(`No parameter named '${name}'.`);
@@ -194,9 +203,9 @@ export class PreparedQuery<
           // fall through
         case "number":
           if (Number.isSafeInteger(value)) {
-            status = this._wasm.bind_int(this._stmt, i + 1, value);
+            status = this.#wasm.bind_int(this.#stmt, i + 1, value);
           } else {
-            status = this._wasm.bind_double(this._stmt, i + 1, value);
+            status = this.#wasm.bind_double(this.#stmt, i + 1, value);
           }
           break;
         case "bigint":
@@ -210,8 +219,8 @@ export class PreparedQuery<
             const sign = value >= 0n ? 1 : -1;
             const upper = Number(BigInt.asUintN(32, posVal >> 32n));
             const lower = Number(BigInt.asUintN(32, posVal));
-            status = this._wasm.bind_big_int(
-              this._stmt,
+            status = this.#wasm.bind_big_int(
+              this.#stmt,
               i + 1,
               sign,
               upper,
@@ -221,81 +230,81 @@ export class PreparedQuery<
           break;
         case "string":
           status = setStr(
-            this._wasm,
+            this.#wasm,
             value,
-            (ptr) => this._wasm.bind_text(this._stmt, i + 1, ptr),
+            (ptr) => this.#wasm.bind_text(this.#stmt, i + 1, ptr),
           );
           break;
         default:
           if (value instanceof Date) {
             // Dates are allowed and bound to TEXT, formatted `YYYY-MM-DDTHH:MM:SS.SSSZ`
             status = setStr(
-              this._wasm,
+              this.#wasm,
               value.toISOString(),
-              (ptr) => this._wasm.bind_text(this._stmt, i + 1, ptr),
+              (ptr) => this.#wasm.bind_text(this.#stmt, i + 1, ptr),
             );
           } else if (value instanceof Uint8Array) {
             // Uint8Arrays are allowed and bound to BLOB
             const size = value.length;
             status = setArr(
-              this._wasm,
+              this.#wasm,
               value,
-              (ptr) => this._wasm.bind_blob(this._stmt, i + 1, ptr, size),
+              (ptr) => this.#wasm.bind_blob(this.#stmt, i + 1, ptr, size),
             );
           } else if (value === null || value === undefined) {
             // Both null and undefined result in a NULL entry
-            status = this._wasm.bind_null(this._stmt, i + 1);
+            status = this.#wasm.bind_null(this.#stmt, i + 1);
           } else {
             throw new SqliteError(`Can not bind ${typeof value}.`);
           }
           break;
       }
       if (status !== Status.SqliteOk) {
-        throw new SqliteError(this._wasm, status);
+        throw new SqliteError(this.#wasm, status);
       }
     }
   }
 
-  private getQueryRow(): R {
-    if (this._finalized) {
+  #getQueryRow(): R {
+    if (this.#finalized) {
       throw new SqliteError("Query is finalized.");
     }
 
-    const columnCount = this._wasm.column_count(this._stmt);
+    const columnCount = this.#wasm.column_count(this.#stmt);
     const row: Row = [];
     for (let i = 0; i < columnCount; i++) {
-      switch (this._wasm.column_type(this._stmt, i)) {
+      switch (this.#wasm.column_type(this.#stmt, i)) {
         case Types.Integer:
-          row.push(this._wasm.column_int(this._stmt, i));
+          row.push(this.#wasm.column_int(this.#stmt, i));
           break;
         case Types.Float:
-          row.push(this._wasm.column_double(this._stmt, i));
+          row.push(this.#wasm.column_double(this.#stmt, i));
           break;
         case Types.Text:
           row.push(
             getStr(
-              this._wasm,
-              this._wasm.column_text(this._stmt, i),
+              this.#wasm,
+              this.#wasm.column_text(this.#stmt, i),
             ),
           );
           break;
         case Types.Blob: {
-          const ptr = this._wasm.column_blob(this._stmt, i);
+          const ptr = this.#wasm.column_blob(this.#stmt, i);
           if (ptr === 0) {
             // Zero pointer results in null
             row.push(null);
           } else {
-            const length = this._wasm.column_bytes(this._stmt, i);
+            const length = this.#wasm.column_bytes(this.#stmt, i);
             // Slice should copy the bytes, as it makes a shallow copy
             row.push(
-              new Uint8Array(this._wasm.memory.buffer, ptr, length).slice(),
+              new Uint8Array(this.#wasm.memory.buffer, ptr, length).slice(),
             );
           }
           break;
         }
         case Types.BigInteger: {
-          const ptr = this._wasm.column_text(this._stmt, i);
-          row.push(BigInt(getStr(this._wasm, ptr)));
+          const ptr = this.#wasm.column_text(this.#stmt, i);
+          row.push(BigInt(getStr(this.#wasm, ptr)));
           break;
         }
         default:
@@ -307,19 +316,19 @@ export class PreparedQuery<
     return row as R;
   }
 
-  private makeRowObject(row: Row): O {
-    if (this._rowKeys == null) {
-      const rowCount = this._wasm.column_count(this._stmt);
-      this._rowKeys = [];
+  #makeRowObject(row: Row): O {
+    if (this.#rowKeys == null) {
+      const rowCount = this.#wasm.column_count(this.#stmt);
+      this.#rowKeys = [];
       for (let i = 0; i < rowCount; i++) {
-        this._rowKeys.push(
-          getStr(this._wasm, this._wasm.column_name(this._stmt, i)),
+        this.#rowKeys.push(
+          getStr(this.#wasm, this.#wasm.column_name(this.#stmt, i)),
         );
       }
     }
 
     const obj = row.reduce<RowObject>((obj, val, idx) => {
-      obj[this._rowKeys![idx]] = val;
+      obj[this.#rowKeys![idx]] = val;
       return obj;
     }, {});
     return obj as O;
@@ -351,12 +360,12 @@ export class PreparedQuery<
    *
    * ```typescript
    * const query = db.prepareQuery("SELECT id FROM people WHERE name = ?");
-   * preparedQuery.iter([name]);
+   * query.iter([name]);
    * ```
    *
    * ```typescript
    * const query = db.prepareQuery("SELECT id FROM people WHERE name = :name");
-   * preparedQuery.iter({ name });
+   * query.iter({ name });
    * ```
    *
    * See `QueryParameterSet` for documentation on
@@ -366,14 +375,14 @@ export class PreparedQuery<
    * values are returned from the database.
    */
   iter(params?: P): RowsIterator<R> {
-    this.startQuery(params);
-    this._status = this._wasm.step(this._stmt);
+    this.#startQuery(params);
+    this.#status = this.#wasm.step(this.#stmt);
     if (
-      this._status !== Status.SqliteRow && this._status !== Status.SqliteDone
+      this.#status !== Status.SqliteRow && this.#status !== Status.SqliteDone
     ) {
-      throw new SqliteError(this._wasm, this._status);
+      throw new SqliteError(this.#wasm, this.#status);
     }
-    this._iterKv = false;
+    this.#iterKv = false;
     return this as RowsIterator<R>;
   }
 
@@ -381,18 +390,18 @@ export class PreparedQuery<
    * Like `iter` except each row is returned
    * as an object containing key-value pairs.
    *
-   * # Examples
+   * # Example
    *
    * ```typescript
-   * const query = db.prepareQuery<_, { id: number, name: string }>("SELECT id, name FROM people");
-   * for (const { id, name } of query.iter()) {
+   * const query = db.prepareQuery<[number, string], { id: number, name: string }>("SELECT id, name FROM people");
+   * for (const { id, name } of query.iterEntries()) {
    *   // ...
    * }
    * ```
    */
   iterEntries(params?: P): RowsIterator<O> {
     this.iter(params);
-    this._iterKv = true;
+    this.#iterKv = true;
     return this as RowsIterator<O>;
   }
 
@@ -413,18 +422,18 @@ export class PreparedQuery<
    * a bug to call this method directly.
    */
   next(): IteratorResult<R | O> {
-    if (this._status === Status.SqliteRow) {
-      const value = this.getQueryRow();
-      this._status = this._wasm.step(this._stmt);
-      if (this._iterKv) {
-        return { value: this.makeRowObject(value), done: false };
+    if (this.#status === Status.SqliteRow) {
+      const value = this.#getQueryRow();
+      this.#status = this.#wasm.step(this.#stmt);
+      if (this.#iterKv) {
+        return { value: this.#makeRowObject(value), done: false };
       } else {
         return { value, done: false };
       }
-    } else if (this._status === Status.SqliteDone) {
+    } else if (this.#status === Status.SqliteDone) {
       return { value: null, done: true };
     } else {
-      throw new SqliteError(this._wasm, this._status);
+      throw new SqliteError(this.#wasm, this.#status);
     }
   }
 
@@ -438,7 +447,7 @@ export class PreparedQuery<
    * ```typescript
    * const query = db.prepareQuery<[number, string]>("SELECT id, name FROM people");
    * const rows = query.all();
-   * // [[1, "Peter"], ...]
+   * // rows = [[1, "Peter"], ...]
    * ```
    *
    * To avoid SQL injection, user-provided values
@@ -447,12 +456,12 @@ export class PreparedQuery<
    *
    * ```typescript
    * const query = db.prepareQuery("SELECT id FROM people WHERE name = ?");
-   * preparedQuery.all([name]);
+   * query.all([name]);
    * ```
    *
    * ```typescript
    * const query = db.prepareQuery("SELECT id FROM people WHERE name = :name");
-   * preparedQuery.all({ name });
+   * query.all({ name });
    * ```
    *
    * See `QueryParameterSet` for documentation on
@@ -462,15 +471,15 @@ export class PreparedQuery<
    * values are returned from the database.
    */
   all(params?: P): Array<R> {
-    this.startQuery(params);
+    this.#startQuery(params);
     const rows: Array<R> = [];
-    this._status = this._wasm.step(this._stmt);
-    while (this._status === Status.SqliteRow) {
-      rows.push(this.getQueryRow());
-      this._status = this._wasm.step(this._stmt);
+    this.#status = this.#wasm.step(this.#stmt);
+    while (this.#status === Status.SqliteRow) {
+      rows.push(this.#getQueryRow());
+      this.#status = this.#wasm.step(this.#stmt);
     }
-    if (this._status !== Status.SqliteDone) {
-      throw new SqliteError(this._wasm, this._status);
+    if (this.#status !== Status.SqliteDone) {
+      throw new SqliteError(this.#wasm, this.#status);
     }
     return rows;
   }
@@ -479,16 +488,16 @@ export class PreparedQuery<
    * Like `all` except each row is returned
    * as an object containing key-value pairs.
    *
-   * # Examples
+   * # Example
    *
    * ```typescript
-   * const query = db.prepareQuery<_, { id: number, name: string }>("SELECT id, name FROM people");
-   * const rows = query.all();
-   * // [{ id: 1, name: "Peter" }, ...]
+   * const query = db.prepareQuery<[number, string], { id: number, name: string }>("SELECT id, name FROM people");
+   * const rows = query.allEntries();
+   * // rows = [{ id: 1, name: "Peter" }, ...]
    * ```
    */
   allEntries(params?: P): Array<O> {
-    return this.all(params).map((row) => this.makeRowObject(row));
+    return this.all(params).map((row) => this.#makeRowObject(row));
   }
 
   /**
@@ -502,13 +511,13 @@ export class PreparedQuery<
    * ```typescript
    * const query = db.prepareQuery<[number, string]>("SELECT id, name FROM people");
    * const person = query.first();
-   * // [1, "Peter"]
+   * // person = [1, "Peter"]
    * ```
    *
    * ```typescript
    * const query = db.prepareQuery("SELECT id, name FROM people WHERE name = ?");
    * const person = query.first(["not a name"]);
-   * // undefined
+   * // person = undefined
    * ```
    *
    * To avoid SQL injection, user-provided values
@@ -517,12 +526,12 @@ export class PreparedQuery<
    *
    * ```typescript
    * const query = db.prepareQuery("SELECT id FROM people WHERE name = ?");
-   * preparedQuery.first([name]);
+   * query.first([name]);
    * ```
    *
    * ```typescript
    * const query = db.prepareQuery("SELECT id FROM people WHERE name = :name");
-   * preparedQuery.first({ name });
+   * query.first({ name });
    * ```
    *
    * See `QueryParameterSet` for documentation on
@@ -532,19 +541,19 @@ export class PreparedQuery<
    * values are returned from the database.
    */
   first(params?: P): R | undefined {
-    this.startQuery(params);
+    this.#startQuery(params);
 
-    this._status = this._wasm.step(this._stmt);
+    this.#status = this.#wasm.step(this.#stmt);
     let row = undefined;
-    if (this._status === Status.SqliteRow) {
-      row = this.getQueryRow();
+    if (this.#status === Status.SqliteRow) {
+      row = this.#getQueryRow();
     }
 
-    while (this._status === Status.SqliteRow) {
-      this._status = this._wasm.step(this._stmt);
+    while (this.#status === Status.SqliteRow) {
+      this.#status = this.#wasm.step(this.#stmt);
     }
-    if (this._status !== Status.SqliteDone) {
-      throw new SqliteError(this._wasm, this._status);
+    if (this.#status !== Status.SqliteDone) {
+      throw new SqliteError(this.#wasm, this.#status);
     }
 
     return row;
@@ -554,17 +563,17 @@ export class PreparedQuery<
    * Like `first` except the row is returned
    * as an object containing key-value pairs.
    *
-   * # Examples
+   * # Example
    *
    * ```typescript
-   * const query = db.prepareQuery<_, { id: number, name: string }>("SELECT id, name FROM people");
+   * const query = db.prepareQuery<[number, string], { id: number, name: string }>("SELECT id, name FROM people");
    * const person = query.first();
-   * // { id: 1, name: "Peter" }
+   * // person = { id: 1, name: "Peter" }
    * ```
    */
   firstEntry(params?: P): O | undefined {
     const row = this.first(params);
-    return row === undefined ? undefined : this.makeRowObject(row);
+    return row === undefined ? undefined : this.#makeRowObject(row);
   }
 
   /**
@@ -586,7 +595,7 @@ export class PreparedQuery<
    * **Deprecated:** prefer `firstEntry`.
    */
   oneEntry(params?: P): O {
-    return this.makeRowObject(this.one(params));
+    return this.#makeRowObject(this.one(params));
   }
 
   /**
@@ -601,12 +610,12 @@ export class PreparedQuery<
    * # Examples
    *
    * ```typescript
-   * const query = db.prepareQuery<_, _, [string]>("INSERT INTO people (name) VALUES (?)");
+   * const query = db.prepareQuery<never, never, [string]>("INSERT INTO people (name) VALUES (?)");
    * query.execute(["Peter"]);
    * ```
    *
    * ```typescript
-   * const query = db.prepareQuery<_, _, { name: string }>("INSERT INTO people (name) VALUES (:name)");
+   * const query = db.prepareQuery<never, never, { name: string }>("INSERT INTO people (name) VALUES (:name)");
    * query.execute({ name: "Peter" });
    * ```
    *
@@ -617,13 +626,13 @@ export class PreparedQuery<
    * values are returned from the database.
    */
   execute(params?: P) {
-    this.startQuery(params);
-    this._status = this._wasm.step(this._stmt);
-    while (this._status === Status.SqliteRow) {
-      this._status = this._wasm.step(this._stmt);
+    this.#startQuery(params);
+    this.#status = this.#wasm.step(this.#stmt);
+    while (this.#status === Status.SqliteRow) {
+      this.#status = this.#wasm.step(this.#stmt);
     }
-    if (this._status !== Status.SqliteDone) {
-      throw new SqliteError(this._wasm, this._status);
+    if (this.#status !== Status.SqliteDone) {
+      throw new SqliteError(this.#wasm, this.#status);
     }
   }
 
@@ -643,47 +652,37 @@ export class PreparedQuery<
    * times.
    */
   finalize() {
-    if (!this._finalized) {
-      this._wasm.finalize(this._stmt);
-      this._openStatements.delete(this._stmt);
-      this._finalized = true;
+    if (!this.#finalized) {
+      this.#wasm.finalize(this.#stmt);
+      this.#openStatements.delete(this.#stmt);
+      this.#finalized = true;
     }
   }
 
   /**
-   * Returns the column names for the query
-   * results.
-   *
-   * This method returns an array of objects,
-   * where each object has the following properties:
-   *
-   * | Property     | Value                                      |
-   * |--------------|--------------------------------------------|
-   * | `name`       | the result of `sqlite3_column_name`        |
-   * | `originName` | the result of `sqlite3_column_origin_name` |
-   * | `tableName`  | the result of `sqlite3_column_table_name`  |
+   * Returns the column names for this query.
    */
   columns(): Array<ColumnName> {
-    if (this._finalized) {
+    if (this.#finalized) {
       throw new SqliteError(
         "Unable to retrieve column names from finalized transaction.",
       );
     }
 
-    const columnCount = this._wasm.column_count(this._stmt);
+    const columnCount = this.#wasm.column_count(this.#stmt);
     const columns: Array<ColumnName> = [];
     for (let i = 0; i < columnCount; i++) {
       const name = getStr(
-        this._wasm,
-        this._wasm.column_name(this._stmt, i),
+        this.#wasm,
+        this.#wasm.column_name(this.#stmt, i),
       );
       const originName = getStr(
-        this._wasm,
-        this._wasm.column_origin_name(this._stmt, i),
+        this.#wasm,
+        this.#wasm.column_origin_name(this.#stmt, i),
       );
       const tableName = getStr(
-        this._wasm,
-        this._wasm.column_table_name(this._stmt, i),
+        this.#wasm,
+        this.#wasm.column_table_name(this.#stmt, i),
       );
       columns.push({ name, originName, tableName });
     }
