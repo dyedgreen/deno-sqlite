@@ -58,7 +58,7 @@ export enum Status {
   SqliteAuth = 23,
   /** Not used. */
   SqliteFormat = 24,
-  /** 2nd parameter to sqlite3_bind out of range. */
+  /** 2nd parameter to `sqlite3_bind` out of range. */
   SqliteRange = 25,
   /** File opened that is not a database file. */
   SqliteNotADB = 26,
@@ -66,9 +66,9 @@ export enum Status {
   SqliteNotice = 27,
   /** Warnings from `sqlite3_log()`. */
   SqliteWarning = 28,
-  /** sqlite3_step() has another row ready. */
+  /** `sqlite3_step()` has another row ready. */
   SqliteRow = 100,
-  /** sqlite3_step() has finished executing. */
+  /** `sqlite3_step()` has finished executing. */
   SqliteDone = 101,
 }
 
