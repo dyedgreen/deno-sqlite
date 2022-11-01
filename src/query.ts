@@ -86,7 +86,7 @@ export type QueryParameterSet =
   | Array<QueryParameter>;
 
 /**
- * Name of a column returned in a database query.
+ * Name of a column returned from a database query.
  */
 export interface ColumnName {
   /**
