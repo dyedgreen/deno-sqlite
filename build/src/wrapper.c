@@ -297,6 +297,8 @@ int EXPORT(delete_function) (const char* funcname) {
 }
 
 // Determine type of argument. Returns SQLITE column types.
+// Calling this outside of of a call to`js_call_user_func`
+// is undefined.
 int EXPORT(argument_type) (int arg) {
   int type = sqlite3_value_type(current_argv[arg]);
   if (type == SQLITE_INTEGER) {
@@ -310,7 +312,8 @@ int EXPORT(argument_type) (int arg) {
   return type;
 }
 
-// Wrap function argument readers.
+// Wrap function argument readers. Calling these outside of
+// a call to `js_call_user_func` is undefined.
 
 double EXPORT(argument_int) (int arg) {
   return (double)sqlite3_value_int64(current_argv[arg]);
@@ -332,7 +335,8 @@ int EXPORT(argument_bytes) (int arg) {
   return sqlite3_value_bytes(current_argv[arg]);
 }
 
-// Wrap function return setters.
+// Wrap function return setters. Calling these outside of
+// a call to `js_call_user_func` is undefined.
 
 void EXPORT(result_int) (double value) {
   sqlite3_result_int64(current_ctx, (sqlite3_int64)value);
