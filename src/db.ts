@@ -1,8 +1,14 @@
 import { instantiate, StatementPtr, Wasm } from "../build/sqlite.js";
 import { setStr } from "./wasm.ts";
-import { OpenFlags, Status, Values } from "./constants.ts";
+import { FunctionFlags, OpenFlags, Status, Values } from "./constants.ts";
 import { SqliteError } from "./error.ts";
 import { PreparedQuery, QueryParameterSet, Row, RowObject } from "./query.ts";
+import {
+  SqlFunction,
+  SqlFunctionArgument,
+  SqlFunctionResult,
+  wrapSqlFunction,
+} from "./function.ts";
 
 /**
  * Options for opening a database.
@@ -37,14 +43,23 @@ export interface SqliteOptions {
   uri?: boolean;
 }
 
+export interface SqliteFunctionOptions {
+  name?: string;
+  deterministic?: boolean;
+  directOnly?: boolean;
+}
+
 /**
  * A database handle that can be used to run
  * queries.
  */
 export class DB {
   #wasm: Wasm;
+  #functions: Array<(argc: number) => void>;
   #open: boolean;
+
   #statements: Set<StatementPtr>;
+  #functionNames: Map<string, number>;
   #transactionDepth: number;
 
   /**
@@ -75,9 +90,13 @@ export class DB {
    * ```
    */
   constructor(path: string = ":memory:", options: SqliteOptions = {}) {
-    this.#wasm = instantiate().exports;
+    const instance = instantiate();
+    this.#wasm = instance.exports;
+    this.#functions = instance.functions;
     this.#open = false;
+
     this.#statements = new Set();
+    this.#functionNames = new Map();
     this.#transactionDepth = 0;
 
     // Configure flags
@@ -339,6 +358,63 @@ export class DB {
     this.query(`RELEASE _deno_sqlite_sp_${this.#transactionDepth}`);
     this.#transactionDepth -= 1;
     return value;
+  }
+
+  createFunction<
+    A extends Array<SqlFunctionArgument> = Array<SqlFunctionArgument>,
+    R extends SqlFunctionResult = SqlFunctionResult,
+  >(func: (...args: A) => R, options?: SqliteFunctionOptions) {
+    const name = options?.name ?? func.name;
+    if (name === "") {
+      throw new SqliteError("Function name can not be empty.");
+    }
+
+    const argc = func.length === 0 ? -1 : func.length;
+    let flags = 0;
+    if (options?.deterministic ?? false) flags |= FunctionFlags.Deterministic;
+    if (options?.directOnly ?? true) flags |= FunctionFlags.DirectOnly;
+    let funcIdx = 0;
+    while (this.#functions[funcIdx] != undefined) funcIdx++;
+    const status = setStr(
+      this.#wasm,
+      name,
+      (name) => this.#wasm.create_function(name, argc, flags, funcIdx),
+    );
+
+    if (status !== Status.SqliteOk) {
+      throw new SqliteError(this.#wasm, status);
+    } else {
+      this.#functions.push(
+        wrapSqlFunction(
+          this.#wasm,
+          name,
+          /* This cast is not fully correct (because function arguments
+             are contra-variant), but makes defining custom functions
+             slightly nicer. */
+          func as unknown as SqlFunction,
+        ),
+      );
+      this.#functionNames.set(name, funcIdx);
+    }
+  }
+
+  deleteFunction(name: string) {
+    if (this.#functionNames.has(name)) {
+      const status = setStr(
+        this.#wasm,
+        name,
+        (pts) => this.#wasm.delete_function(pts),
+      );
+      if (status === Status.SqliteOk) {
+        const funcIdx = this.#functionNames.get(name)!;
+        this.#functionNames.delete(name);
+        delete this.#functions[funcIdx];
+      } else {
+        throw new SqliteError(this.#wasm, status);
+      }
+    } else {
+      throw new SqliteError(`User defined function '${name}' does not exist`);
+    }
   }
 
   /**

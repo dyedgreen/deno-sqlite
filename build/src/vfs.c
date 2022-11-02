@@ -4,8 +4,8 @@
 #include <time.h>
 #include <sqlite3.h>
 #include <pcg.h>
-#include "debug.h"
 #include "imports.h"
+#include "debug.h"
 
 // SQLite VFS component.
 // Based on demoVFS from SQLlite.

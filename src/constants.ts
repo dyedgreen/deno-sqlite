@@ -80,6 +80,11 @@ export enum OpenFlags {
   Memory = 0x00000080,
 }
 
+export enum FunctionFlags {
+  Deterministic = 0x000000800,
+  DirectOnly = 0x000080000,
+}
+
 export enum Types {
   Integer = 1,
   Float = 2,

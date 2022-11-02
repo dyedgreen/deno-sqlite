@@ -271,45 +271,45 @@ export class PreparedQuery<
     }
 
     const columnCount = this.#wasm.column_count(this.#stmt);
-    const row: Row = [];
-    for (let i = 0; i < columnCount; i++) {
-      switch (this.#wasm.column_type(this.#stmt, i)) {
+    const row: Row = new Array(columnCount);
+    for (let columnIdx = 0; columnIdx < columnCount; columnIdx++) {
+      switch (this.#wasm.column_type(this.#stmt, columnIdx)) {
         case Types.Integer:
-          row.push(this.#wasm.column_int(this.#stmt, i));
+          row[columnIdx] = this.#wasm.column_int(this.#stmt, columnIdx);
           break;
         case Types.Float:
-          row.push(this.#wasm.column_double(this.#stmt, i));
+          row[columnIdx] = this.#wasm.column_double(this.#stmt, columnIdx);
           break;
         case Types.Text:
-          row.push(
-            getStr(
-              this.#wasm,
-              this.#wasm.column_text(this.#stmt, i),
-            ),
+          row[columnIdx] = getStr(
+            this.#wasm,
+            this.#wasm.column_text(this.#stmt, columnIdx),
           );
           break;
         case Types.Blob: {
-          const ptr = this.#wasm.column_blob(this.#stmt, i);
+          const ptr = this.#wasm.column_blob(this.#stmt, columnIdx);
           if (ptr === 0) {
             // Zero pointer results in null
-            row.push(null);
+            row[columnIdx] = null;
           } else {
-            const length = this.#wasm.column_bytes(this.#stmt, i);
+            const length = this.#wasm.column_bytes(this.#stmt, columnIdx);
             // Slice should copy the bytes, as it makes a shallow copy
-            row.push(
-              new Uint8Array(this.#wasm.memory.buffer, ptr, length).slice(),
-            );
+            row[columnIdx] = new Uint8Array(
+              this.#wasm.memory.buffer,
+              ptr,
+              length,
+            ).slice();
           }
           break;
         }
         case Types.BigInteger: {
-          const ptr = this.#wasm.column_text(this.#stmt, i);
-          row.push(BigInt(getStr(this.#wasm, ptr)));
+          const ptr = this.#wasm.column_text(this.#stmt, columnIdx);
+          row[columnIdx] = BigInt(getStr(this.#wasm, ptr));
           break;
         }
         default:
           // TODO(dyedgreen): Differentiate between NULL and not-recognized?
-          row.push(null);
+          row[columnIdx] = null;
           break;
       }
     }

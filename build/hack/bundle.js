@@ -40,9 +40,11 @@ export async function compile() {
 }
 
 export async function instantiateBrowser() {
-  const placeholder = { exports: null };
+  const functions = [];
+  const placeholder = { exports: null, functions };
   const instance = await WebAssembly.instantiate(moduleOrInstance.module, env(placeholder));
   placeholder.exports = instance.exports;
+  instance.functions = functions;
   instance.exports.seed_rng(Date.now());
   moduleOrInstance.instances.push(instance);
 }
@@ -51,9 +53,11 @@ export function instantiate() {
   if (moduleOrInstance.instances.length) {
     return moduleOrInstance.instances.pop();
   } else {
-    const placeholder = { exports: null };
+    const functions = [];
+    const placeholder = { exports: null, functions };
     const instance = new WebAssembly.Instance(moduleOrInstance.module, env(placeholder));
     placeholder.exports = instance.exports;
+    instance.functions = functions;
     instance.exports.seed_rng(Date.now());
     return instance;
   }

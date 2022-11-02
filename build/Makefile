@@ -19,12 +19,12 @@ endif
 CSRC  = ""
 CSRC += $(shell find ./src  -name "*.c")
 CSRC += $(shell find ./lib  -name "*.c")
-CSRC += $(shell find ./hask -name "*.c")
 FLGS  = -Wall
 RFLG  = -Os
 DFLG  = -DDEBUG_BUILD
 WAFLG = --target=wasm32-unknown-wasi -Wl,--no-entry -nostartfiles --sysroot $(WASI)/share/wasi-sysroot\
-        -DWASI_BUILD -Wl,--export,malloc -Wl,--export,free -Wl,--allow-undefined-file=vfs.syms
+        -DWASI_BUILD -Wl,--export,malloc -Wl,--export,free -Wl,--allow-undefined-file=vfs.syms -g0\
+        -Wl,-strip-all
 INCS  = -Ilib
 
 # Location of wrapper library which contains all c-land export
