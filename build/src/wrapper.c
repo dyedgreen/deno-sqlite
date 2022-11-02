@@ -22,9 +22,13 @@ sqlite3_value** current_argv = NULL;
 
 // Return length of string pointed to by str.
 int EXPORT(str_len) (const char* str) {
-  int len = 0;
-  while (str[len] != '\0') len ++;
-  return len;
+  if (str == NULL) {
+    return 0;
+  } else {
+    int len = 0;
+    while (str[len] != '\0') len ++;
+    return len;
+  }
 }
 
 // Seed the random number generator. We pass a double, to
