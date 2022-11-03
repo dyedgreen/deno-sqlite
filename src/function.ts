@@ -91,7 +91,7 @@ export function wrapSqlFunction(
     }
 
     try {
-      let result = func.apply(null, args) as SqlFunctionResult;
+      let result = func.apply(null, args);
       // This logic is similar to how we bind query parameters in `query.ts`
       switch (typeof result) {
         case "boolean":
