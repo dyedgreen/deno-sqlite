@@ -5,39 +5,71 @@
  * Also see https://www.sqlite.org/rescode.html.
  */
 export enum Status {
-  Unknown = -1, // Unknown status
+  /** Unknown status. */
+  Unknown = -1,
 
-  SqliteOk = 0, // Successful result
-  SqliteError = 1, // Generic error
-  SqliteInternal = 2, // Internal logic error in SQLite
-  SqlitePerm = 3, // Access permission denied
-  SqliteAbort = 4, // Callback routine requested an abort
-  SqliteBusy = 5, // The database file is locked
-  SqliteLocked = 6, // A table in the database is locked
-  SqliteNoMem = 7, // A malloc() failed
-  SqliteReadOnly = 8, // Attempt to write a readonly database
-  SqliteInterrupt = 9, // Operation terminated by sqlite3_interrupt()
-  SqliteIOErr = 10, // Some kind of disk I/O error occurred
-  SqliteCorrupt = 11, // The database disk image is malformed
-  SqliteNotFound = 12, // Unknown opcode in sqlite3_file_control()
-  SqliteFull = 13, // Insertion failed because database is full
-  SqliteCantOpen = 14, // Unable to open the database file
-  SqliteProtocol = 15, // Database lock protocol error
-  SqliteEmpty = 16, // Internal use only
-  SqliteSchema = 17, // The database schema changed
-  SqliteTooBig = 18, // String or BLOB exceeds size limit
-  SqliteConstraint = 19, // Abort due to constraint violation
-  SqliteMismatch = 20, // Data type mismatch
-  SqliteMisuse = 21, // Library used incorrectly
-  SqliteNoLFS = 22, // Uses OS features not supported on host
-  SqliteAuth = 23, // Authorization denied
-  SqliteFormat = 24, // Not used
-  SqliteRange = 25, // 2nd parameter to sqlite3_bind out of range
-  SqliteNotADB = 26, // File opened that is not a database file
-  SqliteNotice = 27, // Notifications from sqlite3_log()
-  SqliteWarning = 28, // Warnings from sqlite3_log()
-  SqliteRow = 100, // sqlite3_step() has another row ready
-  SqliteDone = 101, // sqlite3_step() has finished executing
+  /** Successful result. */
+  SqliteOk = 0,
+  /** Generic error. */
+  SqliteError = 1,
+  /** Internal logic error in SQLite. */
+  SqliteInternal = 2,
+  /** Access permission denied. */
+  SqlitePerm = 3,
+  /** Callback routine requested an abort. */
+  SqliteAbort = 4,
+  /** The database file is locked. */
+  SqliteBusy = 5,
+  /** A table in the database is locked. */
+  SqliteLocked = 6,
+  /** A `malloc()` failed. */
+  SqliteNoMem = 7,
+  /** Attempt to write a read-only database. */
+  SqliteReadOnly = 8,
+  /** Operation terminated by `sqlite3_interrupt()`. */
+  SqliteInterrupt = 9,
+  /** Some kind of disk I/O error occurred. */
+  SqliteIOErr = 10,
+  /** The database disk image is malformed. */
+  SqliteCorrupt = 11,
+  /** Unknown opcode in `sqlite3_file_control()`. */
+  SqliteNotFound = 12,
+  /** Insertion failed because database is full. */
+  SqliteFull = 13,
+  /** Unable to open the database file. */
+  SqliteCantOpen = 14,
+  /** Database lock protocol error. */
+  SqliteProtocol = 15,
+  /** Internal use only. */
+  SqliteEmpty = 16,
+  /** The database schema changed. */
+  SqliteSchema = 17,
+  /** String or BLOB exceeds size limit. */
+  SqliteTooBig = 18,
+  /** Abort due to constraint violation. */
+  SqliteConstraint = 19,
+  /** Data type mismatch. */
+  SqliteMismatch = 20,
+  /** Library used incorrectly. */
+  SqliteMisuse = 21,
+  /** Uses OS features not supported on host. */
+  SqliteNoLFS = 22,
+  /** Authorization denied. */
+  SqliteAuth = 23,
+  /** Not used. */
+  SqliteFormat = 24,
+  /** 2nd parameter to `sqlite3_bind` out of range. */
+  SqliteRange = 25,
+  /** File opened that is not a database file. */
+  SqliteNotADB = 26,
+  /** Notifications from `sqlite3_log()`. */
+  SqliteNotice = 27,
+  /** Warnings from `sqlite3_log()`. */
+  SqliteWarning = 28,
+  /** `sqlite3_step()` has another row ready. */
+  SqliteRow = 100,
+  /** `sqlite3_step()` has finished executing. */
+  SqliteDone = 101,
 }
 
 export enum OpenFlags {
@@ -46,6 +78,11 @@ export enum OpenFlags {
   Create = 0x00000004,
   Uri = 0x00000040,
   Memory = 0x00000080,
+}
+
+export enum FunctionFlags {
+  Deterministic = 0x000000800,
+  DirectOnly = 0x000080000,
 }
 
 export enum Types {

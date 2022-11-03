@@ -11,11 +11,14 @@ export interface Wasm {
   free: (ptr: VoidPtr) => void;
   str_len: (str: StringPtr) => number;
   seed_rng: (seed: number) => void;
-  get_status: () => number;
   sqlite_free: (ptr: VoidPtr) => void;
+  get_status: () => number;
   open: (filename: StringPtr, flags: number) => number;
   close: () => number;
   get_sqlite_error_str: () => StringPtr;
+  last_insert_rowid: () => number;
+  changes: () => number;
+  total_changes: () => number;
   prepare: (sql: StringPtr) => StatementPtr;
   finalize: (stmt: StatementPtr) => number;
   reset: (stmt: StatementPtr) => number;
@@ -42,20 +45,40 @@ export interface Wasm {
   step: (stmt: StatementPtr) => number;
   column_count: (stmt: StatementPtr) => number;
   column_type: (stmt: StatementPtr, col: number) => number;
+  column_name: (stmt: StatementPtr, col: number) => StringPtr;
+  column_origin_name: (stmt: StatementPtr, col: number) => StringPtr;
+  column_table_name: (stmt: StatementPtr, col: number) => StringPtr;
+  expanded_sql: (stmt: StatementPtr) => StringPtr;
   column_int: (stmt: StatementPtr, col: number) => number;
   column_double: (stmt: StatementPtr, col: number) => number;
   column_text: (stmt: StatementPtr, col: number) => StringPtr;
   column_blob: (stmt: StatementPtr, col: number) => VoidPtr;
   column_bytes: (stmt: StatementPtr, col: number) => number;
-  column_name: (stmt: StatementPtr, col: number) => StringPtr;
-  column_origin_name: (stmt: StatementPtr, col: number) => StringPtr;
-  column_table_name: (stmt: StatementPtr, col: number) => StringPtr;
-  expanded_sql: (stmt: StatementPtr) => StringPtr;
-  last_insert_rowid: () => number;
-  changes: () => number;
-  total_changes: () => number;
+  create_function: (
+    funcname: StringPtr,
+    argc: number,
+    flags: number,
+    func: number,
+  ) => number;
+  delete_function: (funcname: StringPtr) => number;
+  argument_type: (arg: number) => number;
+  argument_int: (arg: number) => number;
+  argument_double: (arg: number) => number;
+  argument_text: (arg: number) => StringPtr;
+  argument_blob: (arg: number) => VoidPtr;
+  argument_bytes: (arg: number) => number;
+  result_int: (value: number) => void;
+  result_double: (value: number) => void;
+  result_text: (value: StringPtr) => void;
+  result_blob: (value: VoidPtr, size: number) => void;
+  result_big_int: (sign: number, high: number, low: number) => void;
+  result_null: () => void;
+  result_error: (message: StringPtr, code: number) => void;
 }
 
 export function compile(): Promise<void>;
 export function instantiateBrowser(): Promise<void>;
-export function instantiate(): { exports: Wasm };
+export function instantiate(): {
+  exports: Wasm;
+  functions: Array<(argc: number) => void>;
+};

@@ -13,3 +13,4 @@ js_time
 js_timezone
 js_exists
 js_access
+js_call_user_func

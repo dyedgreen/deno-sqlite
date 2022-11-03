@@ -33,10 +33,8 @@ db.execute(`
   )
 `);
 
-const names = ["Peter Parker", "Clark Kent", "Bruce Wayne"];
-
 // Run a simple query
-for (const name of names) {
+for (const name of ["Peter Parker", "Clark Kent", "Bruce Wayne"]) {
   db.query("INSERT INTO people (name) VALUES (?)", [name]);
 }
 

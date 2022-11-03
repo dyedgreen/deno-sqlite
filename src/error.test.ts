@@ -14,25 +14,19 @@ Deno.test("invalid SQL", function () {
     ";;;",
   ];
   for (const query of queries) assertThrows(() => db.query(query));
-
-  db.close();
 });
 
-Deno.test("constraint error code is correct", function () {
+Deno.test("constraint error is correct", function () {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");
   db.query("INSERT INTO test (name) VALUES (?)", ["A"]);
 
   assertThrows(
     () => db.query("INSERT INTO test (name) VALUES (?)", ["A"]),
-    (e: Error) => {
-      assertInstanceOf(e, SqliteError);
-      assertEquals(e.code, Status.SqliteConstraint, "Got wrong error code");
-      assertEquals(
-        Status[e.codeName],
-        Status.SqliteConstraint,
-        "Got wrong error code name",
-      );
+    (error: Error) => {
+      assertInstanceOf(error, SqliteError);
+      assertEquals(error.code, Status.SqliteConstraint);
+      assertEquals(error.message, "UNIQUE constraint failed: test.name");
     },
   );
 });
@@ -42,14 +36,10 @@ Deno.test("syntax error code is correct", function () {
 
   assertThrows(
     () => db.query("CREATE TABLEX test (name TEXT PRIMARY KEY)"),
-    (e: Error) => {
-      assertInstanceOf(e, SqliteError);
-      assertEquals(e.code, Status.SqliteError, "Got wrong error code");
-      assertEquals(
-        Status[e.codeName],
-        Status.SqliteError,
-        "Got wrong error code name",
-      );
+    (error: Error) => {
+      assertInstanceOf(error, SqliteError);
+      assertEquals(error.code, Status.SqliteError);
+      assertEquals(error.message, 'near "TABLEX": syntax error');
     },
   );
 });

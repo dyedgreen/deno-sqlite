@@ -150,7 +150,7 @@ export interface Wasm {
 
 export function compile(): Promise<void>;
 export function instantiateBrowser(): Promise<void>;
-export function instantiate(): { exports: Wasm };
+export function instantiate(): { exports: Wasm, functions: Array<(argc: number) => void> };
 `;
 
 await Deno.writeTextFile(dest, typeDeclaration);

@@ -85,7 +85,7 @@ export default function env(inst) {
       return Date.now();
     },
     // Return the timezone offset in minutes for
-    // the current locale.
+    // the current locale
     js_timezone: () => {
       return (new Date()).getTimezoneOffset();
     },
@@ -113,6 +113,10 @@ export default function env(inst) {
         }
       }
       return 1;
+    },
+    // Call a user defined SQL function
+    js_call_user_func: (func_idx, arg_count) => {
+      inst.functions[func_idx](arg_count);
     },
   };
 
