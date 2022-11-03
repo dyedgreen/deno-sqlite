@@ -1,6 +1,6 @@
 import { Wasm } from "../build/sqlite.js";
 import { Status, Types } from "./constants.ts";
-import { getStr, setStr } from "./wasm.ts";
+import { getStr, setArr, setStr } from "./wasm.ts";
 import { SqliteError } from "./error.ts";
 
 export type SqlFunctionArgument =
@@ -101,8 +101,20 @@ export function wrapSqlFunction(
           setStr(wasm, result, (ptr) => wasm.result_text(ptr));
           break;
         default:
-          wasm.result_null();
-          break; // TODO
+          if (result instanceof Date) {
+            // Dates are allowed and bound to TEXT, formatted `YYYY-MM-DDTHH:MM:SS.SSSZ`
+            setStr(wasm, result.toISOString(), (ptr) => wasm.result_text(ptr));
+          } else if (result instanceof Uint8Array) {
+            // Uint8Arrays are allowed and bound to BLOB
+            const size = result.length;
+            setArr(wasm, result, (ptr) => wasm.result_blob(ptr, size));
+          } else if (result === null || result === undefined) {
+            // Both null and undefined result in a NULL entry
+            wasm.result_null();
+          } else {
+            throw new SqliteError(`Can not return ${typeof result}.`);
+          }
+          break;
       }
     } catch (error) {
       setStr(

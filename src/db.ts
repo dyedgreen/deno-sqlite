@@ -384,15 +384,13 @@ export class DB {
     if (status !== Status.SqliteOk) {
       throw new SqliteError(this.#wasm, status);
     } else {
-      this.#functions.push(
-        wrapSqlFunction(
-          this.#wasm,
-          name,
-          /* This cast is not fully correct (because function arguments
-             are contra-variant), but makes defining custom functions
-             slightly nicer. */
-          func as unknown as SqlFunction,
-        ),
+      this.#functions[funcIdx] = wrapSqlFunction(
+        this.#wasm,
+        name,
+        /* This cast is not fully correct (because function arguments
+         * are contra-variant), but makes defining custom functions
+         * slightly nicer. */
+        func as unknown as SqlFunction,
       );
       this.#functionNames.set(name, funcIdx);
     }

@@ -83,8 +83,8 @@ Deno.test("blobs are copies", function () {
 
 Deno.test("bind bigint values", function () {
   assertEquals(
-    [9007199254741991n, 100],
-    roundTripValues([9007199254741991n, 100n]),
+    [9007199254741991n, -9007199254741991n, 100],
+    roundTripValues([9007199254741991n, -9007199254741991n, 100n]),
   );
 });
 
