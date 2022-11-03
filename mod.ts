@@ -11,11 +11,7 @@ export type {
   Row,
   RowObject,
 } from "./src/query.ts";
-export type {
-  SqlFunction,
-  SqlFunctionArgument,
-  SqlFunctionResult,
-} from "./src/function.ts";
+export type { SqlFunctionArgument, SqlFunctionResult } from "./src/function.ts";
 
 import { compile } from "./build/sqlite.js";
 await compile();

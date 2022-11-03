@@ -23,7 +23,7 @@ export type RowObject = Record<string, unknown>;
  *
  * | JS type in | SQL type        | JS type out      |
  * |------------|-----------------|------------------|
- * | number     | INTEGER or REAL | number or bigint |
+ * | number     | INTEGER or REAL | number           |
  * | bigint     | INTEGER         | number or bigint |
  * | boolean    | INTEGER         | number           |
  * | string     | TEXT            | string           |

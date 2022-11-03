@@ -3,6 +3,17 @@ import { Status, Types } from "./constants.ts";
 import { getStr, setArr, setStr } from "./wasm.ts";
 import { SqliteError } from "./error.ts";
 
+/**
+ * Possible arguments a user-defined SQL function might
+ * receive.
+ *
+ * These correspond to the SQL types `INTEGER` (number,
+ * bigint, or boolean), `REAL` (number), `TEXT` (string),
+ * `BLOB` (Uint8Array), and `NULL` (null).
+ *
+ * See `QueryParameter` for more details on how JS values
+ * are converted to and from SQL values.
+ */
 export type SqlFunctionArgument =
   | boolean
   | number
@@ -11,6 +22,16 @@ export type SqlFunctionArgument =
   | null
   | Uint8Array;
 
+/**
+ * Values a user-defined SQL function is allowed to
+ * return.
+ *
+ * These correspond to how `QueryParameter`s are
+ * converted when bound to queries. Additionally a
+ * user-defined function may return `void` (e.g. as in
+ * `return;`), in which case a `NULL` value is returned
+ * on the SQL side.
+ */
 export type SqlFunctionResult =
   | void
   | boolean

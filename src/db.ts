@@ -43,9 +43,51 @@ export interface SqliteOptions {
   uri?: boolean;
 }
 
+/**
+ * Options for defining a custom SQL function.
+ */
 export interface SqliteFunctionOptions {
+  /**
+   * Name of the custom function to be used on
+   * the SQL side.
+   *
+   * If this argument is omitted, the function's
+   * name is used. E.g.
+   *
+   * ```typescript
+   * function foo(...) { ... }
+   * const foo = (...) => ...;
+   * const bar = function foo(...) { ... };
+   * ```
+   *
+   * would all be called `foo` on the SQL side.
+   */
   name?: string;
+  /**
+   * Enables additional query optimizations if
+   * a function is pure (i.e. if it always returns
+   * the same output given the same input).
+   *
+   * By default this is assumed `false`.
+   */
   deterministic?: boolean;
+  /**
+   * If `directOnly` is `true`, the `SQLITE_DIRECTONLY`
+   * flag is set when creating the user-defined function.
+   *
+   * Setting this flag means the function can only be
+   * invoked from top-level SQL (e.g. it can't be used
+   * inside VIEWs or TRIGGERs).
+   *
+   * This is a security feature that prevents functions
+   * to be invoked by malicious inputs to the database /
+   * malicious values set in bound parameters.
+   *
+   * By default this is assumed `true`.
+   *
+   * See https://www.sqlite.org/c3ref/c_deterministic.html#sqlitedirectonly
+   * for more information.
+   */
   directOnly?: boolean;
 }
 
@@ -360,13 +402,55 @@ export class DB {
     return value;
   }
 
+  /**
+   * Creates a custom (scalar) SQL function that can be
+   * used in queries.
+   *
+   * # Examples
+   *
+   * ```typescript
+   * const log = (value: unknown) => {
+   *   console.log(value);
+   *   return value;
+   * };
+   * db.createFunction(log);
+   * db.query("SELECT name, log(updated_at) FROM users");
+   * ```
+   *
+   * If a function is pure (i.e. always returns the same result
+   * given the same input), it can be marked as `deterministic` to
+   * enable additional optimizations.
+   *
+   * ```typescript
+   * const discount = (price: number, salePercent: number) => num * (1 - salePercent / 100);
+   * db.createFunction(discount, { deterministic: true });
+   * db.query("SELECT name, discount(price, :sale) FROM products", { sale: 15 });
+   * ```
+   *
+   * The function name can be set explicitly.
+   *
+   * ```typescript
+   * db.createFunction(() => Math.random(), { name: "jsRandom" });
+   * db.query("SELECT jsRandom()");
+   * ```
+   *
+   * Functions can also take a variable number of arguments.
+   *
+   * ```typescript
+   * const sum = (...nums: number[]) => nums.reduce((sum, num) => sum + num, 0);
+   * db.createFunction(sum, { deterministic: true });
+   * db.query("SELECT sum(1, 2), sum(1,2,3,4)");
+   * ```
+   */
   createFunction<
     A extends Array<SqlFunctionArgument> = Array<SqlFunctionArgument>,
     R extends SqlFunctionResult = SqlFunctionResult,
   >(func: (...args: A) => R, options?: SqliteFunctionOptions) {
     const name = options?.name ?? func.name;
     if (name === "") {
-      throw new SqliteError("Function name can not be empty.");
+      throw new SqliteError("Function name can not be empty");
+    } else if (this.#functionNames.has(name)) {
+      throw new SqliteError(`A function named '${name}' already exists`);
     }
 
     const argc = func.length === 0 ? -1 : func.length;
@@ -396,6 +480,22 @@ export class DB {
     }
   }
 
+  /**
+   * Delete a user-defined SQL function previously
+   * created with `createFunction`.
+   *
+   * After the function is deleted, it can no longer be
+   * used in queries, and is free to be re-defined.
+   *
+   * # Example
+   *
+   * ```typescript
+   * const double = (num: number) => num * 2;
+   * db.createFunction(double);
+   * // use the function ...
+   * db.deleteFunction("double");
+   * ```
+   */
   deleteFunction(name: string) {
     if (this.#functionNames.has(name)) {
       const status = setStr(

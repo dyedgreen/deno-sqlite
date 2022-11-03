@@ -62,6 +62,17 @@ Deno.test("specify function names", function () {
   assertThrows(() => db.createFunction(function namedBut() {}, { name: "" }));
 });
 
+Deno.test("can't define the same function twice", function () {
+  const db = new DB();
+  const test = () => {};
+  db.createFunction(test);
+  assertThrows(() => db.createFunction(test), (err: Error) => {
+    assertInstanceOf(err, SqliteError);
+    assertEquals(err.code, Status.Unknown);
+    assertEquals(err.message, "A function named 'test' already exists");
+  });
+});
+
 Deno.test("can throw errors in user defined functions", function () {
   const db = new DB();
   const error = (message: string) => {
