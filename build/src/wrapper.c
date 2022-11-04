@@ -112,6 +112,11 @@ double EXPORT(total_changes) () {
   return (double)sqlite3_total_changes(database);
 }
 
+// Returns whether in auto commit mode
+int EXPORT(autocommit) () {
+  return sqlite3_get_autocommit(database);
+}
+
 // Wraps sqlite3_prepare. Returns statement id.
 sqlite3_stmt* EXPORT(prepare) (const char* sql) {
   // Prepare sqlite statement
