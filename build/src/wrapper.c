@@ -13,12 +13,20 @@
 
 // Status returned by last instruction
 int last_status = SQLITE_OK;
+
+// Size of the buffer most recently returned
+// from sqlite3_serialize
+int last_serialize_bytes = 0;
+
 // Database handle for this instance
 sqlite3* database = NULL;
+
 // Current context for user defined SQL function
 sqlite3_context* current_ctx = NULL;
+
 // Current arguments for user defined SQL function
 sqlite3_value** current_argv = NULL;
+
 
 // Return length of string pointed to by str.
 int EXPORT(str_len) (const char* str) {
@@ -35,6 +43,11 @@ int EXPORT(str_len) (const char* str) {
 // get as many bytes from the JS number as possible.
 void EXPORT(seed_rng) (double seed) {
   pcg_seed((uint64_t)seed);
+}
+
+// Allocate memory using SQLite.
+void* EXPORT(sqlite_malloc) (double bytes) {
+  return sqlite3_malloc64((sqlite3_int64)bytes);
 }
 
 // Free memory obtained from SQLite.
@@ -384,4 +397,30 @@ void EXPORT(result_null) () {
 void EXPORT(result_error) (const char* message, int code) {
   sqlite3_result_error(current_ctx, message, -1);
   sqlite3_result_error_code(current_ctx, code);
+}
+
+// Serialize the given schema into a buffer of bytes.
+void* EXPORT(serialize) (const char* schema) {
+  sqlite3_int64 bytes;
+  unsigned char* data = sqlite3_serialize(database, schema, &bytes, 0);
+  last_serialize_bytes = (int)bytes;
+  return (void*)data;
+}
+
+// Size of the buffer most recently returned by serialize.
+int EXPORT(serialize_bytes) () {
+  return last_serialize_bytes;
+}
+
+// Deserialize a schema from a provided buffer.
+int EXPORT(deserialize) (const char* schema, void* data, int bytes, int flags) {
+  last_status = sqlite3_deserialize(
+    database,
+    schema,
+    (unsigned char*)data,
+    (sqlite3_int64)bytes,
+    (sqlite3_int64)bytes,
+    flags
+  );
+  return last_status;
 }

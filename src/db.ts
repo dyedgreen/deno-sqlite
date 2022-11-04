@@ -1,6 +1,12 @@
 import { instantiate, StatementPtr, Wasm } from "../build/sqlite.js";
 import { setStr } from "./wasm.ts";
-import { FunctionFlags, OpenFlags, Status, Values } from "./constants.ts";
+import {
+  DeserializeFlags,
+  FunctionFlags,
+  OpenFlags,
+  Status,
+  Values,
+} from "./constants.ts";
 import { SqliteError } from "./error.ts";
 import { PreparedQuery, QueryParameterSet, Row, RowObject } from "./query.ts";
 import {
@@ -41,6 +47,35 @@ export interface SqliteOptions {
    * for more information.
    */
   uri?: boolean;
+}
+
+/**
+ * Options for opening a database from an in-memory
+ * buffer.
+ */
+export interface SqliteDeserializeOptions {
+  /**
+   * Name of the schema to deserialize into.
+   *
+   * The default schema name is `main`, which
+   * refers to the database opened originally.
+   *
+   * If a database schema with the given name
+   * does not exist, this fails.
+   */
+  schema?: "main" | string;
+  /**
+   * Mode in which to open the deserialized
+   * database.
+   *
+   * - `read`: opens a read-only database
+   * - `write`: opens a read-write database
+   *   in memory
+   *
+   * `write` is the default if no mode is
+   * specified.
+   */
+  mode?: "read" | "write";
 }
 
 /**
@@ -400,6 +435,116 @@ export class DB {
     this.query(`RELEASE _deno_sqlite_sp_${this.#transactionDepth}`);
     this.#transactionDepth -= 1;
     return value;
+  }
+
+  /**
+   * Serialize a database.
+   *
+   * The format is the same as would be written to disk
+   * when modifying a database opened from a file. So for
+   * an on-disk database file, this is just a copy of the
+   * file contents on disk.
+   *
+   * If no `schema` name is specified the default
+   * (`main`) schema is serialized.
+   *
+   * # Examples
+   *
+   * ```typescript
+   * const data = db.serialize();
+   * ```
+   *
+   * Serialize the in-memory temporary database
+   *
+   * ```typescript
+   * const temp = db.serialize("temp");
+   * ```
+   */
+  serialize(schema: "main" | "temp" | string = "main"): Uint8Array {
+    const ptr = setStr(this.#wasm, schema, (ptr) => this.#wasm.serialize(ptr));
+    if (ptr === Values.Null) {
+      throw new SqliteError(`Failed to serialize database '${schema}'`);
+    }
+    const length = this.#wasm.serialize_bytes();
+    // Make a copy of the returned data
+    const data = new Uint8Array(this.#wasm.memory.buffer, ptr, length).slice();
+    this.#wasm.sqlite_free(ptr);
+    return data;
+  }
+
+  /**
+   * Deserialize a database.
+   *
+   * The format is the same as would be read from disk
+   * when opening a database from a file.
+   *
+   * When the database is deserialized, the contents of
+   * the passed `data` buffer are copied.
+   *
+   * # Examples
+   *
+   * Replace the default (`main`) database schema
+   * with the contents from `data`.
+   *
+   * ```typescript
+   * db.deserialize(data);
+   * ```
+   *
+   * Deserialize `data` as a read-only database.
+   *
+   * ```typescript
+   * db.deserialize(data, { mode: "read" });
+   * ```
+   *
+   * Specify a schema name different from `main`.
+   * Note that it is not possible to deserialize into
+   * the `temp` database.
+   *
+   * ```typescript
+   * db.execute("ATTACH DATABASE ':memory:' AS other"); // create schema 'other'
+   * db.deserialize(data, { schema: "other" });
+   * ```
+   *
+   * For more details see https://www.sqlite.org/c3ref/deserialize.html
+   * and https://www.sqlite.org/lang_attach.html.
+   */
+  deserialize(data: Uint8Array, options?: SqliteDeserializeOptions) {
+    const dataPtr = this.#wasm.sqlite_malloc(data.length);
+    if (dataPtr === Values.Null) {
+      throw new SqliteError("Out of memory.", Status.SqliteNoMem);
+    } else {
+      const mem = new Uint8Array(
+        this.#wasm.memory.buffer,
+        dataPtr,
+        data.length,
+      );
+      mem.set(data);
+    }
+
+    let flags = DeserializeFlags.FreeOnClose;
+    switch (options?.mode) {
+      case "read":
+        flags |= DeserializeFlags.ReadOnly;
+        break;
+      case "write":
+      default:
+        flags |= DeserializeFlags.Resizeable;
+        break;
+    }
+
+    const schema = options?.schema ?? "main";
+    const status = setStr(
+      this.#wasm,
+      schema,
+      (schemaPtr) =>
+        this.#wasm.deserialize(schemaPtr, dataPtr, data.length, flags),
+    );
+    if (status !== Status.SqliteOk) {
+      throw new SqliteError(
+        `Failed to deserialize into database '${schema}'`,
+        status,
+      );
+    }
   }
 
   /**
