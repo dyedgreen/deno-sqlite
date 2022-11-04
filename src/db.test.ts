@@ -5,6 +5,7 @@ import {
 } from "https://deno.land/std@0.154.0/testing/asserts.ts";
 
 import { DB } from "../mod.ts";
+import { TransactionState } from "./constants.ts";
 
 const TEST_DB = "test.db";
 const LARGE_TEST_DB = "build/2GB_test.db";
@@ -460,3 +461,41 @@ Deno.test(
     db.close();
   },
 );
+
+Deno.test("transaction state", {
+  ignore: !TEST_DB_PERMISSIONS,
+  permissions: { read: true, write: false },
+  sanitizeResources: true,
+}, function () {
+  const db = new DB();
+  assertEquals(db.transactionState, TransactionState.Auto);
+
+  db.query("create table test (col text)");
+  assertEquals(db.transactionState, TransactionState.Auto);
+
+  db.query("savepoint s");
+  assertEquals(db.transactionState, TransactionState.None);
+
+  db.query("select * from test");
+  assertEquals(db.transactionState, TransactionState.Read);
+
+  db.query("insert into test values('x')");
+  assertEquals(db.transactionState, TransactionState.Write);
+
+  db.query("rollback to s");
+  assertEquals(db.transactionState, TransactionState.Write);
+
+  db.query("rollback");
+  assertEquals(db.transactionState, TransactionState.Auto);
+
+  db.query("begin");
+  assertEquals(db.transactionState, TransactionState.None);
+
+  db.query("select * from test");
+  assertEquals(db.transactionState, TransactionState.Read);
+
+  db.query("insert into test values('x')");
+  assertEquals(db.transactionState, TransactionState.Write);
+
+  db.close();
+});

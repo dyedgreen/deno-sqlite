@@ -98,3 +98,10 @@ export enum Values {
   Error = -1,
   Null = 0,
 }
+
+export enum TransactionState {
+  None = 0,
+  Read = 1,
+  Write = 2,
+  Auto = 3,
+}

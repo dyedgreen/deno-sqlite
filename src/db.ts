@@ -1,6 +1,12 @@
 import { instantiate, StatementPtr, Wasm } from "../build/sqlite.js";
 import { setStr } from "./wasm.ts";
-import { FunctionFlags, OpenFlags, Status, Values } from "./constants.ts";
+import {
+  FunctionFlags,
+  OpenFlags,
+  Status,
+  TransactionState,
+  Values,
+} from "./constants.ts";
 import { SqliteError } from "./error.ts";
 import { PreparedQuery, QueryParameterSet, Row, RowObject } from "./query.ts";
 import {
@@ -573,5 +579,25 @@ export class DB {
    */
   get totalChanges(): number {
     return this.#wasm.total_changes();
+  }
+
+  /**
+   * Return the current transaction state:
+   * * `Auto` when there is no active transaction (i.e.
+   * `sqlite3_get_autocommit` returns non-zero)
+   * * `None` when a transaction was started, e.g. with
+   * `begin` or `savepoint`
+   * * `Read` after reading from the database
+   * * `Write` after reading from or writing to the database
+   */
+  get transactionState(): TransactionState {
+    if (this.#wasm.get_autocommit() !== 0) {
+      return TransactionState.Auto;
+    }
+    const state = this.#wasm.txn_state();
+    if (typeof TransactionState[state] === "undefined") {
+      throw new Error(`Unsupported transaction state: ${state}`);
+    }
+    return state;
   }
 }

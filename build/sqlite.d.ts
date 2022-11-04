@@ -74,6 +74,8 @@ export interface Wasm {
   result_big_int: (sign: number, high: number, low: number) => void;
   result_null: () => void;
   result_error: (message: StringPtr, code: number) => void;
+  get_autocommit: () => number;
+  txn_state: () => number;
 }
 
 export function compile(): Promise<void>;

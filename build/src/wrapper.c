@@ -385,3 +385,11 @@ void EXPORT(result_error) (const char* message, int code) {
   sqlite3_result_error(current_ctx, message, -1);
   sqlite3_result_error_code(current_ctx, code);
 }
+
+int EXPORT(get_autocommit) () {
+  return sqlite3_get_autocommit(database);
+}
+
+int EXPORT(txn_state) () {
+  return sqlite3_txn_state(database, NULL);
+}
