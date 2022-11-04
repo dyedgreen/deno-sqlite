@@ -46,8 +46,8 @@ void EXPORT(seed_rng) (double seed) {
 }
 
 // Allocate memory using SQLite.
-void* EXPORT(sqlite_malloc) (double bytes) {
-  return sqlite3_malloc64((sqlite3_int64)bytes);
+void* EXPORT(sqlite_malloc) (double size) {
+  return sqlite3_malloc64((sqlite3_int64)size);
 }
 
 // Free memory obtained from SQLite.

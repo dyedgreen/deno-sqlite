@@ -11,7 +11,7 @@ export interface Wasm {
   free: (ptr: VoidPtr) => void;
   str_len: (str: StringPtr) => number;
   seed_rng: (seed: number) => void;
-  sqlite_malloc: (bytes: number) => VoidPtr;
+  sqlite_malloc: (size: number) => VoidPtr;
   sqlite_free: (ptr: VoidPtr) => void;
   get_status: () => number;
   open: (filename: StringPtr, flags: number) => number;
