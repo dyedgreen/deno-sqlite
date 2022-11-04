@@ -25,10 +25,13 @@ export interface SqliteOptions {
    *
    * - `read`: read-only, throws an error if
    *   the database file does not exists
+   *
    * - `write`: read-write, throws an error
    *   if the database file does not exists
+   *
    * - `create`: read-write, create the database
-   *   if the file does not exist
+   *   if the file does not exist (for an in-memory
+   *   database this is the same as `write`)
    *
    * `create` is the default if no mode is
    * specified.
@@ -69,6 +72,7 @@ export interface SqliteDeserializeOptions {
    * database.
    *
    * - `read`: opens a read-only database
+   *
    * - `write`: opens a read-write database
    *   in memory
    *
@@ -487,6 +491,13 @@ export class DB {
    * with the contents from `data`.
    *
    * ```typescript
+   * db.deserialize(data);
+   * ```
+   *
+   * Create an in-memory database from a buffer.
+   *
+   * ```typescript
+   * const db = new DB();
    * db.deserialize(data);
    * ```
    *
