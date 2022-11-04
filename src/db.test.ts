@@ -1,10 +1,13 @@
 import {
   assertAlmostEquals,
   assertEquals,
+  assertInstanceOf,
   assertThrows,
 } from "https://deno.land/std@0.154.0/testing/asserts.ts";
 
 import { DB } from "../mod.ts";
+import { Status } from "./constants.ts";
+import { SqliteError } from "./error.ts";
 
 const TEST_DB = "test.db";
 const LARGE_TEST_DB = "build/2GB_test.db";
@@ -241,6 +244,75 @@ Deno.test("invalid bind does not leak statements", function () {
   db.query("INSERT INTO test (id) VALUES (1)");
 
   db.close();
+});
+
+Deno.test("serialize / deserialize round-trips correctly", function () {
+  const db = new DB();
+  db.execute(`
+    CREATE TABLE test (id INTEGER PRIMARY KEY, value TEXT);
+    INSERT INTO test (id, value) VALUES (1, 'Hello'), (2, 'World');
+  `);
+
+  const original = db.serialize();
+
+  db.query(
+    "INSERT INTO test (id, value) VALUES (3, 'Added after serialize')",
+  );
+  assertEquals(
+    [["Hello"], ["World"], ["Added after serialize"]],
+    db.query("SELECT value FROM test"),
+  );
+  const modified = db.serialize();
+
+  db.deserialize(original);
+  assertEquals([["Hello"], ["World"]], db.query("SELECT value FROM test"));
+
+  db.execute("ATTACH DATABASE ':memory:' AS modified");
+  db.deserialize(modified, { schema: "modified" });
+  assertEquals([["Hello"], ["World"]], db.query("SELECT value FROM main.test"));
+  assertEquals(
+    [["Hello"], ["World"], ["Added after serialize"]],
+    db.query("SELECT value FROM modified.test"),
+  );
+
+  const copyOfModified = db.serialize("modified");
+  assertEquals(modified, copyOfModified);
+});
+
+Deno.test("can't modify a database deserialized as read-only", function () {
+  const db = new DB(":memory:", { mode: "write" });
+  db.execute("CREATE TABLE test (id INTEGER PRIMARY KEY, value TEXT)");
+  const data = db.serialize();
+
+  // before calling deserialize inserts are okay
+  db.execute("INSERT INTO test (id, value) VALUES (1, 'This works!')");
+
+  db.deserialize(data, { mode: "read" });
+
+  // after calling deserialize inserts throw
+  assertThrows(() =>
+    db.execute("INSERT INTO test (id, value) VALUES (2, 'This works!')")
+  );
+});
+
+Deno.test("can't serialize an unknown database", function () {
+  const db = new DB();
+  assertThrows(() => db.serialize("unknown-schema"), (err: Error) => {
+    assertInstanceOf(err, SqliteError);
+    assertEquals(err.code, Status.Unknown);
+    assertEquals(err.message, "Failed to serialize database 'unknown-schema'");
+  });
+});
+
+Deno.test("can't deserialize into temp database", function () {
+  const db = new DB();
+  db.execute("CREATE TABLE test (id INTEGER PRIMARY KEY)");
+  const data = db.serialize();
+  assertThrows(() => db.deserialize(data, { schema: "temp" }), (err: Error) => {
+    assertInstanceOf(err, SqliteError);
+    assertEquals(err.code, Status.SqliteError);
+    assertEquals(err.message, "Failed to deserialize into database 'temp'");
+  });
 });
 
 Deno.test("transactions can be nested", function () {

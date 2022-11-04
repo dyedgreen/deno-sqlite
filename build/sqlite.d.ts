@@ -11,6 +11,7 @@ export interface Wasm {
   free: (ptr: VoidPtr) => void;
   str_len: (str: StringPtr) => number;
   seed_rng: (seed: number) => void;
+  sqlite_malloc: (bytes: number) => VoidPtr;
   sqlite_free: (ptr: VoidPtr) => void;
   get_status: () => number;
   open: (filename: StringPtr, flags: number) => number;
@@ -74,6 +75,14 @@ export interface Wasm {
   result_big_int: (sign: number, high: number, low: number) => void;
   result_null: () => void;
   result_error: (message: StringPtr, code: number) => void;
+  serialize: (schema: StringPtr) => VoidPtr;
+  serialize_bytes: () => number;
+  deserialize: (
+    schema: StringPtr,
+    data: VoidPtr,
+    bytes: number,
+    flags: number,
+  ) => number;
 }
 
 export function compile(): Promise<void>;

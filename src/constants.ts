@@ -80,6 +80,12 @@ export enum OpenFlags {
   Memory = 0x00000080,
 }
 
+export enum DeserializeFlags {
+  FreeOnClose = 1,
+  Resizeable = 2,
+  ReadOnly = 4,
+}
+
 export enum FunctionFlags {
   Deterministic = 0x000000800,
   DirectOnly = 0x000080000,
