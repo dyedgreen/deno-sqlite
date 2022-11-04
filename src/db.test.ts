@@ -292,7 +292,7 @@ Deno.test("can't modify a database deserialized as read-only", function () {
 
   // after calling deserialize inserts throw
   assertThrows(() =>
-    db.execute("INSERT INTO test (id, value) VALUES (2, 'This works!')")
+    db.execute("INSERT INTO test (id, value) VALUES (2, 'This fails!')")
   );
 });
 
