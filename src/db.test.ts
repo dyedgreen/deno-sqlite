@@ -262,6 +262,7 @@ Deno.test("serialize / deserialize round-trips correctly", function () {
     [["Hello"], ["World"], ["Added after serialize"]],
     db.query("SELECT value FROM test"),
   );
+
   const modified = db.serialize();
 
   db.deserialize(original);
