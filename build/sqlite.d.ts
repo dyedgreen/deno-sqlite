@@ -20,6 +20,7 @@ export interface Wasm {
   last_insert_rowid: () => number;
   changes: () => number;
   total_changes: () => number;
+  autocommit: () => number;
   prepare: (sql: StringPtr) => StatementPtr;
   finalize: (stmt: StatementPtr) => number;
   reset: (stmt: StatementPtr) => number;
