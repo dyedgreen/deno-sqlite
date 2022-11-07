@@ -163,6 +163,17 @@ Deno.test("database has correct changes and totalChanges", function () {
   assertEquals(6, db.totalChanges);
 });
 
+Deno.test("autoCommit property reflects database state", function () {
+  const db = new DB();
+  assertEquals(db.autoCommit, true);
+
+  db.query("BEGIN");
+  assertEquals(db.autoCommit, false);
+
+  db.query("ROLLBACK");
+  assertEquals(db.autoCommit, true);
+});
+
 Deno.test("last inserted id", function () {
   const db = new DB();
 

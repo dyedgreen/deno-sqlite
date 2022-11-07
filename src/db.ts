@@ -730,4 +730,13 @@ export class DB {
   get totalChanges(): number {
     return this.#wasm.total_changes();
   }
+
+  /**
+   * Returns `true` when in auto commit mode and `false` otherwise.
+   * This corresponds to the SQLite function
+   * `sqlite3_get_autocommit`.
+   */
+  get autoCommit(): boolean {
+    return this.#wasm.autocommit() !== 0;
+  }
 }
