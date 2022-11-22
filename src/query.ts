@@ -567,7 +567,7 @@ export class PreparedQuery<
    *
    * ```typescript
    * const query = db.prepareQuery<[number, string], { id: number, name: string }>("SELECT id, name FROM people");
-   * const person = query.first();
+   * const person = query.firstEntry();
    * // person = { id: 1, name: "Peter" }
    * ```
    */
