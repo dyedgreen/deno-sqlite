@@ -1,4 +1,5 @@
 import {
+  assert,
   assertAlmostEquals,
   assertEquals,
   assertInstanceOf,
@@ -341,6 +342,7 @@ Deno.test("transactions can be nested", function () {
     } catch (_) { /* ignore */ }
   });
 
+  assert(db.autoCommit);
   assertEquals([{ id: 1 }], db.queryEntries("SELECT * FROM test"));
 });
 
@@ -353,6 +355,7 @@ Deno.test("transactions commit when closure exists", function () {
   });
   assertThrows(() => db.query("ROLLBACK"));
 
+  assert(db.autoCommit);
   assertEquals([{ id: 1 }], db.queryEntries("SELECT * FROM test"));
 });
 
@@ -367,6 +370,7 @@ Deno.test("transaction rolls back on throw", function () {
     });
   });
 
+  assert(db.autoCommit);
   assertEquals([], db.query("SELECT * FROM test"));
 });
 

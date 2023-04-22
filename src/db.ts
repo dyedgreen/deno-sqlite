@@ -417,7 +417,7 @@ export class DB {
    *
    * ```typescript
    * db.transaction(() => {
-   *   // call db.query) ...
+   *   // call db.query ...
    *   db.transaction(() => {
    *     // nested transaction
    *   });
@@ -427,18 +427,16 @@ export class DB {
    */
   transaction<V>(closure: () => V): V {
     this.#transactionDepth += 1;
-    this.query(`SAVEPOINT _deno_sqlite_sp_${this.#transactionDepth}`);
-    let value;
+    this.execute(`SAVEPOINT _deno_sqlite_sp_${this.#transactionDepth}`);
     try {
-      value = closure();
+      return closure();
     } catch (err) {
-      this.query(`ROLLBACK TO _deno_sqlite_sp_${this.#transactionDepth}`);
-      this.#transactionDepth -= 1;
+      this.execute(`ROLLBACK TO _deno_sqlite_sp_${this.#transactionDepth}`);
       throw err;
+    } finally {
+      this.execute(`RELEASE _deno_sqlite_sp_${this.#transactionDepth}`);
+      this.#transactionDepth -= 1;
     }
-    this.query(`RELEASE _deno_sqlite_sp_${this.#transactionDepth}`);
-    this.#transactionDepth -= 1;
-    return value;
   }
 
   /**
