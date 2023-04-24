@@ -334,12 +334,18 @@ Deno.test("transactions can be nested", function () {
 
   db.transaction(() => {
     db.query("INSERT INTO test (id) VALUES (1)");
-    try {
-      db.transaction(() => {
-        db.query("INSERT INTO test (id) VALUES (2)");
-        throw new Error("boom!");
-      });
-    } catch (_) { /* ignore */ }
+    assertThrows(
+      () => {
+        db.transaction(() => {
+          assert(!db.autoCommit);
+          db.query("INSERT INTO test (id) VALUES (2)");
+          throw new Error("boom!");
+        });
+      },
+      Error,
+      "boom!",
+    );
+    assert(!db.autoCommit);
   });
 
   assert(db.autoCommit);
@@ -351,9 +357,9 @@ Deno.test("transactions commit when closure exists", function () {
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
 
   db.transaction(() => {
+    assert(!db.autoCommit);
     db.query("INSERT INTO test (id) VALUES (1)");
   });
-  assertThrows(() => db.query("ROLLBACK"));
 
   assert(db.autoCommit);
   assertEquals([{ id: 1 }], db.queryEntries("SELECT * FROM test"));
@@ -363,12 +369,17 @@ Deno.test("transaction rolls back on throw", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
 
-  assertThrows(() => {
-    db.transaction(() => {
-      db.query("INSERT INTO test (id) VALUES (1)");
-      throw new Error("boom!");
-    });
-  });
+  assertThrows(
+    () => {
+      db.transaction(() => {
+        assert(!db.autoCommit);
+        db.query("INSERT INTO test (id) VALUES (1)");
+        throw new Error("boom!");
+      });
+    },
+    Error,
+    "boom!",
+  );
 
   assert(db.autoCommit);
   assertEquals([], db.query("SELECT * FROM test"));
