@@ -16,6 +16,7 @@ hack.*
 *.gz
 build/sqlite-src
 build/wasi-sdk
+build/sqlite_dl.zip
 deno
 
 # NPM garbage
