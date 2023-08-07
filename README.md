@@ -99,6 +99,7 @@ Databases created in the browser are persisted using
 - [deno-nessie](https://github.com/halvardssm/deno-nessie)
 - [denodb](https://github.com/eveningkid/denodb)
 - [denolib/typeorm](https://github.com/denolib/typeorm)
+- [kysely-deno-sqlite](https://gitlab.com/soapbox-pub/kysely-deno-sqlite)
 - [small-orm-sqlite](https://github.com/enimatek-nl/small-orm-sqlite)
 
 _(listed in alphabetical order, please submit a PR if you are using this library
