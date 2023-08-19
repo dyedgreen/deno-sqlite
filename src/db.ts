@@ -358,9 +358,9 @@ export class DB {
     }
 
     const stmt = setStr(
-      this.#wasm, 
+      this.#wasm,
       sql,
-    (ptr) => this.#wasm.prepare(ptr)
+      (ptr) => this.#wasm.prepare(ptr),
     );
     if (stmt === Values.Null) {
       throw new SqliteError(this.#wasm);
@@ -394,9 +394,9 @@ export class DB {
    */
   execute(sql: string) {
     const status = setStr(
-      this.#wasm, 
-      sql, 
-      (ptr) => this.#wasm.exec(ptr)
+      this.#wasm,
+      sql,
+      (ptr) => this.#wasm.exec(ptr),
     );
 
     if (status !== Status.SqliteOk) {
@@ -609,9 +609,7 @@ export class DB {
 
     const argc = func.length === 0 ? -1 : func.length;
     let flags = 0;
-    if (options?.deterministic ?? false) {
-        flags |= FunctionFlags.Deterministic;
-    }
+    if (options?.deterministic ?? false) flags |= FunctionFlags.Deterministic;
     if (options?.directOnly ?? true) flags |= FunctionFlags.DirectOnly;
     let funcIdx = 0;
     while (this.#functions[funcIdx] != undefined) funcIdx++;
@@ -625,12 +623,12 @@ export class DB {
       throw new SqliteError(this.#wasm, status);
     } else {
       this.#functions[funcIdx] = wrapSqlFunction(
-          this.#wasm,
-          name,
-          /* This cast is not fully correct (because function arguments
-           * are contra-variant), but makes defining custom functions
-           * slightly nicer. */
-          func as unknown as SqlFunction
+        this.#wasm,
+        name,
+        /* This cast is not fully correct (because function arguments
+         * are contra-variant), but makes defining custom functions
+         * slightly nicer. */
+        func as unknown as SqlFunction,
       );
       this.#functionNames.set(name, funcIdx);
     }
