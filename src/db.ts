@@ -351,13 +351,17 @@ export class DB {
     O extends RowObject = RowObject,
     P extends QueryParameterSet = QueryParameterSet,
   >(
-    sql: string
+    sql: string,
   ): PreparedQuery<R, O, P> {
     if (!this.#open) {
       throw new SqliteError("Database was closed.");
     }
 
-    const stmt = setStr(this.#wasm, sql, (ptr) => this.#wasm.prepare(ptr));
+    const stmt = setStr(
+      this.#wasm, 
+      sql,
+    (ptr) => this.#wasm.prepare(ptr)
+    );
     if (stmt === Values.Null) {
       throw new SqliteError(this.#wasm);
     }
@@ -389,7 +393,11 @@ export class DB {
    * ```
    */
   execute(sql: string) {
-    const status = setStr(this.#wasm, sql, (ptr) => this.#wasm.exec(ptr));
+    const status = setStr(
+      this.#wasm, 
+      sql, 
+      (ptr) => this.#wasm.exec(ptr)
+    );
 
     if (status !== Status.SqliteOk) {
       throw new SqliteError(this.#wasm, status);
@@ -601,7 +609,9 @@ export class DB {
 
     const argc = func.length === 0 ? -1 : func.length;
     let flags = 0;
-    if (options?.deterministic ?? false) flags |= FunctionFlags.Deterministic;
+    if (options?.deterministic ?? false) {
+        flags |= FunctionFlags.Deterministic;
+    }
     if (options?.directOnly ?? true) flags |= FunctionFlags.DirectOnly;
     let funcIdx = 0;
     while (this.#functions[funcIdx] != undefined) funcIdx++;
@@ -729,6 +739,7 @@ export class DB {
   get autoCommit(): boolean {
     return this.#wasm.autocommit() !== 0;
   }
+
   /**
    * Returns `true` when the database handle is closed
    * and can no longer be used.
