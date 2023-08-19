@@ -350,7 +350,9 @@ export class DB {
     R extends Row = Row,
     O extends RowObject = RowObject,
     P extends QueryParameterSet = QueryParameterSet,
-  >(sql: string): PreparedQuery<R, O, P> {
+  >(
+    sql: string
+  ): PreparedQuery<R, O, P> {
     if (!this.#open) {
       throw new SqliteError("Database was closed.");
     }
@@ -421,9 +423,7 @@ export class DB {
     try {
       return closure();
     } catch (err) {
-      this.execute(
-        `ROLLBACK TO _deno_sqlite_sp_${this.#transactionDepth}`,
-      );
+      this.execute(`ROLLBACK TO _deno_sqlite_sp_${this.#transactionDepth}`);
       throw err;
     } finally {
       this.execute(`RELEASE _deno_sqlite_sp_${this.#transactionDepth}`);
@@ -461,11 +461,7 @@ export class DB {
     }
     const length = this.#wasm.serialize_bytes();
     // Make a copy of the returned data
-    const data = new Uint8Array(
-      this.#wasm.memory.buffer,
-      ptr,
-      length,
-    ).slice();
+    const data = new Uint8Array(this.#wasm.memory.buffer, ptr, length).slice();
     this.#wasm.sqlite_free(ptr);
     return data;
   }
@@ -605,9 +601,7 @@ export class DB {
 
     const argc = func.length === 0 ? -1 : func.length;
     let flags = 0;
-    if (options?.deterministic ?? false) {
-      flags |= FunctionFlags.Deterministic;
-    }
+    if (options?.deterministic ?? false) flags |= FunctionFlags.Deterministic;
     if (options?.directOnly ?? true) flags |= FunctionFlags.DirectOnly;
     let funcIdx = 0;
     while (this.#functions[funcIdx] != undefined) funcIdx++;
@@ -621,12 +615,12 @@ export class DB {
       throw new SqliteError(this.#wasm, status);
     } else {
       this.#functions[funcIdx] = wrapSqlFunction(
-        this.#wasm,
-        name,
-        /* This cast is not fully correct (because function arguments
-                 * are contra-variant), but makes defining custom functions
-                 * slightly nicer. */
-        func as unknown as SqlFunction,
+          this.#wasm,
+          name,
+          /* This cast is not fully correct (because function arguments
+           * are contra-variant), but makes defining custom functions
+           * slightly nicer. */
+          func as unknown as SqlFunction
       );
       this.#functionNames.set(name, funcIdx);
     }
@@ -663,9 +657,7 @@ export class DB {
         throw new SqliteError(this.#wasm, status);
       }
     } else {
-      throw new SqliteError(
-        `User defined function '${name}' does not exist`,
-      );
+      throw new SqliteError(`User defined function '${name}' does not exist`);
     }
   }
 
