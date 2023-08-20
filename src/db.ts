@@ -388,7 +388,7 @@ export class DB {
    *     age REAL,
    *     city TEXT
    *   );
-   *   INSERT INTO people (name, age, city) VALUES ("Peter Parker", 21, "nyc");
+   *   INSERT INTO people (name, age, city) VALUES ('Peter Parker', 21, 'nyc');
    * `);
    * ```
    */
