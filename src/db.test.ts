@@ -215,6 +215,13 @@ Deno.test("close database", function () {
   db.close(); // check close is idempotent and won't throw
 });
 
+Deno.test("check database is closed", function () {
+  const db = new DB();
+  assertEquals(db.isClosed, false);
+  db.close();
+  assertEquals(db.isClosed, true);
+});
+
 Deno.test("open queries block close", function () {
   const db = new DB();
   db.query("CREATE TABLE test (name TEXT PRIMARY KEY)");

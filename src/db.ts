@@ -737,4 +737,12 @@ export class DB {
   get autoCommit(): boolean {
     return this.#wasm.autocommit() !== 0;
   }
+
+  /**
+   * Returns `true` when the database handle is closed
+   * and can no longer be used.
+   */
+  get isClosed(): boolean {
+    return !this.#open;
+  }
 }
