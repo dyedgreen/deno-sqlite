@@ -30,29 +30,42 @@ INCS  = -Ilib
 # Location of wrapper library which contains all c-land export
 CWRP = "./src/wrapper.c"
 
-# Configure sqlite for out use-case
-SQLFLG = -DSQLITE_DQS=0 -DSQLITE_THREADSAFE=0 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS\
-         -DSQLITE_DEFAULT_FOREIGN_KEYS=1 -DSQLITE_TEMP_STORE=2\
-         -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_UTF16 -DSQLITE_OMIT_SHARED_CACHE\
-         -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_PROGRESS_CALLBACK\
-         -DSQLITE_OS_OTHER=1 -DSQLITE_OMIT_COMPLETE -DSQLITE_OMIT_WAL\
-         -DNDEBUG=1 -DSQLITE_ENABLE_COLUMN_METADATA -DHAVE_LOCALTIME_R
-# Rational:
-# SQLITE_DQS -> we do not need to have backwards comp
-# SQLITE_THREADSAFE -> we run single-threaded
-# SQLITE_LIKE_DOESNT_MATCH_BLOBS -> faster (is recommended if no backwards comp)
+# Configure sqlite for our use-case
+SQLFLG = -DHAVE_LOCALTIME_R\
+         -DNDEBUG=1\
+         -DSQLITE_DEFAULT_FOREIGN_KEYS=1\
+         -DSQLITE_DQS=0\
+         -DSQLITE_ENABLE_COLUMN_METADATA\
+         -DSQLITE_ENABLE_FTS5\
+         -DSQLITE_LIKE_DOESNT_MATCH_BLOBS\
+         -DSQLITE_OMIT_COMPLETE\
+         -DSQLITE_OMIT_DEPRECATED\
+         -DSQLITE_OMIT_LOAD_EXTENSION\
+         -DSQLITE_OMIT_PROGRESS_CALLBACK\
+         -DSQLITE_OMIT_SHARED_CACHE\
+         -DSQLITE_OMIT_UTF16\
+         -DSQLITE_OMIT_WAL\
+         -DSQLITE_OS_OTHER=1\
+         -DSQLITE_TEMP_STORE=2\
+         -DSQLITE_THREADSAFE=0
+# Rationale:
+# HAVE_LOCALTIME_R -> respect local timezone
+# NDEBUG -> "use for maximum speed"
 # SQLITE_DEFAULT_FOREIGN_KEYS -> this should be the default
-# SQLITE_TEMP_STORE -> in memory is faster, so it's the better default
+# SQLITE_DQS -> we do not need to have backwards comp
+# SQLITE_ENABLE_COLUMN_METADATA -> we depend on column metadata interfaces (`sqlite3_column_table_name` and `sqlite3_column_origin_name`)
+# SQLITE_ENABLE_FTS5 -> enable full-text search
+# SQLITE_LIKE_DOESNT_MATCH_BLOBS -> faster (is recommended if no backwards comp)
+# SQLITE_OMIT_COMPLETE -> we don't need these
 # SQLITE_OMIT_DEPRECATED -> we do not need to have backwards comp
-# SQLITE_OMIT_UTF16 -> we only support utf-8 encoded strings
-# SQLITE_OMIT_SHARED_CACHE -> we only ever open one connection
 # SQLITE_OMIT_LOAD_EXTENSION -> we don't use it
 # SQLITE_OMIT_PROGRESS_CALLBACK -> we don't use it
-# SQLITE_OS_OTHER -> we provide our own vfs
-# SQLITE_OMIT_COMPLETE -> we don't need these
+# SQLITE_OMIT_SHARED_CACHE -> we only ever open one connection
+# SQLITE_OMIT_UTF16 -> we only support utf-8 encoded strings
 # SQLITE_OMIT_WAL -> this is doggy, as we can not memory map files
-# DNDEBUG -> "use for maximum speed"
-# SQLITE_ENABLE_COLUMN_METADATA -> we depend on column metadata interfaces (`sqlite3_column_table_name` and `sqlite3_column_origin_name`)
+# SQLITE_OS_OTHER -> we provide our own vfs
+# SQLITE_TEMP_STORE -> in memory is faster, so it's the better default
+# SQLITE_THREADSAFE -> we run single-threaded
 
 all: release
 
