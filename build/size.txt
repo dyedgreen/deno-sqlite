@@ -1,7 +1,7 @@
 sqlite.d.ts    ➜   3373 bytes
-sqlite.js      ➜1065447 bytes
-sqlite.js.br   ➜ 354316 bytes
-sqlite.js.gz   ➜ 436637 bytes
-sqlite.wasm    ➜ 798027 bytes
-sqlite.wasm.br ➜ 285084 bytes
-sqlite.wasm.gz ➜ 337001 bytes
+sqlite.js      ➜1062483 bytes
+sqlite.js.br   ➜ 353733 bytes
+sqlite.js.gz   ➜ 435666 bytes
+sqlite.wasm    ➜ 795802 bytes
+sqlite.wasm.br ➜ 284858 bytes
+sqlite.wasm.gz ➜ 336501 bytes
