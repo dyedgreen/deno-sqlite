@@ -9,10 +9,10 @@ OUT_TY = "sqlite.d.ts"
 SQLITE_DLD = "https://sqlite.org/2023/sqlite-src-3420000.zip"
 SQLITE_DIR = "sqlite-src-3420000"
 
-WASI_DLD = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-16/wasi-sdk-16.0-linux.tar.gz"
+WASI_DLD = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-21/wasi-sdk-21.0-linux.tar.gz"
 WASI_TAR = wasi_dl_linux.tar.gz
 ifeq ($(shell uname), Darwin)
-	WASI_DLD = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-16/wasi-sdk-16.0-macos.tar.gz"
+	WASI_DLD = "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-21/wasi-sdk-21.0-macos.tar.gz"
 	WASI_TAR = wasi_dl_darwin.tar.gz
 endif
 
@@ -122,7 +122,7 @@ dlwasi:
 	sed -n '/${WASI_TAR}/p' ".checksums" | shasum -c -
 	rm -rf "wasi-sdk"
 	tar -xzvf "$(WASI_TAR)"
-	mv "wasi-sdk-16.0" "wasi-sdk"
+	mv "wasi-sdk-21.0" "wasi-sdk"
 	rm "${WASI_TAR}"
 
 testdb:
