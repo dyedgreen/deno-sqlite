@@ -2,6 +2,21 @@ import { getStr } from "../src/wasm.ts";
 
 const isWindows = Deno.build.os === "windows";
 
+const OPEN_FILES = new Map();
+
+function nextRid() {
+  const rid = (nextRid?.LAST_RID ?? 0) + 1;
+  nextRid.LAST_RID = rid;
+  return rid;
+}
+
+function getOpenFile(rid) {
+  if (!OPEN_FILES.has(rid)) {
+    throw new Error(`Resource ID ${rid} does not exist.`);
+  }
+  return OPEN_FILES.get(rid);
+}
+
 // Closure to return an environment that links
 // the current wasm context
 export default function env(inst) {
@@ -26,12 +41,16 @@ export default function env(inst) {
 
       const write = !!(flags & 0x00000002);
       const create = !!(flags & 0x00000004);
-      const rid = Deno.openSync(path, { read: true, write, create }).rid;
+      const file = Deno.openSync(path, { read: true, write, create });
+      const rid = nextRid();
+      OPEN_FILES.set(rid, file);
       return rid;
     },
     // Close a file
     js_close: (rid) => {
-      Deno.close(rid);
+      const file = getOpenFile(rid);
+      file.close();
+      OPEN_FILES.delete(rid);
     },
     // Delete file at path
     js_delete: (path_ptr) => {
@@ -45,8 +64,9 @@ export default function env(inst) {
         buffer_ptr,
         amount,
       );
-      Deno.seekSync(rid, offset, Deno.SeekMode.Start);
-      return Deno.readSync(rid, buffer);
+      const file = getOpenFile(rid);
+      file.seekSync(offset, Deno.SeekMode.Start);
+      return file.readSync(buffer);
     },
     // Write to a file from a buffer in the module
     js_write: (rid, buffer_ptr, offset, amount) => {
@@ -55,30 +75,44 @@ export default function env(inst) {
         buffer_ptr,
         amount,
       );
-      Deno.seekSync(rid, offset, Deno.SeekMode.Start);
-      return Deno.writeSync(rid, buffer);
+      const file = getOpenFile(rid);
+      file.seekSync(offset, Deno.SeekMode.Start);
+      return file.writeSync(buffer);
     },
     // Truncate the given file
     js_truncate: (rid, size) => {
-      Deno.ftruncateSync(rid, size);
+      const file = getOpenFile(rid);
+      file.truncateSync(size);
     },
     // Sync file data to disk
     js_sync: (rid) => {
-      Deno.fdatasyncSync(rid);
+      const file = getOpenFile(rid);
+      if (typeof file.rid === "number") {
+        // Uses deprecated Deno.FsFile.rid, which will be removed in Deno 2.0
+        Deno.fdatasyncSync(file.rid);
+      } else {
+        // Support DENO_FUTURE, but requires --unstable-fs
+        file.syncDataSync();
+      }
     },
     // Retrieve the size of the given file
     js_size: (rid) => {
-      return Deno.fstatSync(rid).size;
+      const file = getOpenFile(rid);
+      return file.statSync().size;
     },
     // Acquire a SHARED or EXCLUSIVE file lock
     js_lock: (rid, exclusive) => {
       // this is unstable and has issues on Windows ...
-      if (Deno.flockSync && !isWindows) Deno.flockSync(rid, exclusive !== 0);
+      if (Deno.flockSync && !isWindows) {
+        getOpenFile(rid).lockSync(exclusive !== 0);
+      }
     },
     // Release a file lock
     js_unlock: (rid) => {
       // this is unstable and has issues on Windows ...
-      if (Deno.funlockSync && !isWindows) Deno.funlockSync(rid);
+      if (Deno.funlockSync && !isWindows) {
+        getOpenFile(rid).unlockSync();
+      }
     },
     // Return current time in ms since UNIX epoch
     js_time: () => {
