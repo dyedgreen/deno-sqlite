@@ -509,9 +509,12 @@ Deno.test(
     assertEquals(rows, [[1, "open-options-test"]]);
 
     // ... but we can't write with a read-only connection
-    assertThrows(() =>
-      dbRead.query("INTERT INTO test (name) VALUES (?)", ["this-fails"])
+    const err = assertThrows(() =>
+      dbRead.query("INSERT INTO test (name) VALUES (?)", ["this-fails"])
     );
+    assertInstanceOf(err, SqliteError);
+    assertEquals(err.code, Status.SqliteReadOnly);
+    assertEquals(err.message, "attempt to write a readonly database");
     dbRead.close();
   },
 );
