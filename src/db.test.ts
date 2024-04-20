@@ -359,7 +359,7 @@ Deno.test("transactions can be nested", function () {
   assertEquals([{ id: 1 }], db.queryEntries("SELECT * FROM test"));
 });
 
-Deno.test("transactions commit when closure exists", function () {
+Deno.test("transactions commit when closure exits", function () {
   const db = new DB();
   db.query("CREATE TABLE test (id INTEGER PRIMARY KEY)");
 
