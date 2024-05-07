@@ -1,0 +1,32 @@
+name: Publish JSR package
+on: 
+  release:
+    types: [published]
+
+jobs:
+  Publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write 
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Generate jsr.json
+        run: |
+          PACKAGE_NAME="@${{ github.repository }}"
+          echo "{
+              \"name\": \"$PACKAGE_NAME\",
+              \"version\": \"${{ github.event.release.tag_name }}\",
+              \"exports\": \"./mod.ts\"
+          }" > jsr.json
+
+      - name: Publish to JSR
+        run: deno publish --allow-dirty
