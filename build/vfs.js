@@ -87,13 +87,7 @@ export default function env(inst) {
     // Sync file data to disk
     js_sync: (rid) => {
       const file = getOpenFile(rid);
-      if (typeof file.rid === "number") {
-        // Uses deprecated Deno.FsFile.rid, which will be removed in Deno 2.0
-        Deno.fdatasyncSync(file.rid);
-      } else {
-        // Support DENO_FUTURE, but requires --unstable-fs
-        file.syncDataSync();
-      }
+      file.syncDataSync();
     },
     // Retrieve the size of the given file
     js_size: (rid) => {

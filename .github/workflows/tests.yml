@@ -32,6 +32,8 @@ jobs:
     - name: Run tests (unstable)
       run: /home/runner/.deno/bin/deno test --unstable --allow-read --allow-write
     - name: Run tests (DENO_FUTURE)
+      run: DENO_FUTURE=1 /home/runner/.deno/bin/deno test --allow-read --allow-write
+    - name: Run tests (DENO_FUTURE and unstable)
       run: DENO_FUTURE=1 /home/runner/.deno/bin/deno test --unstable --allow-read --allow-write
     - name: Run benchmarks
       run: /home/runner/.deno/bin/deno run bench.ts
