@@ -2,19 +2,14 @@ import { getStr } from "../src/wasm.ts";
 
 const isWindows = Deno.build.os === "windows";
 
-const OPEN_FILES = new Map();
-
-function nextRid() {
-  const rid = (nextRid?.LAST_RID ?? 0) + 1;
-  nextRid.LAST_RID = rid;
-  return rid;
-}
+const OPEN_FILES = [];
 
 function getOpenFile(rid) {
-  if (!OPEN_FILES.has(rid)) {
+  const file = OPEN_FILES[rid]
+  if (!file) {
     throw new Error(`Resource ID ${rid} does not exist.`);
   }
-  return OPEN_FILES.get(rid);
+  return file;
 }
 
 // Closure to return an environment that links
@@ -42,15 +37,14 @@ export default function env(inst) {
       const write = !!(flags & 0x00000002);
       const create = !!(flags & 0x00000004);
       const file = Deno.openSync(path, { read: true, write, create });
-      const rid = nextRid();
-      OPEN_FILES.set(rid, file);
-      return rid;
+      OPEN_FILES.push(file);
+      return OPEN_FILES.length - 1;
     },
     // Close a file
     js_close: (rid) => {
       const file = getOpenFile(rid);
       file.close();
-      OPEN_FILES.delete(rid);
+      OPEN_FILES[rid] = null;
     },
     // Delete file at path
     js_delete: (path_ptr) => {
