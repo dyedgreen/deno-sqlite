@@ -5,7 +5,7 @@ const isWindows = Deno.build.os === "windows";
 const OPEN_FILES = [];
 
 function getOpenFile(rid) {
-  const file = OPEN_FILES[rid]
+  const file = OPEN_FILES[rid];
   if (!file) {
     throw new Error(`Resource ID ${rid} does not exist.`);
   }
@@ -90,15 +90,15 @@ export default function env(inst) {
     },
     // Acquire a SHARED or EXCLUSIVE file lock
     js_lock: (rid, exclusive) => {
-      // this is unstable and has issues on Windows ...
-      if (Deno.flockSync && !isWindows) {
+      // this has issues on Windows ...
+      if (!isWindows) {
         getOpenFile(rid).lockSync(exclusive !== 0);
       }
     },
     // Release a file lock
     js_unlock: (rid) => {
-      // this is unstable and has issues on Windows ...
-      if (Deno.funlockSync && !isWindows) {
+      // this has issues on Windows ...
+      if (!isWindows) {
         getOpenFile(rid).unlockSync();
       }
     },
