@@ -14,6 +14,10 @@ encounter. Note that the `master` branch might contain new or breaking features.
 The versioning guarantee applies only to
 [tagged releases](https://github.com/dyedgreen/deno-sqlite/releases).
 
+This module relies on filesystem APIs stabilized in Deno v1.44. To use it with
+earlier Deno versions, you must pass the `--unstable-fs` flag when running your
+application.
+
 ## Documentation
 
 Documentation is available [Deno Docs](https://deno.land/x/sqlite). There is
