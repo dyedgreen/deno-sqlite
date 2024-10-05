@@ -140,7 +140,9 @@ export function wrapSqlFunction(
     } catch (error) {
       setStr(
         wasm,
-        `Error in user defined function '${name}': ${error?.message}`,
+        `Error in user defined function '${name}': ${
+          (error as Error)?.message
+        }`,
         (ptr) => wasm.result_error(ptr, Status.SqliteError),
       );
     }
