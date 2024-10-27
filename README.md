@@ -85,7 +85,7 @@ There is **experimental** support for using `deno-sqlite` in the browser. You
 can generate a browser compatible module by running:
 
 ```bash
-deno bundle --import-map browser/import_map.json browser/mod.ts [output_bundle_path]
+deno run --allow-run --allow-env --allow-read --allow-write ./browser/bundle.js
 ```
 
 The modules documentation can be seen by running

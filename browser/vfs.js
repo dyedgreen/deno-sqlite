@@ -70,8 +70,11 @@ class Buffer {
   }
 }
 
-const indexedDB = window.indexedDB || window.mozIndexedDB ||
-  window.webkitIndexedDB || window.msIndexedDB || window.shimIndexedDB;
+const indexedDB = window.indexedDB ||
+  window.mozIndexedDB ||
+  window.webkitIndexedDB ||
+  window.msIndexedDB ||
+  window.shimIndexedDB;
 
 // Web browser indexedDB database
 const database = new Promise((resolve, reject) => {
@@ -195,13 +198,16 @@ export default function env(inst) {
       return Date.now();
     },
     js_timezone: () => {
-      return (new Date()).getTimezoneOffset();
+      return new Date().getTimezoneOffset();
     },
     js_exists: (path_ptr) => {
       const path = getStr(inst.exports, path_ptr);
       return LOADED_FILES.has(path) ? 1 : 0;
     },
     js_access: (_path_ptr) => 1,
+    js_call_user_func: (func_idx, arg_count) => {
+      inst.functions[func_idx](arg_count);
+    },
   };
 
   return { env };
