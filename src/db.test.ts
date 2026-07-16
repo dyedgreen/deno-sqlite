@@ -451,18 +451,16 @@ Deno.test(
     const path = await Deno.makeTempFile({ suffix: ".sqlite" });
     const moduleUrl = new URL("../mod.ts", import.meta.url).href;
     const workers: Worker[] = [];
+    const workerUrls: string[] = [];
 
     const createWorker = (source: string) => {
       const workerUrl = URL.createObjectURL(
         new Blob([source], { type: "text/javascript" }),
       );
-      try {
-        const worker = new Worker(workerUrl, { type: "module" });
-        workers.push(worker);
-        return worker;
-      } finally {
-        URL.revokeObjectURL(workerUrl);
-      }
+      workerUrls.push(workerUrl);
+      const worker = new Worker(workerUrl, { type: "module" });
+      workers.push(worker);
+      return worker;
     };
     const nextMessage = (worker: Worker) =>
       new Promise<unknown>((resolve, reject) => {
@@ -517,6 +515,7 @@ Deno.test(
       }
     } finally {
       for (const worker of workers) worker.terminate();
+      for (const workerUrl of workerUrls) URL.revokeObjectURL(workerUrl);
       await deleteDatabase(path);
     }
   },
