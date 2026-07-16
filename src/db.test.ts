@@ -435,6 +435,93 @@ Deno.test(
   },
 );
 
+/**
+ * This test demonstrates that the lock from the reader is being released when
+ * the reader's query ends, instead of when the DB is closed. By intentionally
+ * leaking the DB, we show that the lock so not depend on closing the DB.
+ */
+Deno.test(
+  "worker read releases database lock",
+  {
+    ignore: !TEST_DB_PERMISSIONS,
+    permissions: { read: true, write: true },
+    sanitizeResources: true,
+  },
+  async function () {
+    const path = await Deno.makeTempFile({ suffix: ".sqlite" });
+    const moduleUrl = new URL("../mod.ts", import.meta.url).href;
+    const workers: Worker[] = [];
+
+    const createWorker = (source: string) => {
+      const workerUrl = URL.createObjectURL(
+        new Blob([source], { type: "text/javascript" }),
+      );
+      try {
+        const worker = new Worker(workerUrl, { type: "module" });
+        workers.push(worker);
+        return worker;
+      } finally {
+        URL.revokeObjectURL(workerUrl);
+      }
+    };
+    const nextMessage = (worker: Worker) =>
+      new Promise<unknown>((resolve, reject) => {
+        worker.onmessage = (event) => resolve(event.data);
+        worker.onerror = reject;
+      });
+
+    try {
+      const db = new DB(path);
+      db.execute("CREATE TABLE test (id INTEGER PRIMARY KEY)");
+      db.execute("INSERT INTO test VALUES (1)");
+      db.close();
+
+      // Keep the reader connection open after its statement is finalized.
+      const reader = createWorker(`
+        import { DB } from ${JSON.stringify(moduleUrl)};
+        const db = new DB(${JSON.stringify(path)}, { mode: "read" });
+        db.query("SELECT * FROM test");
+        postMessage("read");
+        onmessage = () => {};
+      `);
+      assertEquals(await nextMessage(reader), "read");
+
+      const writer = createWorker(`
+        import { DB } from ${JSON.stringify(moduleUrl)};
+        const db = new DB(${JSON.stringify(path)}, { mode: "write" });
+        db.execute("INSERT INTO test VALUES (2)");
+        db.close();
+        postMessage("wrote");
+      `);
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+
+      // We are proving that we don't wait forever. If nextMessage from writer
+      // lands before a timeout (five seconds), then the database accepted the
+      // write. Without this timeout, a failing version of this test would hang
+      // the test suite forever, which is very confusing when trying to test.
+      // If the timeout is too short for slower test systems, feel free to bump
+      // it to a higher amount until it finishes within a reasonable amount of
+      // time on all the systems the project wants to test on.
+      try {
+        assertEquals(
+          await Promise.race([
+            nextMessage(writer),
+            new Promise((resolve) => {
+              timeout = setTimeout(() => resolve("timeout"), 5000);
+            }),
+          ]),
+          "wrote",
+        );
+      } finally {
+        clearTimeout(timeout);
+      }
+    } finally {
+      for (const worker of workers) worker.terminate();
+      await deleteDatabase(path);
+    }
+  },
+);
+
 Deno.test(
   "temporary file database read / write",
   {
