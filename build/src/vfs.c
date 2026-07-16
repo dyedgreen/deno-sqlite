@@ -124,13 +124,23 @@ static int denoUnlock(sqlite3_file *pFile, int eLock) {
     DenoFile *p = (DenoFile*)pFile;
   switch (eLock) {
     case SQLITE_LOCK_NONE:
-      // no op
+      js_unlock(p->rid);
       break;
     case SQLITE_LOCK_SHARED:
+      // This looks very strange, we are locking in a method
+      // named denoUnlock. The sqlite docs say: xUnlock (our denoUnlock)
+      // downgrades the database file lock to either SHARED or NONE.
+      // So, if the lock level was higher than SHARED, we should lock it as
+      // SHARED. So we are decreasing the strength of the lock on this line.
+      js_lock(p->rid, 0);
+      break;
     case SQLITE_LOCK_RESERVED:
     case SQLITE_LOCK_PENDING:
     case SQLITE_LOCK_EXCLUSIVE:
-      js_unlock(p->rid);
+      // According to the comment in sqlite.c for the
+      // definitions of SQLITE_LOCK_*, xUnlock (our denoUnlock)
+      // function is never called with any other value than
+      // 0 (NONE) or 1 (SHARED). This could be an assert(false).
       break;
   }
   return SQLITE_OK;
